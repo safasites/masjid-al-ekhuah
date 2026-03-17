@@ -9,11 +9,15 @@ function getSecret() {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Only protect /admin routes (but not /admin/login or /api/admin/auth)
+  // Skip API routes entirely — they handle their own auth
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
+  // Only protect /admin UI routes (but not /admin/login)
   if (
     pathname.startsWith('/admin') &&
-    !pathname.startsWith('/admin/login') &&
-    !pathname.startsWith('/api/admin/auth')
+    !pathname.startsWith('/admin/login')
   ) {
     const token = req.cookies.get('admin_session')?.value;
 
@@ -35,5 +39,6 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: ['/admin/:path*', '/api/admin/:path*'],
 };
+
