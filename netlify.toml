@@ -1,0 +1,17 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NEXT_TELEMETRY_DISABLED = "1"
+
+# Redirects: make sure /admin always hits the Next.js app
+[[redirects]]
+  from = "/admin/*"
+  to = "/.netlify/functions/___netlify-handler"
+  status = 200
+  force = true
