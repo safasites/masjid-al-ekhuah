@@ -47,7 +47,7 @@ export async function PUT(req: NextRequest) {
       try {
         const [arText, kuText] = await Promise.all([
           translateText(aboutUpdate.value, 'ar'),
-          translateText(aboutUpdate.value, 'ku'),
+          translateText(aboutUpdate.value, 'ckb'),
         ]);
         await db.from('content').upsert([
           { key: 'about_desc_ar', value: arText, updated_at: new Date().toISOString() },
