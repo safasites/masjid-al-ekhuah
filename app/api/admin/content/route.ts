@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { createServerSupabase } from '@/lib/supabase-server';
+import { translateText } from '@/lib/translate';
 
 function getSecret() {
   return new TextEncoder().encode(
@@ -18,7 +19,6 @@ export async function GET() {
   const db = createServerSupabase();
   const { data, error } = await db.from('content').select('key, value');
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  // Return as an object { key: value, ... }
   const obj: Record<string, string> = {};
   (data || []).forEach((r: { key: string; value: string }) => { obj[r.key] = r.value; });
   return NextResponse.json(obj);
@@ -26,7 +26,6 @@ export async function GET() {
 
 export async function PUT(req: NextRequest) {
   if (!await auth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  // Body: { key: string, value: string } OR array of { key, value }
   const body = await req.json();
   const db = createServerSupabase();
 
@@ -40,5 +39,25 @@ export async function PUT(req: NextRequest) {
     { onConflict: 'key' }
   );
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Auto-translate about_desc when it's updated
+  const aboutUpdate = updates.find((u: { key: string; value: string }) => u.key === 'about_desc');
+  if (aboutUpdate?.value) {
+    (async () => {
+      try {
+        const [arText, kuText] = await Promise.all([
+          translateText(aboutUpdate.value, 'ar'),
+          translateText(aboutUpdate.value, 'ku'),
+        ]);
+        await db.from('content').upsert([
+          { key: 'about_desc_ar', value: arText, updated_at: new Date().toISOString() },
+          { key: 'about_desc_ku', value: kuText, updated_at: new Date().toISOString() },
+        ], { onConflict: 'key' });
+      } catch {
+        // Non-fatal
+      }
+    })();
+  }
+
   return NextResponse.json({ ok: true });
 }

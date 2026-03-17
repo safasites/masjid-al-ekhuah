@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { createServerSupabase } from '@/lib/supabase-server';
+import { translateBatch } from '@/lib/translate';
 
 function getSecret() {
   return new TextEncoder().encode(
@@ -12,6 +13,20 @@ async function auth(req: NextRequest) {
   const token = req.cookies.get('admin_session')?.value;
   if (!token) return false;
   try { await jwtVerify(token, getSecret()); return true; } catch { return false; }
+}
+
+/** Auto-translate course title into Arabic and Kurdish, then update the row. */
+async function autoTranslate(db: ReturnType<typeof createServerSupabase>, id: string, title: string) {
+  try {
+    const [titleAr] = await translateBatch([title], 'ar');
+    const [titleKu] = await translateBatch([title], 'ckb');
+    await db.from('courses').update({
+      title_ar: titleAr || null,
+      title_ku: titleKu || null,
+    }).eq('id', id);
+  } catch {
+    // Translation failure is non-fatal
+  }
 }
 
 export async function GET() {
@@ -27,6 +42,7 @@ export async function POST(req: NextRequest) {
   const db = createServerSupabase();
   const { data, error } = await db.from('courses').insert([body]).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  autoTranslate(db, data.id, data.title);
   return NextResponse.json(data, { status: 201 });
 }
 

@@ -1,0 +1,95 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { jwtVerify } from 'jose';
+import { createServerSupabase } from '@/lib/supabase-server';
+import { translateBatch, translateText } from '@/lib/translate';
+
+function getSecret() {
+  return new TextEncoder().encode(
+    process.env.ADMIN_SESSION_SECRET ?? 'mosque-dev-secret-change-before-deploy'
+  );
+}
+
+async function auth(req: NextRequest) {
+  const token = req.cookies.get('admin_session')?.value;
+  if (!token) return false;
+  try { await jwtVerify(token, getSecret()); return true; } catch { return false; }
+}
+
+export async function POST(req: NextRequest) {
+  if (!await auth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const db = createServerSupabase();
+  const results = { events: 0, courses: 0, about: false };
+
+  // Retranslate events with missing translations
+  const { data: events } = await db
+    .from('events')
+    .select('id, title, description')
+    .or('title_ar.is.null,title_ku.is.null');
+
+  if (events && events.length > 0) {
+    for (const ev of events) {
+      try {
+        const texts = [ev.title, ev.description].filter(Boolean) as string[];
+        const [arResults, kuResults] = await Promise.all([
+          translateBatch(texts, 'ar'),
+          translateBatch(texts, 'ckb'),
+        ]);
+        const hasDesc = ev.description && ev.description.length > 0;
+        await db.from('events').update({
+          title_ar: arResults[0] || null,
+          title_ku: kuResults[0] || null,
+          description_ar: hasDesc ? (arResults[1] || null) : null,
+          description_ku: hasDesc ? (kuResults[1] || null) : null,
+        }).eq('id', ev.id);
+        results.events++;
+      } catch { /* non-fatal */ }
+    }
+  }
+
+  // Retranslate courses with missing translations
+  const { data: courses } = await db
+    .from('courses')
+    .select('id, title')
+    .or('title_ar.is.null,title_ku.is.null');
+
+  if (courses && courses.length > 0) {
+    for (const c of courses) {
+      try {
+        const [titleAr] = await translateBatch([c.title], 'ar');
+        const [titleKu] = await translateBatch([c.title], 'ckb');
+        await db.from('courses').update({
+          title_ar: titleAr || null,
+          title_ku: titleKu || null,
+        }).eq('id', c.id);
+        results.courses++;
+      } catch { /* non-fatal */ }
+    }
+  }
+
+  // Retranslate about description if not yet translated
+  const { data: aboutRows } = await db
+    .from('content')
+    .select('key, value')
+    .in('key', ['about_desc', 'about_desc_ar', 'about_desc_ku']);
+
+  const aboutDesc = aboutRows?.find(r => r.key === 'about_desc')?.value;
+  const aboutAr = aboutRows?.find(r => r.key === 'about_desc_ar')?.value;
+  const aboutKu = aboutRows?.find(r => r.key === 'about_desc_ku')?.value;
+
+  if (aboutDesc && (!aboutAr || !aboutKu)) {
+    try {
+      const [arText, kuText] = await Promise.all([
+        translateText(aboutDesc, 'ar'),
+        translateText(aboutDesc, 'ckb'),
+      ]);
+      await db.from('content').upsert([
+        { key: 'about_desc_ar', value: arText, updated_at: new Date().toISOString() },
+        { key: 'about_desc_ku', value: kuText, updated_at: new Date().toISOString() },
+      ], { onConflict: 'key' });
+      results.about = true;
+    } catch { /* non-fatal */ }
+  }
+
+  return NextResponse.json({ ok: true, translated: results });
+}

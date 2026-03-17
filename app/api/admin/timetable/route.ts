@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { createServerSupabase } from '@/lib/supabase-server';
 
+export const dynamic = 'force-dynamic';
+
 function getSecret() {
   return new TextEncoder().encode(
     process.env.ADMIN_SESSION_SECRET ?? 'mosque-dev-secret-change-before-deploy'

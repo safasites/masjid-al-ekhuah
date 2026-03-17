@@ -9,7 +9,13 @@
   NODE_VERSION = "20"
   NEXT_TELEMETRY_DISABLED = "1"
 
-# Redirects: make sure /admin always hits the Next.js app
+# Redirects: make sure /admin and all sub-paths hit the Next.js app
+[[redirects]]
+  from = "/admin"
+  to = "/.netlify/functions/___netlify-handler"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/admin/*"
   to = "/.netlify/functions/___netlify-handler"

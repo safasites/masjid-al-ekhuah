@@ -1,16 +1,41 @@
 'use client';
 
 import { motion, useScroll, useTransform, useAnimationControls, AnimatePresence } from 'motion/react';
-import { MapPin, ArrowRight, Globe, Home, BookOpen, Calendar, LayoutGrid, Heart, Info, Menu, X, Settings, Phone, Mail } from 'lucide-react';
+import { MapPin, ArrowRight, ArrowUp, Globe, Home, BookOpen, Calendar, LayoutGrid, Heart, Info, Menu, X, Settings, Phone, Mail } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Prayer { id: string; azan: string; jamat: string; }
 interface PrayerData { prayers: Prayer[]; jumuah: string; hijri: string; gregorian: string; }
-interface Event { id: string; title: string; date_label: string; description: string; }
-interface Course { id: string; title: string; level: string; duration: string; }
+interface Event {
+  id: string; title: string; date_label: string; description: string;
+  title_ar?: string; title_ku?: string; description_ar?: string; description_ku?: string;
+}
+interface Course {
+  id: string; title: string; level: string; duration: string;
+  title_ar?: string; title_ku?: string;
+}
 type Lang = 'en' | 'ku' | 'ar';
+
+// ─── Hijri month name lookup ───────────────────────────────────────────────
+const hijriMonths: Record<Lang, Record<string, string>> = {
+  en: {},
+  ar: {
+    Muharram: 'مُحرَّم', Safar: 'صَفَر', "Rabi' al-Awwal": 'رَبيع الأوَّل',
+    "Rabi' al-Thani": 'رَبيع الثَّاني', "Jumada al-Awwal": 'جُمادى الأولى',
+    "Jumada al-Thani": 'جُمادى الثَّانية', Rajab: 'رَجَب',
+    "Sha'ban": 'شَعبان', Ramadan: 'رَمَضان', Shawwal: 'شَوَّال',
+    "Dhu al-Qi'dah": 'ذُو القَعدة', "Dhu al-Hijjah": 'ذُو الحِجَّة',
+  },
+  ku: {
+    Muharram: 'موحەڕڕەم', Safar: 'سەفەر', "Rabi' al-Awwal": 'ڕەبیعو الئەووەل',
+    "Rabi' al-Thani": 'ڕەبیعو الثانی', "Jumada al-Awwal": 'جومادا الئووڵى',
+    "Jumada al-Thani": 'جومادا الثانی', Rajab: 'ڕەجەب',
+    "Sha'ban": 'شەعبان', Ramadan: 'ڕەمەزان', Shawwal: 'شەووال',
+    "Dhu al-Qi'dah": 'زولقەعدە', "Dhu al-Hijjah": 'زولحیججە',
+  },
+};
 
 // ─── Translations ─────────────────────────────────────────────────────────────
 const translations = {
@@ -25,6 +50,7 @@ const translations = {
     birmingham: 'Birmingham',
     prayers: { fajr: 'Fajr', dhuhr: 'Dhuhr', asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha' },
     azan: 'Azan', jamat: "Jama'at", jumuah: "Jumu'ah",
+    minsAfterAzan: (n: number) => `${n} mins after Azan`,
     langToggle: 'کوردی',
     eventsTitle: 'Upcoming Events',
     eventsSubtitle: 'Join our community gatherings',
@@ -38,6 +64,9 @@ const translations = {
     mobileNav: { home: 'Home', quran: 'Courses', events: 'Events', timetable: 'Times', more: 'More' },
     admin: 'Admin', close: 'Close',
     loading: 'Loading prayer times…',
+    openTimetable: 'Open Full Timetable',
+    noTimetable: 'No Timetable Uploaded',
+    noTimetableDesc: 'The mosque admin can upload the monthly timetable from the Admin panel.',
   },
   ku: {
     nav: { times: 'کاتەکان', events: 'بۆنەکان', courses: 'خولەکان', donate: 'بەخشین', about: 'دەربارە' },
@@ -50,6 +79,7 @@ const translations = {
     birmingham: 'بیرمینگام',
     prayers: { fajr: 'فەجر', dhuhr: 'نیوەڕۆ', asr: 'عەسر', maghrib: 'مەغریب', isha: 'عیشا' },
     azan: 'ئەزان', jamat: 'جەماعەت', jumuah: 'ئینی',
+    minsAfterAzan: (n: number) => `${n} خولەک دوای ئەزان`,
     langToggle: 'العربية',
     eventsTitle: 'بۆنە ئامادەکراوەکان',
     eventsSubtitle: 'بەشداری کۆبوونەوەکانی کۆمەڵگەکەمان بکە',
@@ -63,6 +93,9 @@ const translations = {
     mobileNav: { home: 'سەرەکی', quran: 'خولەکان', events: 'بۆنەکان', timetable: 'کاتەکان', more: 'زیاتر' },
     admin: 'بەڕێوەبەر', close: 'داخستن',
     loading: '…کاتی نوێژ بارکردن',
+    openTimetable: 'خشتەی تەواو بکەرەوە',
+    noTimetable: 'هیچ خشتەیەک بارنەکراوە',
+    noTimetableDesc: 'بەڕێوەبەری مزگەوت دەتوانێت خشتەی مانگانەی کاتەکان لە پانێلی بەڕێوەبەری بار بکات.',
   },
   ar: {
     nav: { times: 'الأوقات', events: 'الفعاليات', courses: 'الدورات', donate: 'تبرع', about: 'حول' },
@@ -75,6 +108,7 @@ const translations = {
     birmingham: 'برمنغهام',
     prayers: { fajr: 'الفجر', dhuhr: 'الظهر', asr: 'العصر', maghrib: 'المغرب', isha: 'العشاء' },
     azan: 'أذان', jamat: 'جماعة', jumuah: 'الجمعة',
+    minsAfterAzan: (n: number) => `${n} دقائق بعد الأذان`,
     langToggle: 'EN',
     eventsTitle: 'الفعاليات القادمة',
     eventsSubtitle: 'انضم إلى تجمعات مجتمعنا',
@@ -88,6 +122,9 @@ const translations = {
     mobileNav: { home: 'الرئيسية', quran: 'الدورات', events: 'الفعاليات', timetable: 'الأوقات', more: 'المزيد' },
     admin: 'المسؤول', close: 'إغلاق',
     loading: '…جاري تحميل أوقات الصلاة',
+    openTimetable: 'فتح الجدول الكامل',
+    noTimetable: 'لم يتم رفع جدول',
+    noTimetableDesc: 'يمكن لمسؤول المسجد رفع الجدول الشهري من لوحة الإدارة.',
   },
 };
 
@@ -100,7 +137,7 @@ function getActivePrayer(prayers: Prayer[]): string {
 
   function toMins(t: string): number {
     if (!t) return -1;
-    const m = t.match(/^(\d{1,2}):(\d{2})$/);
+    const m = t.match(/^(\d{1,2}):(\d{2})/);
     if (!m) return -1;
     return parseInt(m[1]) * 60 + parseInt(m[2]);
   }
@@ -116,8 +153,34 @@ function getActivePrayer(prayers: Prayer[]): string {
   return active;
 }
 
+// ─── Helper: format jamat with translated "X mins after Azan" pattern ─────────
+function formatJamat(jamat: string, t: typeof translations['en']): string {
+  const match = jamat.match(/^(\d+)\s*min/i);
+  if (match) return t.minsAfterAzan(parseInt(match[1]));
+  return jamat;
+}
+
+// ─── Helper: translate hijri date month names ─────────────────────────────────
+function translateHijri(hijri: string, lang: Lang): string {
+  if (lang === 'en' || !hijri) return hijri;
+  const months = hijriMonths[lang];
+  let result = hijri;
+  for (const [en, translated] of Object.entries(months)) {
+    result = result.replace(en, translated);
+  }
+  return result;
+}
+
 // ─── AnimatedText ─────────────────────────────────────────────────────────────
-const AnimatedText = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+const AnimatedText = ({
+  children,
+  className = '',
+  nowrap = true,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  nowrap?: boolean;
+}) => (
   <AnimatePresence mode="wait" initial={false}>
     <motion.span
       key={String(children)}
@@ -125,7 +188,7 @@ const AnimatedText = ({ children, className = '' }: { children: React.ReactNode;
       animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
       exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }}
       transition={{ duration: 0.2 }}
-      className={`inline-block whitespace-nowrap ${className}`}
+      className={`inline-block ${nowrap ? 'whitespace-nowrap' : 'whitespace-normal'} ${className}`}
     >
       {children}
     </motion.span>
@@ -136,7 +199,9 @@ const AnimatedText = ({ children, className = '' }: { children: React.ReactNode;
 export default function MosqueHero() {
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const [lang, setLang] = useState<Lang>('en');
+  const [activeSection, setActiveSection] = useState<string>('');
   const [activeMobileTab, setActiveMobileTab] = useState('home');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showTimetable, setShowTimetable] = useState(false);
@@ -162,15 +227,43 @@ export default function MosqueHero() {
   const heroBlur   = useTransform(scrollYProgress, [0, 0.2], ['blur(0px)', 'blur(20px)']);
   const heroY      = useTransform(scrollYProgress, [0, 0.2], ['0%', '15%']);
 
+  // Restore persisted language
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', onScroll);
+    const stored = localStorage.getItem('mosque-lang') as Lang | null;
+    if (stored && (stored === 'en' || stored === 'ku' || stored === 'ar')) setLang(stored);
+  }, []);
+
+  // Scroll state — header backdrop + back-to-top visibility
+  useEffect(() => {
+    const onScroll = () => {
+      setScrolled(window.scrollY > 50);
+      setShowBackToTop(window.scrollY > 300);
+      if (window.scrollY < 100) setActiveSection('');
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // IntersectionObserver — active nav section
+  useEffect(() => {
+    const sectionIds = ['times', 'events', 'courses', 'donate', 'about'];
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) setActiveSection(entry.target.id);
+        });
+      },
+      { rootMargin: '-40% 0px -50% 0px', threshold: 0 }
+    );
+    sectionIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
   }, []);
 
   // Fetch all dynamic data on mount
   useEffect(() => {
-    // Prayer times
     fetch('/api/prayer-times')
       .then(r => r.json())
       .then((data: PrayerData) => {
@@ -180,22 +273,18 @@ export default function MosqueHero() {
       })
       .catch(() => setPrayerLoading(false));
 
-    // Events (top 3)
     fetch('/api/admin/events')
       .then(r => r.json())
       .then((data: Event[]) => setEvents(data.slice(0, 3)));
 
-    // Courses
     fetch('/api/admin/courses')
       .then(r => r.json())
       .then(setCourses);
 
-    // Site content
     fetch('/api/admin/content')
       .then(r => r.json())
       .then(setContent);
 
-    // Active timetable
     fetch('/api/admin/timetable')
       .then(r => r.json())
       .then(d => d && setTimetableUrl(d.image_url));
@@ -208,26 +297,39 @@ export default function MosqueHero() {
     return () => clearInterval(timer);
   }, [prayerData]);
 
+  const changeLang = (newLang: Lang) => {
+    setLang(newLang);
+    localStorage.setItem('mosque-lang', newLang);
+  };
+
   const handlePinInteraction = useCallback(async () => {
     await pinControls.start({ y: -10, rotate: 360, scale: 1.2, transition: { duration: 0.6, type: 'spring', bounce: 0.5 } });
     pinControls.start({ y: 0, rotate: 0, scale: 1, transition: { duration: 0.3 } });
   }, [pinControls]);
 
-  const heroLine1 = content.hero_line1 || t.awaken;
-  const heroLine2 = content.hero_line2 || t.faith;
-  const aboutDesc = content.about_desc || 'Masjid Al-Ekhuah is a welcoming community in the heart of Birmingham, dedicated to worship, education, and serving the local community.';
+  // Derived content — hero text respects language; database content only used for English
+  const heroLine1 = lang === 'en' ? (content.hero_line1 || t.awaken) : t.awaken;
+  const heroLine2 = lang === 'en' ? (content.hero_line2 || t.faith) : t.faith;
+  const baseAboutDesc = content.about_desc || 'Masjid Al-Ekhuah is a welcoming community in the heart of Birmingham, dedicated to worship, education, and serving the local community.';
+  const aboutDesc = lang === 'ar' ? (content.about_desc_ar || baseAboutDesc) : lang === 'ku' ? (content.about_desc_ku || baseAboutDesc) : baseAboutDesc;
   const contactAddress = content.contact_address || 'New Spring St, Birmingham B18 7PW, United Kingdom';
   const contactPhone = content.contact_phone || '0121 507 0166';
   const contactEmail = content.contact_email || 'info@masjidalekhuah.com';
 
+  // Translation helpers for database-driven content
+  const getEventTitle = (e: Event)  => lang === 'ar' ? (e.title_ar || e.title) : lang === 'ku' ? (e.title_ku || e.title) : e.title;
+  const getEventDesc  = (e: Event)  => lang === 'ar' ? (e.description_ar || e.description) : lang === 'ku' ? (e.description_ku || e.description) : e.description;
+  const getCourseTitle = (c: Course) => lang === 'ar' ? (c.title_ar || c.title) : lang === 'ku' ? (c.title_ku || c.title) : c.title;
+
   return (
     <main ref={containerRef} dir={isRTL ? 'rtl' : 'ltr'} className="relative bg-[#0a0804] selection:bg-amber-500/30 selection:text-amber-100 overflow-x-hidden">
 
-      {/* Desktop Navigation */}
+      {/* ── Desktop Navigation ────────────────────────────────────── */}
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled ? 'bg-[#0a0804]/80 backdrop-blur-xl py-4 border-b border-amber-500/20' : 'bg-transparent py-6'
       }`}>
         <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between">
+          {/* Logo */}
           <motion.div
             initial={{ opacity: 0, x: isRTL ? 20 : -20 }} animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -246,22 +348,36 @@ export default function MosqueHero() {
             <span className="font-display font-medium text-lg md:text-xl text-amber-50 tracking-wide whitespace-nowrap">Masjid Al-Ekhuah</span>
           </motion.div>
 
+          {/* Desktop nav — active section glow */}
           <nav className="hidden lg:flex items-center gap-8">
-            {Object.entries(t.nav).map(([key, item], i) => (
-              <motion.a key={key} href={`#${key}`}
-                initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 * i }}
-                className="text-sm font-medium text-amber-100/60 hover:text-amber-400 transition-colors tracking-wide relative group">
-                <AnimatedText>{item}</AnimatedText>
-                <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-amber-400 transition-all duration-300 group-hover:w-full" />
-              </motion.a>
-            ))}
+            {Object.entries(t.nav).map(([key, item], i) => {
+              const isActive = activeSection === key;
+              return (
+                <motion.a key={key} href={`#${key}`}
+                  initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 * i }}
+                  className={`text-sm font-medium tracking-wide relative group transition-colors duration-300 ${
+                    isActive ? 'text-amber-400' : 'text-amber-100/60 hover:text-amber-400'
+                  }`}>
+                  <AnimatedText>{item}</AnimatedText>
+                  {isActive ? (
+                    <motion.span
+                      layoutId="active-nav-indicator"
+                      className="absolute -bottom-1 left-0 right-0 h-[1px] bg-amber-400"
+                      style={{ boxShadow: '0 0 8px 2px rgba(245,158,11,0.5)' }}
+                    />
+                  ) : (
+                    <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-amber-400 transition-all duration-300 group-hover:w-full" />
+                  )}
+                </motion.a>
+              );
+            })}
           </nav>
 
           <motion.div initial={{ opacity: 0, x: isRTL ? -20 : 20 }} animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
             className="flex items-center gap-2 md:gap-4">
-            <button onClick={() => setLang(nextLang[lang])}
+            <button onClick={() => changeLang(nextLang[lang])}
               className="flex items-center justify-center px-3 md:px-4 py-2 md:py-2.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-300 text-sm font-medium backdrop-blur-sm transition-all duration-300 hover:shadow-[0_0_20px_-5px_rgba(245,158,11,0.3)] gap-2 group">
               <Globe className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
               <AnimatedText>{t.langToggle}</AnimatedText>
@@ -277,7 +393,7 @@ export default function MosqueHero() {
         </div>
       </header>
 
-      {/* Fixed Hero */}
+      {/* ── Fixed Hero ────────────────────────────────────────────── */}
       <div className="fixed inset-0 z-0 flex flex-col items-center justify-center pointer-events-none overflow-hidden">
         <div className="absolute inset-0 z-0">
           <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-amber-500/20 blur-[120px] animate-float" style={{ animationDelay: '0s' }} />
@@ -294,9 +410,10 @@ export default function MosqueHero() {
             transition={{ duration: 1, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
             className="font-display text-5xl sm:text-6xl md:text-8xl lg:text-9xl text-white w-full leading-[1.1] tracking-tight mb-12 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
             <AnimatedText>{heroLine1}</AnimatedText>
-            <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-amber-100 via-amber-400 to-yellow-200 animate-gradient-xy drop-shadow-sm py-4 -my-4 leading-normal">
-              <AnimatedText>{heroLine2}</AnimatedText>
-            </span>
+            {/* Gradient word — className applied directly to AnimatedText so bg-clip-text works on the motion.span */}
+            <AnimatedText className="text-transparent bg-clip-text bg-gradient-to-r from-amber-100 via-amber-400 to-yellow-200 animate-gradient-xy drop-shadow-sm">
+              {heroLine2}
+            </AnimatedText>
           </motion.h1>
 
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
@@ -305,7 +422,12 @@ export default function MosqueHero() {
             <button onClick={() => document.getElementById('times')?.scrollIntoView({ behavior: 'smooth' })}
               className="px-8 py-4 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 text-[#0a0804] font-medium text-base hover:from-amber-300 hover:to-amber-500 transition-all duration-300 flex items-center justify-center gap-2 group animate-breathe hover:animate-none hover:shadow-[0_0_40px_-5px_rgba(245,158,11,0.6)] hover:-translate-y-1">
               <AnimatedText>{t.viewPrayers}</AnimatedText>
-              <ArrowRight className={`w-4 h-4 transition-transform ${isRTL ? 'rotate-180 group-hover:-translate-y-1 group-hover:rotate-[270deg]' : 'group-hover:translate-y-1 group-hover:rotate-90'}`} />
+              {/* Arrow always animates downward (rotate 90°) on hover in both LTR and RTL */}
+              <ArrowRight className={`w-4 h-4 transition-transform duration-300 ${
+                isRTL
+                  ? 'rotate-180 group-hover:translate-y-1 group-hover:rotate-90'
+                  : 'group-hover:translate-y-1 group-hover:rotate-90'
+              }`} />
             </button>
           </motion.div>
         </motion.div>
@@ -313,10 +435,10 @@ export default function MosqueHero() {
 
       <div className="h-[100vh]" />
 
-      {/* Content Sections */}
+      {/* ── Content Sections ──────────────────────────────────────── */}
       <div className="relative z-20 bg-[#0a0804] rounded-t-[3rem] md:rounded-t-[5rem] shadow-[0_-30px_60px_-15px_rgba(245,158,11,0.2)] overflow-hidden pb-32 md:pb-0">
 
-        {/* ── Prayer Times Section ─────────────────────────────────── */}
+        {/* Prayer Times Section */}
         <section id="times" className="min-h-screen bg-gradient-to-b from-amber-900/40 via-amber-950/40 to-[#0a0804] backdrop-blur-3xl border-t border-amber-500/30 flex flex-col items-center justify-center px-6 py-24">
           <div className="max-w-6xl w-full mx-auto">
             <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, margin: '-100px' }} transition={{ duration: 0.8, ease: 'easeOut' }} className="text-center mb-16">
@@ -329,59 +451,58 @@ export default function MosqueHero() {
                   <AnimatedText>{t.birmingham}</AnimatedText>
                 </span>
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500/50" />
-                <span>{prayerData?.hijri || '—'}</span>
+                {/* dir="ltr" ensures Hijri date numbers display correctly in RTL mode */}
+                <span dir="ltr">{prayerData ? translateHijri(prayerData.hijri, lang) : '—'}</span>
               </div>
             </motion.div>
 
-            {/* Prayer time cards */}
+            {/* Prayer rows — compact horizontal pill list */}
             {prayerLoading ? (
               <div className="flex items-center justify-center py-20">
                 <span className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-400 rounded-full animate-spin" />
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
+              <div className="flex flex-col gap-2 md:gap-3 max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto w-full">
                 {(prayerData?.prayers ?? []).map((prayer, index) => {
                   const isActive = prayer.id === activePrayer;
                   return (
                     <motion.div
                       key={prayer.id}
-                      initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, margin: '-50px' }}
-                      transition={{ duration: 0.6, delay: index * 0.1, ease: 'easeOut' }}
-                      whileHover={{ y: -8, scale: 1.02 }}
-                      className={`relative overflow-hidden rounded-3xl p-6 md:p-8 transition-all duration-500 ${
+                      initial={{ opacity: 0, x: isRTL ? 30 : -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: false, margin: '-50px' }}
+                      transition={{ duration: 0.5, delay: index * 0.07, ease: 'easeOut' }}
+                      className={`relative flex items-center gap-4 rounded-2xl px-5 py-4 md:py-5 md:px-8 transition-all duration-500 ${
                         isActive
-                          ? 'bg-gradient-to-b from-amber-500/40 to-amber-700/40 border border-amber-400 shadow-[0_0_40px_-10px_rgba(245,158,11,0.5)]'
-                          : 'bg-amber-950/40 border border-amber-800/40 hover:border-amber-500/50 hover:bg-amber-900/50'
+                          ? 'bg-gradient-to-r from-amber-500/25 to-amber-700/15 border border-amber-400/60 shadow-[0_0_30px_-8px_rgba(245,158,11,0.4)]'
+                          : 'bg-amber-950/30 border border-amber-800/30 hover:border-amber-500/40 hover:bg-amber-900/30'
                       }`}
                     >
-                      {isActive && <div className="absolute top-0 right-0 w-32 h-32 bg-amber-300/30 blur-3xl rounded-full -mr-16 -mt-16 pointer-events-none" />}
-                      <div className="flex flex-col gap-3">
-                        {/* Prayer name + active indicator */}
-                        <p className={`text-sm font-medium tracking-widest uppercase flex items-center gap-2 ${isActive ? 'text-amber-200' : 'text-amber-500'}`}>
-                          <AnimatedText>{t.prayers[prayer.id as keyof typeof t.prayers]}</AnimatedText>
-                          {isActive && (
-                            <span className="relative flex h-2.5 w-2.5 shrink-0">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-200 opacity-75" />
-                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-300" />
-                            </span>
-                          )}
+                      {/* Prayer name */}
+                      <div className="w-28 md:w-32 shrink-0 flex items-center gap-2">
+                        <p className={`text-[13px] md:text-sm font-semibold tracking-wider uppercase ${isActive ? 'text-amber-200' : 'text-amber-500/80'}`}>
+                          {t.prayers[prayer.id as keyof typeof t.prayers]}
                         </p>
-                        {/* Azan time */}
-                        <div>
-                          <p className="text-amber-500/50 text-[10px] uppercase tracking-widest mb-0.5">{t.azan}</p>
-                          <p className={`font-display text-2xl md:text-3xl tracking-tight ${isActive ? 'text-white' : 'text-amber-100/80'}`}>
-                            {prayer.azan || '—'}
-                          </p>
-                        </div>
-                        {/* Jamat time */}
-                        {prayer.jamat && (
-                          <div className={`pt-3 border-t ${isActive ? 'border-amber-400/30' : 'border-amber-800/30'}`}>
-                            <p className="text-amber-500/50 text-[10px] uppercase tracking-widest mb-0.5">{t.jamat}</p>
-                            <p className={`font-display text-lg tracking-tight ${isActive ? 'text-amber-200' : 'text-amber-400/80'}`}>
-                              {prayer.jamat}
-                            </p>
-                          </div>
+                        {isActive && (
+                          <span className="relative flex h-2 w-2 shrink-0">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400" />
+                          </span>
                         )}
+                      </div>
+                      {/* Azan */}
+                      <div className="flex-1 text-center">
+                        <p className="text-amber-500/40 text-[11px] md:text-xs uppercase tracking-widest mb-0.5">{t.azan}</p>
+                        <p dir="ltr" className={`font-display text-base md:text-xl tracking-tight ${isActive ? 'text-white' : 'text-amber-100/70'}`}>
+                          {prayer.azan || '—'}
+                        </p>
+                      </div>
+                      {/* Separator */}
+                      <div className={`w-px self-stretch ${isActive ? 'bg-amber-400/20' : 'bg-amber-800/30'}`} />
+                      {/* Jamat */}
+                      <div className="flex-1 text-center">
+                        <p className="text-amber-500/40 text-[11px] md:text-xs uppercase tracking-widest mb-0.5">{t.jamat}</p>
+                        <p dir="ltr" className={`font-display text-base md:text-xl tracking-tight ${isActive ? 'text-amber-300' : 'text-amber-400/70'}`}>
+                          {prayer.jamat ? formatJamat(prayer.jamat, t) : '—'}
+                        </p>
                       </div>
                     </motion.div>
                   );
@@ -396,7 +517,7 @@ export default function MosqueHero() {
                 <div className="px-6 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm font-medium flex items-center gap-3">
                   <Calendar className="w-4 h-4 text-amber-400" />
                   <span><AnimatedText>{t.jumuah}</AnimatedText></span>
-                  <span className="text-amber-400 font-display text-base">{prayerData.jumuah}</span>
+                  <span dir="ltr" className="text-amber-400 font-display text-base">{prayerData.jumuah}</span>
                 </div>
               </motion.div>
             )}
@@ -412,7 +533,7 @@ export default function MosqueHero() {
           </div>
         </section>
 
-        {/* ── Events Section ───────────────────────────────────────── */}
+        {/* Events Section */}
         <section id="events" className="min-h-screen flex items-center justify-center px-6 py-24 overflow-hidden">
           <motion.div initial={{ opacity: 0, x: isRTL ? -100 : 100 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: false, margin: '-100px' }} transition={{ duration: 0.8, ease: 'easeOut' }} className="max-w-6xl w-full mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
@@ -443,16 +564,16 @@ export default function MosqueHero() {
                   <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-6 group-hover:bg-amber-500/20 transition-colors">
                     <Calendar className="w-6 h-6 text-amber-400" />
                   </div>
-                  <h3 className="text-xl font-medium text-amber-50 mb-2">{event.title}</h3>
+                  <h3 dir="auto" className="text-xl font-medium text-amber-50 mb-2">{getEventTitle(event)}</h3>
                   <p className="text-amber-400/80 text-sm mb-4">{event.date_label}</p>
-                  {event.description && <p className="text-amber-100/60 leading-relaxed">{event.description}</p>}
+                  {event.description && <p dir="auto" className="text-amber-100/60 leading-relaxed">{getEventDesc(event)}</p>}
                 </motion.div>
               ))}
             </div>
           </motion.div>
         </section>
 
-        {/* ── Courses Section ──────────────────────────────────────── */}
+        {/* Courses Section */}
         <section id="courses" className="min-h-screen flex items-center justify-center px-6 py-24 bg-amber-950/10 overflow-hidden">
           <motion.div initial={{ opacity: 0, x: isRTL ? 100 : -100 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: false, margin: '-100px' }} transition={{ duration: 0.8, ease: 'easeOut' }} className="max-w-6xl w-full mx-auto">
             <div className="text-center mb-16">
@@ -481,7 +602,7 @@ export default function MosqueHero() {
                     </div>
                     <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-medium border border-amber-500/20">{course.level}</span>
                   </div>
-                  <h3 className="text-xl font-medium text-amber-50 mb-2">{course.title}</h3>
+                  <h3 dir="auto" className="text-xl font-medium text-amber-50 mb-2">{getCourseTitle(course)}</h3>
                   <p className="text-amber-100/60 text-sm flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500/50" />{course.duration}
                   </p>
@@ -491,7 +612,7 @@ export default function MosqueHero() {
           </motion.div>
         </section>
 
-        {/* ── Donate Section ───────────────────────────────────────── */}
+        {/* Donate Section */}
         <section id="donate" className="py-32 px-6 flex items-center justify-center relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-amber-900/20 pointer-events-none" />
           <motion.div initial={{ opacity: 0, y: 50, scale: 0.95 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: false, margin: '-100px' }} transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -499,9 +620,12 @@ export default function MosqueHero() {
             <div className="w-20 h-20 mx-auto bg-amber-500/20 rounded-full flex items-center justify-center mb-8 border border-amber-400/30">
               <Heart className="w-10 h-10 text-amber-400" />
             </div>
-            <h2 className="font-display text-4xl md:text-6xl text-amber-50 mb-6 break-words"><AnimatedText>{t.donateTitle}</AnimatedText></h2>
-            <p className="text-amber-100/70 text-base md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed break-words">
-              <AnimatedText>{t.donateDesc}</AnimatedText>
+            <h2 className="font-display text-4xl md:text-6xl text-amber-50 mb-6 break-words">
+              <AnimatedText>{t.donateTitle}</AnimatedText>
+            </h2>
+            {/* nowrap={false} allows the description to wrap naturally, fixing overflow */}
+            <p className="text-amber-100/70 text-base md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
+              <AnimatedText nowrap={false}>{t.donateDesc}</AnimatedText>
             </p>
             <button className="px-10 py-5 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 text-[#0a0804] font-bold text-lg hover:from-amber-300 hover:to-amber-500 transition-all duration-300 shadow-[0_0_30px_-5px_rgba(245,158,11,0.5)] hover:shadow-[0_0_50px_-5px_rgba(245,158,11,0.7)] hover:-translate-y-1">
               <AnimatedText>{t.donateBtn}</AnimatedText>
@@ -509,7 +633,7 @@ export default function MosqueHero() {
           </motion.div>
         </section>
 
-        {/* ── About / Contact Section ──────────────────────────────── */}
+        {/* About / Contact Section */}
         <section id="about" className="py-24 px-6 border-t border-amber-500/10 overflow-hidden">
           <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, margin: '-100px' }} transition={{ duration: 0.8, ease: 'easeOut' }}
             className="max-w-6xl w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
@@ -529,14 +653,14 @@ export default function MosqueHero() {
                   <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shrink-0 group-hover:bg-amber-500/20 transition-colors">
                     <Phone className="w-4 h-4 text-amber-400" />
                   </div>
-                  <span>{contactPhone}</span>
+                  <span dir="ltr">{contactPhone}</span>
                 </a>
                 <a href={`mailto:${contactEmail}`}
                   className="flex items-center gap-4 text-amber-200/80 hover:text-amber-300 transition-colors group">
                   <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shrink-0 group-hover:bg-amber-500/20 transition-colors">
                     <Mail className="w-4 h-4 text-amber-400" />
                   </div>
-                  <span className="break-words">{contactEmail}</span>
+                  <span dir="ltr" className="break-words">{contactEmail}</span>
                 </a>
               </div>
             </div>
@@ -559,7 +683,7 @@ export default function MosqueHero() {
 
       </div>
 
-      {/* ── Timetable Modal ──────────────────────────────────────── */}
+      {/* ── Timetable Modal ────────────────────────────────────────── */}
       <AnimatePresence>
         {showTimetable && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -573,26 +697,21 @@ export default function MosqueHero() {
               className="w-full max-w-5xl max-h-[90vh] overflow-auto rounded-3xl border border-amber-500/30 bg-[#0a0804] shadow-2xl">
               {timetableUrl ? (
                 timetableUrl.match(/\.(jpg|jpeg|png|webp)$/i) ? (
-                  <img
-                    src={timetableUrl}
-                    alt="Prayer Timetable"
-                    className="w-full h-auto rounded-3xl"
-                    style={{ touchAction: 'pinch-zoom' }}
-                  />
+                  <img src={timetableUrl} alt="Prayer Timetable" className="w-full h-auto rounded-3xl" style={{ touchAction: 'pinch-zoom' }} />
                 ) : (
                   <div className="p-8 flex flex-col items-center gap-4">
-                    <p className="text-amber-200">Timetable PDF</p>
+                    <p className="text-amber-200">{t.noTimetable}</p>
                     <a href={timetableUrl} target="_blank" rel="noopener noreferrer"
                       className="px-6 py-3 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 transition-colors">
-                      Open Full Timetable
+                      {t.openTimetable}
                     </a>
                   </div>
                 )
               ) : (
                 <div className="w-full min-h-[400px] flex flex-col items-center justify-center p-8 text-center">
                   <Calendar className="w-16 h-16 text-amber-500/30 mb-4" />
-                  <p className="text-amber-500/50 text-xl font-display mb-2">No Timetable Uploaded</p>
-                  <p className="text-amber-500/30 text-sm max-w-xs">The mosque admin can upload the monthly timetable from the Admin panel.</p>
+                  <p className="text-amber-500/50 text-xl font-display mb-2">{t.noTimetable}</p>
+                  <p className="text-amber-500/30 text-sm max-w-xs">{t.noTimetableDesc}</p>
                 </div>
               )}
             </motion.div>
@@ -600,9 +719,25 @@ export default function MosqueHero() {
         )}
       </AnimatePresence>
 
-      {/* ── Mobile Bottom Navigation ─────────────────────────────── */}
+      {/* ── Back to Top Button ────────────────────────────────────── */}
+      <AnimatePresence>
+        {showBackToTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="fixed z-40 bottom-32 md:bottom-8 right-6 w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center hover:bg-amber-500/30 transition-all duration-300 backdrop-blur-md shadow-[0_0_20px_-5px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.5)] hover:-translate-y-1"
+            aria-label="Back to top"
+          >
+            <ArrowUp className="w-5 h-5" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* ── Mobile Bottom Navigation ──────────────────────────────── */}
       <div className="md:hidden fixed bottom-6 left-6 right-6 z-50">
-        {/* More popup */}
         <AnimatePresence>
           {showMobileMenu && (
             <motion.div initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.95 }}

@@ -25,14 +25,24 @@ ON CONFLICT (key) DO NOTHING;
 
 -- ─── 2. Events ───────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS events (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title       TEXT NOT NULL,
-  date_label  TEXT NOT NULL,
-  description TEXT,
-  is_featured BOOLEAN DEFAULT false,
-  sort_order  INT DEFAULT 0,
-  created_at  TIMESTAMPTZ DEFAULT NOW()
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title          TEXT NOT NULL,
+  date_label     TEXT NOT NULL,
+  description    TEXT,
+  title_ar       TEXT,          -- Auto-translated Arabic title
+  title_ku       TEXT,          -- Auto-translated Kurdish title
+  description_ar TEXT,          -- Auto-translated Arabic description
+  description_ku TEXT,          -- Auto-translated Kurdish description
+  is_featured    BOOLEAN DEFAULT false,
+  sort_order     INT DEFAULT 0,
+  created_at     TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- If the table already exists, run these to add the translation columns:
+-- ALTER TABLE events ADD COLUMN IF NOT EXISTS title_ar TEXT;
+-- ALTER TABLE events ADD COLUMN IF NOT EXISTS title_ku TEXT;
+-- ALTER TABLE events ADD COLUMN IF NOT EXISTS description_ar TEXT;
+-- ALTER TABLE events ADD COLUMN IF NOT EXISTS description_ku TEXT;
 
 -- Seed with default events
 INSERT INTO events (title, date_label, description, is_featured, sort_order) VALUES
@@ -48,9 +58,15 @@ CREATE TABLE IF NOT EXISTS courses (
   level       TEXT NOT NULL,
   duration    TEXT NOT NULL,
   description TEXT,
+  title_ar    TEXT,              -- Auto-translated Arabic title
+  title_ku    TEXT,              -- Auto-translated Kurdish title
   sort_order  INT DEFAULT 0,
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- If the table already exists, run these to add the translation columns:
+-- ALTER TABLE courses ADD COLUMN IF NOT EXISTS title_ar TEXT;
+-- ALTER TABLE courses ADD COLUMN IF NOT EXISTS title_ku TEXT;
 
 -- Seed with default courses
 INSERT INTO courses (title, level, duration, sort_order) VALUES
@@ -95,7 +111,13 @@ ALTER TABLE courses     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE jamat_times ENABLE ROW LEVEL SECURITY;
 ALTER TABLE timetable   ENABLE ROW LEVEL SECURITY;
 
--- Public read policies
+-- Public read policies (safe to re-run: drops first to avoid "already exists" error)
+DROP POLICY IF EXISTS "Public read content"     ON content;
+DROP POLICY IF EXISTS "Public read events"      ON events;
+DROP POLICY IF EXISTS "Public read courses"     ON courses;
+DROP POLICY IF EXISTS "Public read jamat_times" ON jamat_times;
+DROP POLICY IF EXISTS "Public read timetable"   ON timetable;
+
 CREATE POLICY "Public read content"      ON content     FOR SELECT USING (true);
 CREATE POLICY "Public read events"       ON events      FOR SELECT USING (true);
 CREATE POLICY "Public read courses"      ON courses     FOR SELECT USING (true);
@@ -103,7 +125,12 @@ CREATE POLICY "Public read jamat_times"  ON jamat_times FOR SELECT USING (true);
 CREATE POLICY "Public read timetable"    ON timetable   FOR SELECT USING (true);
 
 -- ─── 7. Supabase Storage bucket ──────────────────────────────
--- After running this SQL, go to Storage in the Supabase dashboard and:
--- 1. Create a new bucket called: timetable-images
--- 2. Set it to PUBLIC
--- The admin upload API will use the service role key to bypass RLS for uploads.
+-- ╔══════════════════════════════════════════════════════════════╗
+-- ║  TIMETABLE IMAGE BUCKET — one-time setup (skip if done)     ║
+-- ║                                                              ║
+-- ║  1. In Supabase dashboard, click "Storage" (left sidebar)   ║
+-- ║  2. Click the green "+ New bucket" button (top right)       ║
+-- ║  3. Name it exactly:  timetable-images                      ║
+-- ║  4. Turn ON the "Public bucket" toggle                      ║
+-- ║  5. Click "Save" — done! Uploads will now work.             ║
+-- ╚══════════════════════════════════════════════════════════════╝

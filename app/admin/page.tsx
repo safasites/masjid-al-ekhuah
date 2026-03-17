@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   LayoutGrid, Calendar, BookOpen, Clock, Image, Settings,
-  LogOut, Plus, Trash2, Edit2, Check, X, Upload, ChevronDown, ChevronUp, Menu
+  LogOut, Plus, Trash2, Edit2, Check, X, Upload, ChevronDown, ChevronUp, Globe
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface Event { id: string; title: string; date_label: string; description: string; is_featured: boolean; sort_order: number; }
-interface Course { id: string; title: string; level: string; duration: string; description: string; sort_order: number; }
+interface Event { id: string; title: string; date_label: string; description: string; is_featured: boolean; sort_order: number; title_ar?: string; title_ku?: string; description_ar?: string; description_ku?: string; }
+interface Course { id: string; title: string; level: string; duration: string; description: string; sort_order: number; title_ar?: string; title_ku?: string; }
 interface JamatTime { prayer: string; time: string; }
 interface Content { [key: string]: string; }
 interface Timetable { id: string; label: string; image_url: string; is_active: boolean; created_at: string; }
@@ -102,7 +102,6 @@ function Btn({ children, variant = 'primary', size = 'md', ...props }: {
 export default function AdminDashboard() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('prayer');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   function showToast(msg: string, type: 'success' | 'error' = 'success') {
@@ -115,12 +114,12 @@ export default function AdminDashboard() {
     router.push('/admin/login');
   }
 
-  const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: 'prayer',   label: 'Prayer Times', icon: <Clock className="w-4 h-4" /> },
-    { id: 'events',   label: 'Events',       icon: <Calendar className="w-4 h-4" /> },
-    { id: 'courses',  label: 'Courses',      icon: <BookOpen className="w-4 h-4" /> },
-    { id: 'timetable',label: 'Timetable',    icon: <Image className="w-4 h-4" /> },
-    { id: 'settings', label: 'Settings',     icon: <Settings className="w-4 h-4" /> },
+  const tabs: { id: Tab; label: string; shortLabel: string; icon: React.ReactNode }[] = [
+    { id: 'prayer',    label: 'Prayer Times', shortLabel: 'Prayer',    icon: <Clock className="w-4 h-4" /> },
+    { id: 'events',    label: 'Events',       shortLabel: 'Events',    icon: <Calendar className="w-4 h-4" /> },
+    { id: 'courses',   label: 'Courses',      shortLabel: 'Courses',   icon: <BookOpen className="w-4 h-4" /> },
+    { id: 'timetable', label: 'Timetable',    shortLabel: 'Timetable', icon: <Image className="w-4 h-4" /> },
+    { id: 'settings',  label: 'Settings',     shortLabel: 'Settings',  icon: <Settings className="w-4 h-4" /> },
   ];
 
   return (
@@ -132,73 +131,57 @@ export default function AdminDashboard() {
       {/* Mobile header */}
       <div className="md:hidden flex items-center justify-between px-5 py-4 border-b border-amber-500/10 bg-[#0a0804]/80 backdrop-blur-xl sticky top-0 z-50">
         <span className="text-amber-200 font-medium text-sm">Masjid Admin</span>
-        <div className="flex items-center gap-2">
-          <button onClick={handleLogout} className="p-2 text-amber-500/60 hover:text-red-400 transition-colors">
-            <LogOut className="w-4 h-4" />
-          </button>
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 text-amber-400">
-            <Menu className="w-5 h-5" />
-          </button>
-        </div>
+        <button onClick={handleLogout} className="p-2 text-amber-500/60 hover:text-red-400 transition-colors">
+          <LogOut className="w-4 h-4" />
+        </button>
       </div>
 
-      {/* Sidebar */}
-      <AnimatePresence>
-        {(sidebarOpen || true) && (
-          <motion.aside
-            initial={false}
-            className={`
-              md:flex flex-col w-full md:w-64 md:min-h-screen border-b md:border-b-0 md:border-r border-amber-500/10
-              bg-[#0a0804]/90 backdrop-blur-xl md:sticky md:top-0 md:h-screen overflow-hidden
-              ${sidebarOpen ? 'flex' : 'hidden'}
-            `}
+      {/* Sidebar — desktop only */}
+      <aside className="hidden md:flex flex-col w-64 min-h-screen border-r border-amber-500/10 bg-[#0a0804]/90 backdrop-blur-xl sticky top-0 h-screen overflow-hidden">
+        {/* Logo */}
+        <div className="flex items-center gap-3 px-6 py-6 border-b border-amber-500/10">
+          <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+              className="absolute inset-0 border border-amber-500/40 rounded-full" />
+            <LayoutGrid className="w-3.5 h-3.5 text-amber-400" />
+          </div>
+          <div>
+            <p className="text-amber-100 font-medium text-sm">Admin Panel</p>
+            <p className="text-amber-500/50 text-xs">Masjid Al-Ekhuah</p>
+          </div>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex flex-col gap-1 p-3 flex-1">
+          {tabs.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-200 ${
+                tab === t.id
+                  ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                  : 'text-amber-500/60 hover:text-amber-300 hover:bg-amber-500/5'
+              }`}
+            >
+              {t.icon}
+              {t.label}
+            </button>
+          ))}
+        </nav>
+
+        {/* Logout */}
+        <div className="p-4 border-t border-amber-500/10">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-red-400/70 hover:text-red-400 hover:bg-red-500/5 transition-all duration-200"
           >
-            {/* Desktop logo */}
-            <div className="hidden md:flex items-center gap-3 px-6 py-6 border-b border-amber-500/10">
-              <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
-                <motion.div animate={{ rotate: 360 }} transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-                  className="absolute inset-0 border border-amber-500/40 rounded-full" />
-                <LayoutGrid className="w-3.5 h-3.5 text-amber-400" />
-              </div>
-              <div>
-                <p className="text-amber-100 font-medium text-sm">Admin Panel</p>
-                <p className="text-amber-500/50 text-xs">Masjid Al-Ekhuah</p>
-              </div>
-            </div>
-
-            {/* Nav */}
-            <nav className="flex md:flex-col gap-1 p-3 overflow-x-auto md:overflow-x-visible md:flex-1">
-              {tabs.map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => { setTab(t.id); setSidebarOpen(false); }}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium whitespace-nowrap transition-all duration-200 ${
-                    tab === t.id
-                      ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                      : 'text-amber-500/60 hover:text-amber-300 hover:bg-amber-500/5'
-                  }`}
-                >
-                  {t.icon}
-                  {t.label}
-                </button>
-              ))}
-            </nav>
-
-            {/* Logout (desktop) */}
-            <div className="hidden md:block p-4 border-t border-amber-500/10">
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-red-400/70 hover:text-red-400 hover:bg-red-500/5 transition-all duration-200"
-              >
-                <LogOut className="w-4 h-4" /> Log Out
-              </button>
-            </div>
-          </motion.aside>
-        )}
-      </AnimatePresence>
+            <LogOut className="w-4 h-4" /> Log Out
+          </button>
+        </div>
+      </aside>
 
       {/* Main content */}
-      <main className="flex-1 p-5 md:p-8 lg:p-10 overflow-auto">
+      <main className="flex-1 p-5 md:p-8 lg:p-10 overflow-auto pb-28 md:pb-10">
         <AnimatePresence mode="wait">
           <motion.div
             key={tab}
@@ -215,6 +198,24 @@ export default function AdminDashboard() {
           </motion.div>
         </AnimatePresence>
       </main>
+
+      {/* Mobile Bottom Nav */}
+      <div className="md:hidden fixed bottom-6 left-4 right-4 z-50">
+        <div className="bg-[#111310]/95 backdrop-blur-xl border border-amber-500/20 rounded-full p-2 flex items-center justify-between shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)]">
+          {tabs.map(t => {
+            const isActive = tab === t.id;
+            return (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                className={`flex flex-col items-center justify-center flex-1 h-14 rounded-full transition-all duration-300 ${
+                  isActive ? 'bg-amber-500/10 text-amber-400' : 'text-zinc-400 hover:text-amber-200'
+                }`}>
+                <span className={`mb-1 ${isActive ? 'text-amber-400' : ''}`}>{t.icon}</span>
+                <span className="text-[9px] font-medium tracking-wide">{t.shortLabel}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Toast */}
       <AnimatePresence>
@@ -259,7 +260,7 @@ function PrayerTab({ showToast }: { showToast: (m: string, t?: 'success' | 'erro
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-4xl mx-auto">
       <div>
         <h2 className="text-2xl font-medium text-amber-50 mb-1">Prayer & Jama'at Times</h2>
         <p className="text-amber-500/50 text-sm">Set congregation times displayed to visitors. Azan times are auto-calculated.</p>
@@ -309,7 +310,7 @@ function EventsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'erro
   const [events, setEvents] = useState<Event[]>([]);
   const [editing, setEditing] = useState<Event | null>(null);
   const [adding, setAdding] = useState(false);
-  const blank: Omit<Event, 'id'> = { title: '', date_label: '', description: '', is_featured: false, sort_order: 0 };
+  const blank: Omit<Event, 'id'> = { title: '', date_label: '', description: '', is_featured: false, sort_order: 0, title_ar: '', title_ku: '', description_ar: '', description_ku: '' };
   const [form, setForm] = useState(blank);
   const [saving, setSaving] = useState(false);
 
@@ -340,12 +341,12 @@ function EventsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'erro
 
   function startEdit(e: Event) {
     setEditing(e);
-    setForm({ title: e.title, date_label: e.date_label, description: e.description ?? '', is_featured: e.is_featured, sort_order: e.sort_order });
+    setForm({ title: e.title, date_label: e.date_label, description: e.description ?? '', is_featured: e.is_featured, sort_order: e.sort_order, title_ar: e.title_ar ?? '', title_ku: e.title_ku ?? '', description_ar: e.description_ar ?? '', description_ku: e.description_ku ?? '' });
     setAdding(true);
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h2 className="text-2xl font-medium text-amber-50 mb-1">Events</h2>
@@ -371,6 +372,16 @@ function EventsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'erro
                   <label htmlFor="featured" className="text-sm text-amber-300">Show on homepage (featured)</label>
                 </div>
                 <Input label="Sort Order" type="number" value={form.sort_order} onChange={e => setForm(p => ({ ...p, sort_order: Number(e.target.value) }))} />
+                {/* Manual Translations */}
+                <div className="pt-2 border-t border-amber-500/10">
+                  <p className="flex items-center gap-2 text-xs font-medium text-amber-400/50 uppercase tracking-wider mb-3"><Globe className="w-3.5 h-3.5" /> Translations (optional — leave blank to keep auto-translated)</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Input label="Arabic Title (عنوان)" dir="rtl" value={form.title_ar ?? ''} onChange={e => setForm(p => ({ ...p, title_ar: e.target.value }))} placeholder="العنوان بالعربي" />
+                    <Input label="Kurdish Title (ناو)" dir="rtl" value={form.title_ku ?? ''} onChange={e => setForm(p => ({ ...p, title_ku: e.target.value }))} placeholder="ناوی کوردی" />
+                    <Textarea label="Arabic Description (وصف)" dir="rtl" value={form.description_ar ?? ''} onChange={e => setForm(p => ({ ...p, description_ar: e.target.value }))} placeholder="الوصف بالعربي" />
+                    <Textarea label="Kurdish Description (پوخته)" dir="rtl" value={form.description_ku ?? ''} onChange={e => setForm(p => ({ ...p, description_ku: e.target.value }))} placeholder="پوختەی کوردی" />
+                  </div>
+                </div>
                 <Btn onClick={save} disabled={saving || !form.title || !form.date_label}>
                   {saving ? <span className="w-4 h-4 border-2 border-[#0a0804]/30 border-t-[#0a0804] rounded-full animate-spin" /> : <Check className="w-4 h-4" />}
                   {editing ? 'Save Changes' : 'Add Event'}
@@ -407,7 +418,7 @@ function CoursesTab({ showToast }: { showToast: (m: string, t?: 'success' | 'err
   const [courses, setCourses] = useState<Course[]>([]);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Course | null>(null);
-  const blank = { title: '', level: 'Beginner', duration: '', description: '', sort_order: 0 };
+  const blank = { title: '', level: 'Beginner', duration: '', description: '', sort_order: 0, title_ar: '', title_ku: '' };
   const [form, setForm] = useState(blank);
   const [saving, setSaving] = useState(false);
 
@@ -438,12 +449,12 @@ function CoursesTab({ showToast }: { showToast: (m: string, t?: 'success' | 'err
 
   function startEdit(c: Course) {
     setEditing(c);
-    setForm({ title: c.title, level: c.level, duration: c.duration, description: c.description ?? '', sort_order: c.sort_order });
+    setForm({ title: c.title, level: c.level, duration: c.duration, description: c.description ?? '', sort_order: c.sort_order, title_ar: c.title_ar ?? '', title_ku: c.title_ku ?? '' });
     setAdding(true);
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h2 className="text-2xl font-medium text-amber-50 mb-1">Courses</h2>
@@ -473,6 +484,14 @@ function CoursesTab({ showToast }: { showToast: (m: string, t?: 'success' | 'err
                 <Input label="Duration" value={form.duration} onChange={e => setForm(p => ({ ...p, duration: e.target.value }))} placeholder="e.g. 12 Weeks" />
                 <Textarea label="Description" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Brief description..." />
                 <Input label="Sort Order" type="number" value={form.sort_order} onChange={e => setForm(p => ({ ...p, sort_order: Number(e.target.value) }))} />
+                {/* Manual Translations */}
+                <div className="pt-2 border-t border-amber-500/10">
+                  <p className="flex items-center gap-2 text-xs font-medium text-amber-400/50 uppercase tracking-wider mb-3"><Globe className="w-3.5 h-3.5" /> Translations (optional — leave blank to keep auto-translated)</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Input label="Arabic Title (عنوان)" dir="rtl" value={form.title_ar ?? ''} onChange={e => setForm(p => ({ ...p, title_ar: e.target.value }))} placeholder="العنوان بالعربي" />
+                    <Input label="Kurdish Title (ناو)" dir="rtl" value={form.title_ku ?? ''} onChange={e => setForm(p => ({ ...p, title_ku: e.target.value }))} placeholder="ناوی کوردی" />
+                  </div>
+                </div>
                 <Btn onClick={save} disabled={saving || !form.title || !form.duration}>
                   {saving ? <span className="w-4 h-4 border-2 border-[#0a0804]/30 border-t-[#0a0804] rounded-full animate-spin" /> : <Check className="w-4 h-4" />}
                   {editing ? 'Save Changes' : 'Add Course'}
@@ -530,17 +549,17 @@ function TimetableTab({ showToast }: { showToast: (m: string, t?: 'success' | 'e
       fd.append('file', file);
       fd.append('label', label);
       const res = await fetch('/api/admin/timetable', { method: 'POST', body: fd });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setCurrent(data);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? 'Upload failed');
+      setCurrent(json);
       setFile(null); setLabel(''); setPreview(null);
       showToast('Timetable uploaded successfully');
-    } catch { showToast('Upload failed', 'error'); }
+    } catch (err) { showToast(err instanceof Error ? err.message : 'Upload failed', 'error'); }
     finally { setUploading(false); }
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-4xl mx-auto">
       <div>
         <h2 className="text-2xl font-medium text-amber-50 mb-1">Prayer Timetable</h2>
         <p className="text-amber-500/50 text-sm">Upload the monthly prayer timetable image for visitors.</p>
@@ -601,6 +620,19 @@ function SettingsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'er
     contact_email: '',
   });
   const [saving, setSaving] = useState(false);
+  const [retranslating, setRetranslating] = useState(false);
+
+  async function retranslateAll() {
+    setRetranslating(true);
+    try {
+      const res = await fetch('/api/admin/retranslate', { method: 'POST' });
+      const json = await res.json();
+      if (!res.ok) throw new Error();
+      const { translated } = json;
+      showToast(`Translated: ${translated.events} events, ${translated.courses} courses${translated.about ? ', about text' : ''}`);
+    } catch { showToast('Retranslation failed', 'error'); }
+    finally { setRetranslating(false); }
+  }
 
   useEffect(() => {
     fetch('/api/admin/content').then(r => r.json()).then((c: Content) => {
@@ -631,7 +663,7 @@ function SettingsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'er
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-4xl mx-auto">
       <div>
         <h2 className="text-2xl font-medium text-amber-50 mb-1">Site Settings</h2>
         <p className="text-amber-500/50 text-sm">Edit text content shown across the website.</p>
@@ -656,10 +688,17 @@ function SettingsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'er
         </div>
       </Section>
 
-      <Btn onClick={save} disabled={saving}>
-        {saving ? <span className="w-4 h-4 border-2 border-[#0a0804]/30 border-t-[#0a0804] rounded-full animate-spin" /> : <Check className="w-4 h-4" />}
-        Save All Settings
-      </Btn>
+      <div className="flex items-center gap-4 flex-wrap">
+        <Btn onClick={save} disabled={saving}>
+          {saving ? <span className="w-4 h-4 border-2 border-[#0a0804]/30 border-t-[#0a0804] rounded-full animate-spin" /> : <Check className="w-4 h-4" />}
+          Save All Settings
+        </Btn>
+        <Btn variant="ghost" onClick={retranslateAll} disabled={retranslating}>
+          {retranslating ? <span className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" /> : <span className="text-base leading-none">🌐</span>}
+          Retranslate All
+        </Btn>
+      </div>
+      <p className="text-amber-500/40 text-xs -mt-2">Retranslate All: auto-translates existing events, courses, and about text that are missing Arabic/Kurdish translations.</p>
     </div>
   );
 }
