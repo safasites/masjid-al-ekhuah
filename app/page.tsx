@@ -354,23 +354,28 @@ export default function MosqueHero() {
 
     fetch('/api/admin/events')
       .then(r => r.json())
-      .then((data: Event[]) => setEvents(data.slice(0, 3)));
+      .then((data) => { if (Array.isArray(data)) setEvents(data.slice(0, 3)); })
+      .catch(() => {});
 
     fetch('/api/admin/courses')
       .then(r => r.json())
-      .then(setCourses);
+      .then((data) => { if (Array.isArray(data)) setCourses(data); })
+      .catch(() => {});
 
     fetch('/api/admin/content')
       .then(r => r.json())
-      .then(setContent);
+      .then((data) => { if (data && typeof data === 'object' && !data.error) setContent(data); })
+      .catch(() => {});
 
     fetch('/api/admin/timetable')
       .then(r => r.json())
-      .then(d => d && setTimetableUrl(d.image_url));
+      .then((d) => { if (d && d.image_url) setTimetableUrl(d.image_url); })
+      .catch(() => {});
 
     fetch('/api/admin/dhikr')
       .then(r => r.json())
-      .then((items: DhikrItem[]) => {
+      .then((items) => {
+        if (!Array.isArray(items)) return;
         setDhikrItems(items);
         // Restore persisted counts and index from localStorage
         try {
@@ -382,7 +387,8 @@ export default function MosqueHero() {
             if (typeof parsed.currentIndex === 'number') setDhikrIndex(parsed.currentIndex);
           }
         } catch { /* ignore */ }
-      });
+      })
+      .catch(() => {});
   }, []);
 
   // Re-check active prayer every minute
