@@ -73,11 +73,12 @@ export default function EventsPage() {
   useEffect(() => {
     fetch('/api/admin/events')
       .then(r => r.json())
-      .then(data => { setEvents(data); setLoading(false); })
+      .then(data => { if (Array.isArray(data)) setEvents(data); setLoading(false); })
       .catch(() => setLoading(false));
     fetch('/api/admin/content')
       .then(r => r.json())
-      .then((c: Record<string, string>) => { if (c.mosque_name) setMosqueName(c.mosque_name); });
+      .then((c: Record<string, string>) => { if (c.mosque_name) setMosqueName(c.mosque_name); })
+      .catch(() => {});
   }, []);
 
   const getTitle = (e: Event) => lang === 'ar' ? (e.title_ar || e.title) : lang === 'ku' ? (e.title_ku || e.title) : e.title;
