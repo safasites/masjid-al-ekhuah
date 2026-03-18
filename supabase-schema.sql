@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS content (
 
 -- Seed with default values
 INSERT INTO content (key, value) VALUES
+  ('mosque_name',      'Masjid Al-Ekhuah'),
   ('hero_line1',       'Awaken Your'),
   ('hero_line2',       'Faith'),
   ('about_desc',       'Masjid Al-Ekhuah is a welcoming community in the heart of Birmingham, dedicated to worship, education, and serving the local community.'),
@@ -20,7 +21,10 @@ INSERT INTO content (key, value) VALUES
   ('contact_phone',    '0121 507 0166'),
   ('contact_email',    'info@masjidalekhuah.com'),
   ('prayer_method',    '1'),
-  ('prayer_school',    '1')
+  ('prayer_school',    '1'),
+  ('feature_events',   'true'),
+  ('feature_courses',  'true'),
+  ('feature_donate',   'true')
 ON CONFLICT (key) DO NOTHING;
 
 -- ─── 2. Events ───────────────────────────────────────────────
@@ -101,7 +105,35 @@ CREATE TABLE IF NOT EXISTS timetable (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ─── 6. Row Level Security (RLS) ─────────────────────────────
+-- ─── 6. Dhikr items ──────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS dhikr_items (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  arabic_text     TEXT NOT NULL,       -- e.g. "سُبْحَانَ اللَّه"
+  transliteration TEXT NOT NULL,       -- e.g. "SubhanAllah"
+  meaning_en      TEXT NOT NULL,       -- e.g. "Glory be to God"
+  meaning_ar      TEXT,                -- Auto-translated Arabic meaning
+  meaning_ku      TEXT,                -- Auto-translated Kurdish meaning
+  target_count    INT DEFAULT 33,
+  sort_order      INT DEFAULT 0,
+  is_active       BOOLEAN DEFAULT true,
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Seed with the classic post-prayer dhikr sequence
+INSERT INTO dhikr_items (arabic_text, transliteration, meaning_en, target_count, sort_order) VALUES
+  ('سُبْحَانَ اللَّه',              'SubhanAllah',       'Glory be to God',            33,  1),
+  ('الْحَمْدُ لِلَّه',             'Alhamdulillah',     'All praise is due to God',   33,  2),
+  ('اللَّهُ أَكْبَرُ',             'Allahu Akbar',      'God is the Greatest',        34,  3),
+  ('لَا إِلَٰهَ إِلَّا اللَّه', 'La ilaha illallah', 'There is no god but God',    100, 4)
+ON CONFLICT DO NOTHING;
+
+-- Add feature_dhikr and dhikr_title to content (feature toggle + section title)
+INSERT INTO content (key, value) VALUES
+  ('feature_dhikr', 'true'),
+  ('dhikr_title',   'Remembrance of God')
+ON CONFLICT (key) DO NOTHING;
+
+-- ─── 7. Row Level Security (RLS) ─────────────────────────────
 -- All tables are publicly readable (no auth needed for visitors).
 -- Write operations are only allowed via the service role key (API routes).
 
@@ -110,19 +142,22 @@ ALTER TABLE events      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE courses     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE jamat_times ENABLE ROW LEVEL SECURITY;
 ALTER TABLE timetable   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dhikr_items ENABLE ROW LEVEL SECURITY;
 
 -- Public read policies (safe to re-run: drops first to avoid "already exists" error)
-DROP POLICY IF EXISTS "Public read content"     ON content;
-DROP POLICY IF EXISTS "Public read events"      ON events;
-DROP POLICY IF EXISTS "Public read courses"     ON courses;
-DROP POLICY IF EXISTS "Public read jamat_times" ON jamat_times;
-DROP POLICY IF EXISTS "Public read timetable"   ON timetable;
+DROP POLICY IF EXISTS "Public read content"      ON content;
+DROP POLICY IF EXISTS "Public read events"       ON events;
+DROP POLICY IF EXISTS "Public read courses"      ON courses;
+DROP POLICY IF EXISTS "Public read jamat_times"  ON jamat_times;
+DROP POLICY IF EXISTS "Public read timetable"    ON timetable;
+DROP POLICY IF EXISTS "Public read dhikr_items"  ON dhikr_items;
 
-CREATE POLICY "Public read content"      ON content     FOR SELECT USING (true);
-CREATE POLICY "Public read events"       ON events      FOR SELECT USING (true);
-CREATE POLICY "Public read courses"      ON courses     FOR SELECT USING (true);
-CREATE POLICY "Public read jamat_times"  ON jamat_times FOR SELECT USING (true);
-CREATE POLICY "Public read timetable"    ON timetable   FOR SELECT USING (true);
+CREATE POLICY "Public read content"      ON content      FOR SELECT USING (true);
+CREATE POLICY "Public read events"       ON events       FOR SELECT USING (true);
+CREATE POLICY "Public read courses"      ON courses      FOR SELECT USING (true);
+CREATE POLICY "Public read jamat_times"  ON jamat_times  FOR SELECT USING (true);
+CREATE POLICY "Public read timetable"    ON timetable    FOR SELECT USING (true);
+CREATE POLICY "Public read dhikr_items"  ON dhikr_items  FOR SELECT USING (true);
 
 -- ─── 7. Supabase Storage bucket ──────────────────────────────
 -- ╔══════════════════════════════════════════════════════════════╗

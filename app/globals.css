@@ -29,9 +29,15 @@
   animation: float 8s ease-in-out infinite;
 }
 
+/* Theme glow defaults (aurum/amber) — overridden per theme below */
+:root {
+  --theme-glow: rgba(245, 158, 11, 0.4);
+  --theme-glow-soft: rgba(245, 158, 11, 0.2);
+}
+
 @keyframes breathe {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
-  50% { transform: scale(1.02); box-shadow: 0 0 20px 5px rgba(245, 158, 11, 0.2); }
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 var(--theme-glow); }
+  50% { transform: scale(1.02); box-shadow: 0 0 20px 5px var(--theme-glow-soft); }
 }
 
 .animate-breathe {
@@ -121,3 +127,99 @@
 [data-theme="accessible"] .bg-amber-800\/30 {
   background-color: rgb(120 53 15 / 0.55);
 }
+
+/* ── Theme: emerald ──────────────────────────────────────────────────────────
+   Islamic green. Hue shift: amber (H≈70–95) → green (H=145).
+   Background: #040a06 (deep green-black)
+   ──────────────────────────────────────────────────────────────────────────── */
+[data-theme="emerald"] {
+  --theme-glow:      rgba(52, 211, 153, 0.4);
+  --theme-glow-soft: rgba(52, 211, 153, 0.2);
+  --color-amber-50:  oklch(0.987 0.022 145);
+  --color-amber-100: oklch(0.962 0.059 145);
+  --color-amber-200: oklch(0.924 0.120 145);
+  --color-amber-300: oklch(0.879 0.169 145);
+  --color-amber-400: oklch(0.828 0.189 145);
+  --color-amber-500: oklch(0.769 0.188 145);
+  --color-amber-600: oklch(0.666 0.179 145);
+  --color-amber-700: oklch(0.555 0.163 145);
+  --color-amber-800: oklch(0.473 0.137 145);
+  --color-amber-900: oklch(0.414 0.112 145);
+  --color-amber-950: oklch(0.279 0.077 145);
+}
+[data-theme="emerald"] .bg-\[\#0a0804\]          { background-color: #040a06; }
+[data-theme="emerald"] .text-\[\#0a0804\]         { color: #040a06; }
+[data-theme="emerald"] .border-t-\[\#0a0804\]     { border-top-color: #040a06; }
+[data-theme="emerald"] .border-\[\#0a0804\]\/30   { border-color: rgb(4 10 6 / 0.30); }
+
+/* ── Theme: sapphire ─────────────────────────────────────────────────────────
+   Deep midnight blue. Hue shift: amber → blue (H=265).
+   Background: #04080f (deep blue-black)
+   ──────────────────────────────────────────────────────────────────────────── */
+[data-theme="sapphire"] {
+  --theme-glow:      rgba(96, 165, 250, 0.4);
+  --theme-glow-soft: rgba(96, 165, 250, 0.2);
+  --color-amber-50:  oklch(0.987 0.022 265);
+  --color-amber-100: oklch(0.962 0.059 265);
+  --color-amber-200: oklch(0.924 0.120 265);
+  --color-amber-300: oklch(0.879 0.169 265);
+  --color-amber-400: oklch(0.828 0.189 265);
+  --color-amber-500: oklch(0.769 0.188 265);
+  --color-amber-600: oklch(0.666 0.179 265);
+  --color-amber-700: oklch(0.555 0.163 265);
+  --color-amber-800: oklch(0.473 0.137 265);
+  --color-amber-900: oklch(0.414 0.112 265);
+  --color-amber-950: oklch(0.279 0.077 265);
+}
+[data-theme="sapphire"] .bg-\[\#0a0804\]          { background-color: #04080f; }
+[data-theme="sapphire"] .text-\[\#0a0804\]         { color: #04080f; }
+[data-theme="sapphire"] .border-t-\[\#0a0804\]     { border-top-color: #04080f; }
+[data-theme="sapphire"] .border-\[\#0a0804\]\/30   { border-color: rgb(4 8 15 / 0.30); }
+
+/* ── Theme: teal ─────────────────────────────────────────────────────────────
+   Cool teal. Hue shift: amber → teal/cyan (H=190).
+   Background: #040b0b (deep teal-black)
+   ──────────────────────────────────────────────────────────────────────────── */
+[data-theme="teal"] {
+  --theme-glow:      rgba(45, 212, 191, 0.4);
+  --theme-glow-soft: rgba(45, 212, 191, 0.2);
+  --color-amber-50:  oklch(0.987 0.022 190);
+  --color-amber-100: oklch(0.962 0.059 190);
+  --color-amber-200: oklch(0.924 0.120 190);
+  --color-amber-300: oklch(0.879 0.169 190);
+  --color-amber-400: oklch(0.828 0.189 190);
+  --color-amber-500: oklch(0.769 0.188 190);
+  --color-amber-600: oklch(0.666 0.179 190);
+  --color-amber-700: oklch(0.555 0.163 190);
+  --color-amber-800: oklch(0.473 0.137 190);
+  --color-amber-900: oklch(0.414 0.112 190);
+  --color-amber-950: oklch(0.279 0.077 190);
+}
+[data-theme="teal"] .bg-\[\#0a0804\]          { background-color: #040b0b; }
+[data-theme="teal"] .text-\[\#0a0804\]         { color: #040b0b; }
+[data-theme="teal"] .border-t-\[\#0a0804\]     { border-top-color: #040b0b; }
+[data-theme="teal"] .border-\[\#0a0804\]\/30   { border-color: rgb(4 11 11 / 0.30); }
+
+/* ── Theme: copper ───────────────────────────────────────────────────────────
+   Warm bronze. Hue shift: amber (H≈70–95) → deeper orange-bronze (H=45).
+   Background: #0a0602 (deep warm brown-black)
+   ──────────────────────────────────────────────────────────────────────────── */
+[data-theme="copper"] {
+  --theme-glow:      rgba(251, 146, 60, 0.4);
+  --theme-glow-soft: rgba(251, 146, 60, 0.2);
+  --color-amber-50:  oklch(0.987 0.022 45);
+  --color-amber-100: oklch(0.962 0.059 45);
+  --color-amber-200: oklch(0.924 0.120 45);
+  --color-amber-300: oklch(0.879 0.169 45);
+  --color-amber-400: oklch(0.828 0.210 45);
+  --color-amber-500: oklch(0.769 0.205 45);
+  --color-amber-600: oklch(0.666 0.185 45);
+  --color-amber-700: oklch(0.555 0.163 45);
+  --color-amber-800: oklch(0.473 0.137 45);
+  --color-amber-900: oklch(0.414 0.112 45);
+  --color-amber-950: oklch(0.279 0.077 45);
+}
+[data-theme="copper"] .bg-\[\#0a0804\]          { background-color: #0a0602; }
+[data-theme="copper"] .text-\[\#0a0804\]         { color: #0a0602; }
+[data-theme="copper"] .border-t-\[\#0a0804\]     { border-top-color: #0a0602; }
+[data-theme="copper"] .border-\[\#0a0804\]\/30   { border-color: rgb(10 6 2 / 0.30); }

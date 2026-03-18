@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   if (!await auth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const db = createServerSupabase();
-  const results = { events: 0, courses: 0, about: false };
+  const results = { events: 0, courses: 0, dhikr: 0, about: false };
 
   // Retranslate events with missing translations
   const { data: events } = await db
@@ -63,6 +63,26 @@ export async function POST(req: NextRequest) {
           title_ku: titleKu || null,
         }).eq('id', c.id);
         results.courses++;
+      } catch { /* non-fatal */ }
+    }
+  }
+
+  // Retranslate dhikr meanings with missing translations
+  const { data: dhikrItems } = await db
+    .from('dhikr_items')
+    .select('id, meaning_en')
+    .or('meaning_ar.is.null,meaning_ku.is.null');
+
+  if (dhikrItems && dhikrItems.length > 0) {
+    for (const d of dhikrItems) {
+      try {
+        const [ar] = await translateBatch([d.meaning_en], 'ar');
+        const [ku] = await translateBatch([d.meaning_en], 'ckb');
+        await db.from('dhikr_items').update({
+          meaning_ar: ar || null,
+          meaning_ku: ku || null,
+        }).eq('id', d.id);
+        results.dhikr++;
       } catch { /* non-fatal */ }
     }
   }

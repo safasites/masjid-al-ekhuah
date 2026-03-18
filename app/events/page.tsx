@@ -52,6 +52,7 @@ export default function EventsPage() {
   const [loading, setLoading] = useState(true);
   const [lang, setLang] = useState<Lang>('en');
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [mosqueName, setMosqueName] = useState('Masjid Al-Ekhuah');
 
   const isRTL = lang === 'ar' || lang === 'ku';
   const t = eventsTranslations[lang];
@@ -74,6 +75,9 @@ export default function EventsPage() {
       .then(r => r.json())
       .then(data => { setEvents(data); setLoading(false); })
       .catch(() => setLoading(false));
+    fetch('/api/admin/content')
+      .then(r => r.json())
+      .then((c: Record<string, string>) => { if (c.mosque_name) setMosqueName(c.mosque_name); });
   }, []);
 
   const getTitle = (e: Event) => lang === 'ar' ? (e.title_ar || e.title) : lang === 'ku' ? (e.title_ku || e.title) : e.title;
@@ -106,7 +110,7 @@ export default function EventsPage() {
           className="mb-16"
         >
           <h1 className="font-display text-5xl md:text-7xl text-amber-50 mb-4 tracking-tight">{t.title}</h1>
-          <p className="text-amber-200/60 text-xl">{t.subtitle}</p>
+          <p className="text-amber-200/60 text-xl">{lang === 'en' ? t.subtitle.replace('Masjid Al-Ekhuah', mosqueName) : t.subtitle}</p>
         </motion.div>
 
         {/* Events grid */}

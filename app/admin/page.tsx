@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   LayoutGrid, Calendar, BookOpen, Clock, Image, Settings,
-  LogOut, Plus, Trash2, Edit2, Check, X, Upload, ChevronDown, ChevronUp, Globe
+  LogOut, Plus, Trash2, Edit2, Check, X, Upload, ChevronDown, ChevronUp, Globe, Sparkles
 } from 'lucide-react';
 import { useTheme, type Theme } from '../theme-provider';
 
@@ -15,8 +15,9 @@ interface Course { id: string; title: string; level: string; duration: string; d
 interface JamatTime { prayer: string; time: string; }
 interface Content { [key: string]: string; }
 interface Timetable { id: string; label: string; image_url: string; is_active: boolean; created_at: string; }
+interface DhikrItem { id: string; arabic_text: string; transliteration: string; meaning_en: string; meaning_ar?: string; meaning_ku?: string; target_count: number; sort_order: number; is_active: boolean; }
 
-type Tab = 'prayer' | 'events' | 'courses' | 'timetable' | 'settings';
+type Tab = 'prayer' | 'events' | 'courses' | 'timetable' | 'settings' | 'dhikr';
 
 const PRAYERS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha', 'jumuah'] as const;
 const PRAYER_LABELS: Record<string, string> = { fajr: 'Fajr', dhuhr: 'Dhuhr', asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha', jumuah: "Jumu'ah" };
@@ -104,6 +105,13 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('prayer');
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [mosqueName, setMosqueName] = useState('Masjid Al-Ekhuah');
+
+  useEffect(() => {
+    fetch('/api/admin/content').then(r => r.json()).then((c: Content) => {
+      if (c.mosque_name) setMosqueName(c.mosque_name);
+    });
+  }, []);
 
   function showToast(msg: string, type: 'success' | 'error' = 'success') {
     setToast({ msg, type });
@@ -120,6 +128,7 @@ export default function AdminDashboard() {
     { id: 'events',    label: 'Events',       shortLabel: 'Events',    icon: <Calendar className="w-4 h-4" /> },
     { id: 'courses',   label: 'Courses',      shortLabel: 'Courses',   icon: <BookOpen className="w-4 h-4" /> },
     { id: 'timetable', label: 'Timetable',    shortLabel: 'Timetable', icon: <Image className="w-4 h-4" /> },
+    { id: 'dhikr',     label: 'Dhikr',        shortLabel: 'Dhikr',     icon: <Sparkles className="w-4 h-4" /> },
     { id: 'settings',  label: 'Settings',     shortLabel: 'Settings',  icon: <Settings className="w-4 h-4" /> },
   ];
 
@@ -131,7 +140,7 @@ export default function AdminDashboard() {
 
       {/* Mobile header */}
       <div className="md:hidden flex items-center justify-between px-5 py-4 border-b border-amber-500/10 bg-[#0a0804]/80 backdrop-blur-xl sticky top-0 z-50">
-        <span className="text-amber-200 font-medium text-sm">Masjid Admin</span>
+        <span className="text-amber-200 font-medium text-sm">{mosqueName}</span>
         <button onClick={handleLogout} className="p-2 text-amber-500/60 hover:text-red-400 transition-colors">
           <LogOut className="w-4 h-4" />
         </button>
@@ -148,7 +157,7 @@ export default function AdminDashboard() {
           </div>
           <div>
             <p className="text-amber-100 font-medium text-sm">Admin Panel</p>
-            <p className="text-amber-500/50 text-xs">Masjid Al-Ekhuah</p>
+            <p className="text-amber-500/50 text-xs">{mosqueName}</p>
           </div>
         </div>
 
@@ -195,7 +204,8 @@ export default function AdminDashboard() {
             {tab === 'events'    && <EventsTab showToast={showToast} />}
             {tab === 'courses'   && <CoursesTab showToast={showToast} />}
             {tab === 'timetable' && <TimetableTab showToast={showToast} />}
-            {tab === 'settings'  && <SettingsTab showToast={showToast} />}
+            {tab === 'dhikr'     && <DhikrTab showToast={showToast} />}
+            {tab === 'settings'  && <SettingsTab showToast={showToast} onMosqueNameChange={setMosqueName} />}
           </motion.div>
         </AnimatePresence>
       </main>
@@ -611,15 +621,19 @@ function TimetableTab({ showToast }: { showToast: (m: string, t?: 'success' | 'e
 }
 
 // ─── Settings Tab ──────────────────────────────────────────────────────────────
-function SettingsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'error') => void }) {
+function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string, t?: 'success' | 'error') => void; onMosqueNameChange?: (name: string) => void }) {
   const { theme: activeTheme, setTheme } = useTheme();
   const [form, setForm] = useState({
+    mosque_name: '',
     hero_line1: '',
     hero_line2: '',
     about_desc: '',
     contact_address: '',
     contact_phone: '',
     contact_email: '',
+    feature_events: 'true',
+    feature_courses: 'true',
+    feature_donate: 'true',
   });
   const [saving, setSaving] = useState(false);
   const [retranslating, setRetranslating] = useState(false);
@@ -639,12 +653,16 @@ function SettingsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'er
   useEffect(() => {
     fetch('/api/admin/content').then(r => r.json()).then((c: Content) => {
       setForm(prev => ({
+        mosque_name:      c.mosque_name      ?? prev.mosque_name,
         hero_line1:       c.hero_line1       ?? prev.hero_line1,
         hero_line2:       c.hero_line2       ?? prev.hero_line2,
         about_desc:       c.about_desc       ?? prev.about_desc,
         contact_address:  c.contact_address  ?? prev.contact_address,
         contact_phone:    c.contact_phone    ?? prev.contact_phone,
         contact_email:    c.contact_email    ?? prev.contact_email,
+        feature_events:   c.feature_events   ?? prev.feature_events,
+        feature_courses:  c.feature_courses  ?? prev.feature_courses,
+        feature_donate:   c.feature_donate   ?? prev.feature_donate,
       }));
     });
   }, []);
@@ -662,25 +680,62 @@ function SettingsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'er
         body: JSON.stringify(updates),
       });
       if (!res.ok) throw new Error();
+      if (form.mosque_name) onMosqueNameChange?.(form.mosque_name);
       showToast('Settings saved');
     } catch { showToast('Failed to save', 'error'); }
     finally { setSaving(false); }
   }
 
-  const themes: { id: Theme; label: string; desc: string; labelSwatch: string; timeSwatch: string }[] = [
+  const themes: { id: Theme; label: string; desc: string; bgHex: string; accentHigh: string; accentMid: string; accentLow: string; dotColor: string }[] = [
     {
-      id: 'classic',
-      label: 'Classic',
-      desc: 'Artistic. Subtle amber tones with intentional low contrast.',
-      labelSwatch: 'rgb(245 158 11 / 0.40)',
-      timeSwatch: 'rgb(254 243 199 / 0.70)',
+      id: 'aurum',
+      label: 'Aurum',
+      desc: 'Classic gold and amber. Timeless warmth.',
+      bgHex: '#0a0804',
+      accentHigh: 'oklch(0.879 0.169 91.2)',
+      accentMid:  'oklch(0.769 0.188 70.1)',
+      accentLow:  'oklch(0.962 0.059 95.2)',
+      dotColor:   'oklch(0.828 0.189 84.4)',
     },
     {
-      id: 'accessible',
-      label: 'Accessible',
-      desc: 'High contrast. WCAG AA compliant. Recommended for all audiences.',
-      labelSwatch: 'rgb(252 211 77 / 0.88)',
-      timeSwatch: 'rgb(255 255 255 / 0.92)',
+      id: 'emerald',
+      label: 'Emerald',
+      desc: 'Islamic green. Peaceful and traditional.',
+      bgHex: '#040a06',
+      accentHigh: 'oklch(0.879 0.169 145)',
+      accentMid:  'oklch(0.769 0.188 145)',
+      accentLow:  'oklch(0.962 0.059 145)',
+      dotColor:   'oklch(0.828 0.189 145)',
+    },
+    {
+      id: 'sapphire',
+      label: 'Sapphire',
+      desc: 'Deep midnight blue. Serene and distinguished.',
+      bgHex: '#04080f',
+      accentHigh: 'oklch(0.879 0.169 265)',
+      accentMid:  'oklch(0.769 0.188 265)',
+      accentLow:  'oklch(0.962 0.059 265)',
+      dotColor:   'oklch(0.828 0.189 265)',
+    },
+    {
+      id: 'teal',
+      label: 'Teal',
+      desc: 'Cool teal tones. Fresh and modern.',
+      bgHex: '#040b0b',
+      accentHigh: 'oklch(0.879 0.169 190)',
+      accentMid:  'oklch(0.769 0.188 190)',
+      accentLow:  'oklch(0.962 0.059 190)',
+      dotColor:   'oklch(0.828 0.189 190)',
+    },
+    {
+      id: 'copper',
+      label: 'Copper',
+      desc: 'Warm bronze tones. Rich and grounded.',
+      bgHex: '#0a0602',
+      accentHigh: 'oklch(0.879 0.169 45)',
+      accentMid:  'oklch(0.769 0.205 45)',
+      accentLow:  'oklch(0.962 0.059 45)',
+      dotColor:   'oklch(0.828 0.210 45)',
     },
   ];
 
@@ -691,42 +746,58 @@ function SettingsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'er
         <p className="text-amber-500/50 text-sm">Edit text content shown across the website.</p>
       </div>
 
+      <Section title="General">
+        <Input label="Mosque Name" value={form.mosque_name} onChange={e => setForm(p => ({ ...p, mosque_name: e.target.value }))} placeholder="Masjid Al-Ekhuah" />
+        <p className="text-amber-500/40 text-xs mt-2">This name appears in the site header, browser tab, and throughout the site.</p>
+      </Section>
+
       <Section title="Appearance">
         <div className="space-y-4">
-          <p className="text-amber-500/50 text-sm -mt-2">Choose how prayer times and text appear across the site. Changes apply instantly.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <p className="text-amber-500/50 text-sm -mt-2">Choose a colour palette for the entire site. Changes apply instantly.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {themes.map(t => (
               <button
                 key={t.id}
                 onClick={() => setTheme(t.id)}
+                style={{ borderColor: activeTheme === t.id ? t.dotColor : undefined }}
                 className={`text-left rounded-2xl p-5 border-2 transition-all duration-200 ${
                   activeTheme === t.id
-                    ? 'border-amber-400 bg-amber-500/10'
-                    : 'border-amber-500/20 bg-amber-950/20 hover:border-amber-500/40 hover:bg-amber-900/20'
+                    ? 'bg-white/5'
+                    : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20'
                 }`}
               >
-                {/* Mini prayer row preview */}
-                <div className="flex items-center gap-3 mb-4 bg-amber-950/40 rounded-xl px-4 py-3 border border-amber-800/30">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-amber-300/80 w-16 shrink-0">Fajr</span>
+                {/* Mini prayer row preview — always shows THIS theme's own colours */}
+                <div
+                  className="flex items-center gap-3 mb-4 rounded-xl px-4 py-3 border"
+                  style={{ backgroundColor: t.bgHex, borderColor: t.dotColor + '33' }}
+                >
+                  <span
+                    className="text-xs font-semibold uppercase tracking-wider w-16 shrink-0"
+                    style={{ color: t.accentHigh }}
+                  >Fajr</span>
                   <div className="flex-1 text-center">
-                    <p className="text-[10px] uppercase tracking-widest mb-0.5" style={{ color: t.labelSwatch }}>Azan</p>
-                    <p className="font-display text-sm" style={{ color: t.timeSwatch }}>04:19</p>
+                    <p className="text-[10px] uppercase tracking-widest mb-0.5" style={{ color: t.accentMid + 'aa' }}>Azan</p>
+                    <p className="font-display text-sm" style={{ color: t.accentLow }}>04:19</p>
                   </div>
-                  <div className="w-px self-stretch bg-amber-800/30" />
+                  <div className="w-px self-stretch" style={{ backgroundColor: t.dotColor + '33' }} />
                   <div className="flex-1 text-center">
-                    <p className="text-[10px] uppercase tracking-widest mb-0.5" style={{ color: t.labelSwatch }}>Jama&apos;at</p>
-                    <p className="font-display text-sm" style={{ color: t.timeSwatch }}>06:00 AM</p>
+                    <p className="text-[10px] uppercase tracking-widest mb-0.5" style={{ color: t.accentMid + 'aa' }}>Jama&apos;at</p>
+                    <p className="font-display text-sm" style={{ color: t.accentLow }}>06:00 AM</p>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-amber-100 font-medium text-sm">{t.label}</p>
-                    <p className="text-amber-500/50 text-xs mt-0.5">{t.desc}</p>
+                    <p className="text-sm font-medium" style={{ color: t.accentLow }}>{t.label}</p>
+                    <p className="text-xs mt-0.5 opacity-60" style={{ color: t.accentMid }}>{t.desc}</p>
                   </div>
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ml-3 ${
-                    activeTheme === t.id ? 'border-amber-400 bg-amber-400' : 'border-amber-500/30'
-                  }`}>
-                    {activeTheme === t.id && <Check className="w-3 h-3 text-[#0a0804]" />}
+                  <div
+                    className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ml-3 transition-colors"
+                    style={{
+                      borderColor: t.dotColor,
+                      backgroundColor: activeTheme === t.id ? t.dotColor : 'transparent',
+                    }}
+                  >
+                    {activeTheme === t.id && <Check className="w-3 h-3" style={{ color: t.bgHex }} />}
                   </div>
                 </div>
               </button>
@@ -755,6 +826,34 @@ function SettingsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'er
         </div>
       </Section>
 
+      <Section title="Feature Toggles">
+        <p className="text-amber-500/50 text-sm -mt-2 mb-4">Disable sections you don&apos;t need. Changes apply site-wide after saving.</p>
+        <div className="space-y-3">
+          {([
+            { key: 'feature_events',  label: 'Events Section',  desc: 'Upcoming events and the events page link' },
+            { key: 'feature_courses', label: 'Courses Section', desc: 'Islamic courses on the homepage' },
+            { key: 'feature_donate',  label: 'Donate Section',  desc: 'Donation call-to-action on the homepage' },
+          ] as { key: 'feature_events' | 'feature_courses' | 'feature_donate'; label: string; desc: string }[]).map(({ key, label, desc }) => {
+            const enabled = form[key] !== 'false';
+            return (
+              <div key={key} className="flex items-center justify-between p-4 rounded-2xl bg-amber-950/20 border border-amber-500/10">
+                <div>
+                  <p className="text-sm font-medium text-amber-100">{label}</p>
+                  <p className="text-xs text-amber-500/50 mt-0.5">{desc}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setForm(p => ({ ...p, [key]: enabled ? 'false' : 'true' }))}
+                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 ${enabled ? 'bg-amber-500' : 'bg-amber-500/20 border border-amber-500/20'}`}
+                >
+                  <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ${enabled ? 'left-6' : 'left-1'}`} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </Section>
+
       <div className="flex items-center gap-4 flex-wrap">
         <Btn onClick={save} disabled={saving}>
           {saving ? <span className="w-4 h-4 border-2 border-[#0a0804]/30 border-t-[#0a0804] rounded-full animate-spin" /> : <Check className="w-4 h-4" />}
@@ -766,6 +865,252 @@ function SettingsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'er
         </Btn>
       </div>
       <p className="text-amber-500/40 text-xs -mt-2">Retranslate All: auto-translates existing events, courses, and about text that are missing Arabic/Kurdish translations.</p>
+    </div>
+  );
+}
+
+// ─── Dhikr Tab ─────────────────────────────────────────────────────────────────
+function DhikrTab({ showToast }: { showToast: (m: string, t?: 'success' | 'error') => void }) {
+  const [items, setItems] = useState<DhikrItem[]>([]);
+  const [featureEnabled, setFeatureEnabled] = useState(true);
+  const [sectionTitle, setSectionTitle] = useState('Remembrance of God');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  const blank = { arabic_text: '', transliteration: '', meaning_en: '', target_count: 33, sort_order: 0, is_active: true };
+  const [form, setForm] = useState(blank);
+
+  useEffect(() => {
+    fetch('/api/admin/dhikr?all=true').then(r => r.json()).then(setItems);
+    fetch('/api/admin/content').then(r => r.json()).then((c: Content) => {
+      if (c.feature_dhikr !== undefined) setFeatureEnabled(c.feature_dhikr !== 'false');
+      if (c.dhikr_title) setSectionTitle(c.dhikr_title);
+    });
+  }, []);
+
+  async function saveSettings() {
+    setSavingSettings(true);
+    try {
+      const res = await fetch('/api/admin/content', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify([
+          { key: 'feature_dhikr', value: featureEnabled ? 'true' : 'false' },
+          { key: 'dhikr_title',   value: sectionTitle },
+        ]),
+      });
+      if (!res.ok) throw new Error();
+      showToast('Dhikr settings saved');
+    } catch {
+      showToast('Failed to save settings', 'error');
+    } finally {
+      setSavingSettings(false);
+    }
+  }
+
+  async function addItem() {
+    if (!form.arabic_text || !form.transliteration || !form.meaning_en) return;
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/dhikr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error();
+      const created = await res.json();
+      setItems(prev => [...prev, created].sort((a, b) => a.sort_order - b.sort_order));
+      setForm(blank);
+      setShowAdd(false);
+      showToast('Dhikr phrase added');
+    } catch {
+      showToast('Failed to add phrase', 'error');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function updateItem() {
+    if (!editingId) return;
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/dhikr', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editingId, ...form }),
+      });
+      if (!res.ok) throw new Error();
+      const updated = await res.json();
+      setItems(prev => prev.map(i => i.id === editingId ? updated : i));
+      setEditingId(null);
+      setForm(blank);
+      showToast('Dhikr phrase updated');
+    } catch {
+      showToast('Failed to update phrase', 'error');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteItem(id: string) {
+    try {
+      const res = await fetch(`/api/admin/dhikr?id=${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
+      setItems(prev => prev.filter(i => i.id !== id));
+      if (editingId === id) { setEditingId(null); setForm(blank); }
+      showToast('Dhikr phrase deleted');
+    } catch {
+      showToast('Failed to delete phrase', 'error');
+    }
+  }
+
+  function startEdit(item: DhikrItem) {
+    setEditingId(item.id);
+    setForm({
+      arabic_text: item.arabic_text,
+      transliteration: item.transliteration,
+      meaning_en: item.meaning_en,
+      target_count: item.target_count,
+      sort_order: item.sort_order,
+      is_active: item.is_active,
+    });
+    setShowAdd(false);
+  }
+
+  function cancelEdit() { setEditingId(null); setForm(blank); }
+
+  const formValid = form.arabic_text.trim() && form.transliteration.trim() && form.meaning_en.trim();
+
+  return (
+    <div className="space-y-6 max-w-4xl mx-auto">
+      <div>
+        <h2 className="text-2xl font-medium text-amber-50 mb-1">Dhikr Counter</h2>
+        <p className="text-amber-500/50 text-sm">Manage the remembrance phrases shown on the homepage counter.</p>
+      </div>
+
+      {/* Settings */}
+      <Section title="Section Settings">
+        <div className="space-y-4">
+          {/* Feature toggle */}
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-amber-950/20 border border-amber-500/10">
+            <div>
+              <p className="text-sm font-medium text-amber-100">Dhikr Section</p>
+              <p className="text-xs text-amber-500/50 mt-0.5">Show the dhikr counter on the homepage</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFeatureEnabled(v => !v)}
+              className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 ${featureEnabled ? 'bg-amber-500' : 'bg-amber-500/20 border border-amber-500/20'}`}
+            >
+              <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ${featureEnabled ? 'left-6' : 'left-1'}`} />
+            </button>
+          </div>
+          <Input
+            label="Section Title"
+            value={sectionTitle}
+            onChange={e => setSectionTitle(e.target.value)}
+            placeholder="Remembrance of God"
+          />
+          <Btn onClick={saveSettings} disabled={savingSettings}>
+            {savingSettings ? <span className="w-4 h-4 border-2 border-[#0a0804]/30 border-t-[#0a0804] rounded-full animate-spin" /> : <Check className="w-4 h-4" />}
+            Save Settings
+          </Btn>
+        </div>
+      </Section>
+
+      {/* Dhikr phrase list */}
+      <Section title={`Phrases (${items.length})`}>
+        <div className="space-y-3">
+          {items.length === 0 && (
+            <p className="text-amber-500/40 text-sm text-center py-6">No dhikr phrases yet. Add your first one below.</p>
+          )}
+          {items.map(item => (
+            <div key={item.id}>
+              {editingId === item.id ? (
+                <div className="bg-amber-950/30 border border-amber-400/30 rounded-2xl p-4 space-y-3">
+                  <p className="text-xs font-medium text-amber-400/70 uppercase tracking-wider">Editing phrase</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Input label="Arabic Text" value={form.arabic_text} onChange={e => setForm(p => ({ ...p, arabic_text: e.target.value }))} placeholder="سُبْحَانَ اللَّه" />
+                    <Input label="Transliteration" value={form.transliteration} onChange={e => setForm(p => ({ ...p, transliteration: e.target.value }))} placeholder="SubhanAllah" />
+                    <Input label="English Meaning" value={form.meaning_en} onChange={e => setForm(p => ({ ...p, meaning_en: e.target.value }))} placeholder="Glory be to God" />
+                    <Input label="Target Count" type="number" min="1" max="999" value={String(form.target_count)} onChange={e => setForm(p => ({ ...p, target_count: parseInt(e.target.value) || 33 }))} />
+                    <Input label="Sort Order" type="number" min="0" value={String(form.sort_order)} onChange={e => setForm(p => ({ ...p, sort_order: parseInt(e.target.value) || 0 }))} />
+                    <div className="flex items-center gap-3 pt-6">
+                      <label className="text-xs font-medium text-amber-400/70 uppercase tracking-wider">Active</label>
+                      <button type="button" onClick={() => setForm(p => ({ ...p, is_active: !p.is_active }))}
+                        className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 ${form.is_active ? 'bg-amber-500' : 'bg-amber-500/20 border border-amber-500/20'}`}>
+                        <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ${form.is_active ? 'left-6' : 'left-1'}`} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 flex-wrap pt-1">
+                    <Btn onClick={updateItem} disabled={saving || !formValid}>
+                      {saving ? <span className="w-4 h-4 border-2 border-[#0a0804]/30 border-t-[#0a0804] rounded-full animate-spin" /> : <Check className="w-4 h-4" />}
+                      Save
+                    </Btn>
+                    <Btn variant="ghost" size="sm" onClick={cancelEdit}><X className="w-3.5 h-3.5" /> Cancel</Btn>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-950/20 border border-amber-500/10 group">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <span dir="rtl" className="text-lg font-bold text-amber-100" style={{ fontFamily: 'serif' }}>{item.arabic_text}</span>
+                      <span className="text-sm text-amber-400">{item.transliteration}</span>
+                      {!item.is_active && <span className="text-[10px] uppercase tracking-widest text-amber-500/40 border border-amber-500/20 rounded-full px-2 py-0.5">inactive</span>}
+                    </div>
+                    <p className="text-xs text-amber-500/50 truncate">{item.meaning_en} · ×{item.target_count}</p>
+                  </div>
+                  <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Btn variant="ghost" size="sm" onClick={() => startEdit(item)}><Edit2 className="w-3.5 h-3.5" /></Btn>
+                    <Btn variant="danger" size="sm" onClick={() => deleteItem(item.id)}><Trash2 className="w-3.5 h-3.5" /></Btn>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Add form */}
+        <div className="mt-4">
+          <AnimatePresence>
+            {showAdd && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="bg-amber-950/30 border border-amber-500/20 rounded-2xl p-4 space-y-3 mb-3">
+                  <p className="text-xs font-medium text-amber-400/70 uppercase tracking-wider">New Dhikr Phrase</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Input label="Arabic Text" value={form.arabic_text} onChange={e => setForm(p => ({ ...p, arabic_text: e.target.value }))} placeholder="سُبْحَانَ اللَّه" />
+                    <Input label="Transliteration" value={form.transliteration} onChange={e => setForm(p => ({ ...p, transliteration: e.target.value }))} placeholder="SubhanAllah" />
+                    <Input label="English Meaning" value={form.meaning_en} onChange={e => setForm(p => ({ ...p, meaning_en: e.target.value }))} placeholder="Glory be to God" />
+                    <Input label="Target Count" type="number" min="1" max="999" value={String(form.target_count)} onChange={e => setForm(p => ({ ...p, target_count: parseInt(e.target.value) || 33 }))} />
+                    <Input label="Sort Order" type="number" min="0" value={String(form.sort_order)} onChange={e => setForm(p => ({ ...p, sort_order: parseInt(e.target.value) || 0 }))} />
+                  </div>
+                  <p className="text-amber-500/40 text-xs">Arabic and Kurdish meanings will be auto-translated from English.</p>
+                  <div className="flex gap-2 flex-wrap">
+                    <Btn onClick={addItem} disabled={saving || !formValid}>
+                      {saving ? <span className="w-4 h-4 border-2 border-[#0a0804]/30 border-t-[#0a0804] rounded-full animate-spin" /> : <Plus className="w-4 h-4" />}
+                      Add Phrase
+                    </Btn>
+                    <Btn variant="ghost" size="sm" onClick={() => { setShowAdd(false); setForm(blank); }}>
+                      <X className="w-3.5 h-3.5" /> Cancel
+                    </Btn>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          {!showAdd && !editingId && (
+            <Btn variant="ghost" onClick={() => setShowAdd(true)}>
+              <Plus className="w-4 h-4" /> Add Phrase
+            </Btn>
+          )}
+        </div>
+      </Section>
     </div>
   );
 }
