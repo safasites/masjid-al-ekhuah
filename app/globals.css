@@ -54,3 +54,70 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ── Accessible Theme Overrides ──────────────────────────────────────────────
+   Applied when <html data-theme="accessible"> is set.
+   Boosts contrast of low-opacity amber classes to meet WCAG AA (4.5:1).
+   No component changes needed — these selectors match Tailwind's generated classes.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+/* Prayer labels "AZAN" / "JAMA'AT": amber-500/40 (~1.5:1) → amber-300/88 (~5.2:1) */
+[data-theme="accessible"] .text-amber-500\/40 {
+  color: rgb(252 211 77 / 0.88);
+}
+
+/* Inactive azan times: amber-100/70 (~3.8:1) → white/92 (~8.5:1) */
+[data-theme="accessible"] .text-amber-100\/70 {
+  color: rgb(255 255 255 / 0.92);
+}
+
+/* Inactive jamat times: amber-400/70 (~2.8:1) → amber-200/92 (~6.1:1) */
+[data-theme="accessible"] .text-amber-400\/70 {
+  color: rgb(253 230 138 / 0.92);
+}
+
+/* Inactive prayer names: amber-500/80 (~2.9:1) → white/88 (~8.1:1) */
+[data-theme="accessible"] .text-amber-500\/80 {
+  color: rgb(255 255 255 / 0.88);
+}
+
+/* Section subtitles / events descriptions: amber-200/60 → amber-50/88 */
+[data-theme="accessible"] .text-amber-200\/60 {
+  color: rgb(254 243 199 / 0.88);
+}
+
+/* Location / date / secondary text: amber-200/70 → amber-50/92 */
+[data-theme="accessible"] .text-amber-200\/70 {
+  color: rgb(254 243 199 / 0.92);
+}
+
+/* Admin section descriptions: amber-500/50 → amber-300/82 */
+[data-theme="accessible"] .text-amber-500\/50 {
+  color: rgb(252 211 77 / 0.82);
+}
+
+/* Admin input labels & jamat time inactive (shared class amber-400/70) */
+/* Note: also covered by .text-amber-400\/70 rule above */
+
+/* Admin footer notes (amber-500/40 rule above covers this too) */
+
+/* Prayer card borders — more visible separation */
+[data-theme="accessible"] .border-amber-800\/30 {
+  border-color: rgb(180 83 9 / 0.55);
+}
+[data-theme="accessible"] .border-amber-500\/20 {
+  border-color: rgb(245 158 11 / 0.45);
+}
+[data-theme="accessible"] .border-amber-500\/10 {
+  border-color: rgb(245 158 11 / 0.28);
+}
+
+/* Prayer card / section backgrounds — slight opacity boost for card definition */
+[data-theme="accessible"] .bg-amber-950\/30 {
+  background-color: rgb(69 26 3 / 0.52);
+}
+
+/* Vertical separator between azan/jamat columns */
+[data-theme="accessible"] .bg-amber-800\/30 {
+  background-color: rgb(120 53 15 / 0.55);
+}

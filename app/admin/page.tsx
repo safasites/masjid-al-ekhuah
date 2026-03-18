@@ -7,6 +7,7 @@ import {
   LayoutGrid, Calendar, BookOpen, Clock, Image, Settings,
   LogOut, Plus, Trash2, Edit2, Check, X, Upload, ChevronDown, ChevronUp, Globe
 } from 'lucide-react';
+import { useTheme, type Theme } from '../theme-provider';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Event { id: string; title: string; date_label: string; description: string; is_featured: boolean; sort_order: number; title_ar?: string; title_ku?: string; description_ar?: string; description_ku?: string; }
@@ -611,6 +612,7 @@ function TimetableTab({ showToast }: { showToast: (m: string, t?: 'success' | 'e
 
 // ─── Settings Tab ──────────────────────────────────────────────────────────────
 function SettingsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'error') => void }) {
+  const { theme: activeTheme, setTheme } = useTheme();
   const [form, setForm] = useState({
     hero_line1: '',
     hero_line2: '',
@@ -650,7 +652,10 @@ function SettingsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'er
   async function save() {
     setSaving(true);
     try {
-      const updates = Object.entries(form).map(([key, value]) => ({ key, value }));
+      const updates = [
+        ...Object.entries(form).map(([key, value]) => ({ key, value })),
+        { key: 'theme', value: activeTheme },
+      ];
       const res = await fetch('/api/admin/content', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -662,12 +667,74 @@ function SettingsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'er
     finally { setSaving(false); }
   }
 
+  const themes: { id: Theme; label: string; desc: string; labelSwatch: string; timeSwatch: string }[] = [
+    {
+      id: 'classic',
+      label: 'Classic',
+      desc: 'Artistic. Subtle amber tones with intentional low contrast.',
+      labelSwatch: 'rgb(245 158 11 / 0.40)',
+      timeSwatch: 'rgb(254 243 199 / 0.70)',
+    },
+    {
+      id: 'accessible',
+      label: 'Accessible',
+      desc: 'High contrast. WCAG AA compliant. Recommended for all audiences.',
+      labelSwatch: 'rgb(252 211 77 / 0.88)',
+      timeSwatch: 'rgb(255 255 255 / 0.92)',
+    },
+  ];
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div>
         <h2 className="text-2xl font-medium text-amber-50 mb-1">Site Settings</h2>
         <p className="text-amber-500/50 text-sm">Edit text content shown across the website.</p>
       </div>
+
+      <Section title="Appearance">
+        <div className="space-y-4">
+          <p className="text-amber-500/50 text-sm -mt-2">Choose how prayer times and text appear across the site. Changes apply instantly.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {themes.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setTheme(t.id)}
+                className={`text-left rounded-2xl p-5 border-2 transition-all duration-200 ${
+                  activeTheme === t.id
+                    ? 'border-amber-400 bg-amber-500/10'
+                    : 'border-amber-500/20 bg-amber-950/20 hover:border-amber-500/40 hover:bg-amber-900/20'
+                }`}
+              >
+                {/* Mini prayer row preview */}
+                <div className="flex items-center gap-3 mb-4 bg-amber-950/40 rounded-xl px-4 py-3 border border-amber-800/30">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-amber-300/80 w-16 shrink-0">Fajr</span>
+                  <div className="flex-1 text-center">
+                    <p className="text-[10px] uppercase tracking-widest mb-0.5" style={{ color: t.labelSwatch }}>Azan</p>
+                    <p className="font-display text-sm" style={{ color: t.timeSwatch }}>04:19</p>
+                  </div>
+                  <div className="w-px self-stretch bg-amber-800/30" />
+                  <div className="flex-1 text-center">
+                    <p className="text-[10px] uppercase tracking-widest mb-0.5" style={{ color: t.labelSwatch }}>Jama&apos;at</p>
+                    <p className="font-display text-sm" style={{ color: t.timeSwatch }}>06:00 AM</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-amber-100 font-medium text-sm">{t.label}</p>
+                    <p className="text-amber-500/50 text-xs mt-0.5">{t.desc}</p>
+                  </div>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ml-3 ${
+                    activeTheme === t.id ? 'border-amber-400 bg-amber-400' : 'border-amber-500/30'
+                  }`}>
+                    {activeTheme === t.id && <Check className="w-3 h-3 text-[#0a0804]" />}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+          <p className="text-amber-500/40 text-xs">Theme is applied site-wide immediately. Save to persist across sessions.</p>
+        </div>
+      </Section>
 
       <Section title="Hero Section">
         <div className="space-y-4">

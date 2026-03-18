@@ -1,6 +1,7 @@
 import type {Metadata} from 'next';
 import { Inter, Outfit } from 'next/font/google';
 import './globals.css'; // Global styles
+import { ThemeProvider } from './theme-provider';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 const outfit = Outfit({ subsets: ['latin'], variable: '--font-display' });
@@ -21,7 +22,11 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
       <body className="font-sans antialiased bg-black text-white" suppressHydrationWarning>
-        {children}
+        {/* Inline script: apply saved theme before first paint to prevent flash */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var t=localStorage.getItem('mosque-theme');if(t==='accessible'||t==='classic'){document.documentElement.setAttribute('data-theme',t);}})();` }} />
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

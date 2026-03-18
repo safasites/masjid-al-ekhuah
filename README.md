@@ -1,20 +1,39 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Masjid Al-Ekhuah Website
 
-# Run and deploy your AI Studio app
+Website for Masjid Al-Ekhuah, Birmingham — built with Next.js, Supabase, and deployed on Netlify.
 
-This contains everything you need to run your app locally.
+## Tech Stack
 
-View your app in AI Studio: https://ai.studio/apps/aa17786e-7ab2-44f3-8d28-42ee32e65aaa
+- **Next.js 15** (App Router) + TypeScript + Tailwind CSS
+- **Supabase** (PostgreSQL database + Storage for timetable images)
+- **Aladhan API** — automatic prayer times (no API key needed)
+- **Netlify** — hosting and deployment
 
-## Run Locally
-
-**Prerequisites:**  Node.js
-
+## Local Development
 
 1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+   ```bash
+   npm install
+   ```
+
+2. Copy `.env.example` to `.env.local` and fill in your values:
+   ```bash
+   cp .env.example .env.local
+   ```
+
+3. Run the dev server:
+   ```bash
+   npm run dev
+   ```
+
+## Database Setup
+
+Run `supabase-schema.sql` in the Supabase SQL Editor to create all tables and seed default data.
+
+## Environment Variables
+
+See `.env.example` for all required variables. These must be set in Netlify's environment variables for production.
+
+## Admin Access
+
+Visit `/admin` — you'll be redirected to the login page. The password is set via the `ADMIN_PASSWORD` environment variable.
