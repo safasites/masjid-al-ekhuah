@@ -110,7 +110,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetch('/api/admin/content').then(r => r.json()).then((c: Content) => {
       if (c.mosque_name) setMosqueName(c.mosque_name);
-    });
+    }).catch(() => {});
   }, []);
 
   function showToast(msg: string, type: 'success' | 'error' = 'success') {
@@ -243,14 +243,15 @@ function PrayerTab({ showToast }: { showToast: (m: string, t?: 'success' | 'erro
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetch('/api/admin/jamat').then(r => r.json()).then((rows: JamatTime[]) => {
+    fetch('/api/admin/jamat').then(r => r.json()).then((rows) => {
+      if (!Array.isArray(rows)) return;
       const m: Record<string, string> = {};
-      rows.forEach(r => { m[r.prayer] = r.time; });
+      rows.forEach((r: JamatTime) => { m[r.prayer] = r.time; });
       setJamat(m);
-    });
+    }).catch(() => {});
     fetch('/api/admin/content').then(r => r.json()).then((c: Content) => {
       if (c.prayer_method) setMethod(c.prayer_method);
-    });
+    }).catch(() => {});
   }, []);
 
   async function save() {
@@ -326,7 +327,7 @@ function EventsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'erro
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(() => {
-    fetch('/api/admin/events').then(r => r.json()).then(setEvents);
+    fetch('/api/admin/events').then(r => r.json()).then((data) => { if (Array.isArray(data)) setEvents(data); }).catch(() => {});
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -434,7 +435,7 @@ function CoursesTab({ showToast }: { showToast: (m: string, t?: 'success' | 'err
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(() => {
-    fetch('/api/admin/courses').then(r => r.json()).then(setCourses);
+    fetch('/api/admin/courses').then(r => r.json()).then((data) => { if (Array.isArray(data)) setCourses(data); }).catch(() => {});
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -541,7 +542,7 @@ function TimetableTab({ showToast }: { showToast: (m: string, t?: 'success' | 'e
   const [preview, setPreview] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/admin/timetable').then(r => r.json()).then(d => setCurrent(d));
+    fetch('/api/admin/timetable').then(r => r.json()).then(d => setCurrent(d)).catch(() => {});
   }, []);
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -664,7 +665,7 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
         feature_courses:  c.feature_courses  ?? prev.feature_courses,
         feature_donate:   c.feature_donate   ?? prev.feature_donate,
       }));
-    });
+    }).catch(() => {});
   }, []);
 
   async function save() {
@@ -883,11 +884,11 @@ function DhikrTab({ showToast }: { showToast: (m: string, t?: 'success' | 'error
   const [form, setForm] = useState(blank);
 
   useEffect(() => {
-    fetch('/api/admin/dhikr?all=true').then(r => r.json()).then(setItems);
+    fetch('/api/admin/dhikr?all=true').then(r => r.json()).then((data) => { if (Array.isArray(data)) setItems(data); }).catch(() => {});
     fetch('/api/admin/content').then(r => r.json()).then((c: Content) => {
       if (c.feature_dhikr !== undefined) setFeatureEnabled(c.feature_dhikr !== 'false');
       if (c.dhikr_title) setSectionTitle(c.dhikr_title);
-    });
+    }).catch(() => {});
   }, []);
 
   async function saveSettings() {
