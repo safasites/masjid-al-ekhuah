@@ -271,12 +271,10 @@ export default function MosqueHero() {
   const showDonate  = content.feature_donate  !== 'false';
   const showDhikr   = content.feature_dhikr   !== 'false';
 
-  // Scroll animations
+  // Scroll animations — kept minimal for mobile performance (no blur/scale GPU strain)
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ['start start', 'end end'] });
   const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
-  const heroScale  = useTransform(scrollYProgress, [0, 0.2], [1, 0.9]);
-  const heroBlur   = useTransform(scrollYProgress, [0, 0.2], ['blur(0px)', 'blur(20px)']);
-  const heroY      = useTransform(scrollYProgress, [0, 0.2], ['0%', '15%']);
+  const heroY      = useTransform(scrollYProgress, [0, 0.2], ['0%', '8%']);
 
   // Restore persisted language
   useEffect(() => {
@@ -495,9 +493,9 @@ export default function MosqueHero() {
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
             <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
-              <motion.div animate={{ rotate: 360 }} transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
                 className="absolute inset-0 border border-amber-500/40 rounded-full group-hover:border-amber-400/80 transition-colors duration-500" />
-              <motion.div animate={{ rotate: -360 }} transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
+              <motion.div animate={{ rotate: -360 }} transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
                 className="absolute inset-1 border border-amber-400/30 rounded-full group-hover:border-amber-300/60 transition-colors duration-500" />
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-amber-400 group-hover:scale-110 transition-transform duration-500">
                 <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9L12 2Z" fill="currentColor"/>
@@ -527,8 +525,7 @@ export default function MosqueHero() {
                   {isActive ? (
                     <motion.span
                       layoutId="active-nav-indicator"
-                      className="absolute -bottom-1 left-0 right-0 h-[1px] bg-amber-400"
-                      style={{ boxShadow: '0 0 8px 2px rgba(245,158,11,0.5)' }}
+                      className="absolute -bottom-1 left-0 right-0 h-[1px] bg-amber-400 shadow-theme-nav"
                     />
                   ) : (
                     <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-amber-400 transition-all duration-300 group-hover:w-full" />
@@ -542,12 +539,12 @@ export default function MosqueHero() {
             transition={{ duration: 0.8, ease: 'easeOut' }}
             className="flex items-center gap-2 md:gap-4">
             <button onClick={() => changeLang(nextLang[lang])}
-              className="flex items-center justify-center px-3 md:px-4 py-2 md:py-2.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-300 text-sm font-medium backdrop-blur-sm transition-all duration-300 hover:shadow-[0_0_20px_-5px_rgba(245,158,11,0.3)] gap-2 group">
+              className="flex items-center justify-center px-3 md:px-4 py-2 md:py-2.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-300 text-sm font-medium backdrop-blur-sm transition-all duration-300 hover:shadow-theme-soft gap-2 group">
               <Globe className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
               <AnimatedText>{t.langToggle}</AnimatedText>
             </button>
             <button onMouseEnter={handlePinInteraction} onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
-              className="hidden md:flex items-center justify-center px-6 py-2.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-sm font-medium backdrop-blur-sm transition-all duration-300 hover:shadow-[0_0_20px_-5px_rgba(245,158,11,0.4)] gap-2 group">
+              className="hidden md:flex items-center justify-center px-6 py-2.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-sm font-medium backdrop-blur-sm transition-all duration-300 hover:shadow-theme-soft gap-2 group">
               <motion.div animate={pinControls} className="animate-pin-breathe group-hover:animate-none">
                 <MapPin className="w-4 h-4" />
               </motion.div>
@@ -566,7 +563,7 @@ export default function MosqueHero() {
           <div className="absolute inset-0 opacity-[0.04] mix-blend-overlay" style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }} />
         </div>
 
-        <motion.div style={{ opacity: heroOpacity, scale: heroScale, filter: heroBlur, y: heroY }}
+        <motion.div style={{ opacity: heroOpacity, y: heroY, willChange: 'transform, opacity' }}
           className="relative z-10 flex flex-col items-center justify-center px-6 w-full max-w-7xl mx-auto text-center">
           <motion.h1
             initial={{ opacity: 0, y: 30, filter: 'blur(10px)' }}
@@ -584,7 +581,7 @@ export default function MosqueHero() {
             transition={{ duration: 1, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="pointer-events-auto">
             <button onClick={() => document.getElementById('times')?.scrollIntoView({ behavior: 'smooth' })}
-              className="px-8 py-4 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 text-[#0a0804] font-medium text-base hover:from-amber-300 hover:to-amber-500 transition-all duration-300 flex items-center justify-center gap-2 group animate-breathe hover:animate-none hover:shadow-[0_0_40px_-5px_rgba(245,158,11,0.6)] hover:-translate-y-1">
+              className="px-8 py-4 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 text-[#0a0804] font-medium text-base hover:from-amber-300 hover:to-amber-500 transition-all duration-300 flex items-center justify-center gap-2 group animate-breathe hover:animate-none hover:shadow-theme-strong hover:-translate-y-1">
               <AnimatedText>{t.viewPrayers}</AnimatedText>
               {/* Arrow always animates downward (rotate 90°) on hover in both LTR and RTL */}
               <ArrowRight className={`w-4 h-4 transition-transform duration-300 ${
@@ -600,7 +597,7 @@ export default function MosqueHero() {
       <div className="h-[100vh]" />
 
       {/* ── Content Sections ──────────────────────────────────────── */}
-      <div className="relative z-20 bg-[#0a0804] rounded-t-[3rem] md:rounded-t-[5rem] shadow-[0_-30px_60px_-15px_rgba(245,158,11,0.2)] overflow-hidden pb-32 md:pb-0">
+      <div className="relative z-20 bg-[#0a0804] rounded-t-[3rem] md:rounded-t-[5rem] shadow-theme-top overflow-hidden pb-32 md:pb-0">
 
         {/* Prayer Times Section */}
         <section id="times" className="min-h-screen bg-gradient-to-b from-amber-900/40 via-amber-950/40 to-[#0a0804] backdrop-blur-3xl border-t border-amber-500/30 flex flex-col items-center justify-center px-6 py-24">
@@ -637,7 +634,7 @@ export default function MosqueHero() {
                       transition={{ duration: 0.5, delay: index * 0.07, ease: 'easeOut' }}
                       className={`relative flex items-center gap-4 rounded-2xl px-5 py-4 md:py-5 md:px-8 transition-all duration-500 ${
                         isActive
-                          ? 'bg-gradient-to-r from-amber-500/25 to-amber-700/15 border border-amber-400/60 shadow-[0_0_30px_-8px_rgba(245,158,11,0.4)]'
+                          ? 'bg-gradient-to-r from-amber-500/25 to-amber-700/15 border border-amber-400/60 shadow-theme-glow'
                           : 'bg-amber-950/30 border border-amber-800/30 hover:border-amber-500/40 hover:bg-amber-900/30'
                       }`}
                     >
@@ -695,7 +692,7 @@ export default function MosqueHero() {
             {/* View Full Timetable */}
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-50px' }} transition={{ duration: 0.6, delay: 0.6, ease: 'easeOut' }} className="mt-8 flex justify-center">
               <button onClick={() => setShowTimetable(true)}
-                className="px-8 py-4 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 font-medium text-base hover:bg-amber-500/20 transition-all duration-300 flex items-center justify-center gap-2 group hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.3)]">
+                className="px-8 py-4 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 font-medium text-base hover:bg-amber-500/20 transition-all duration-300 flex items-center justify-center gap-2 group hover:shadow-theme-glow">
                 <AnimatedText>{t.viewFullTimetable}</AnimatedText>
                 <Calendar className="w-4 h-4 group-hover:scale-110 transition-transform" />
               </button>
@@ -837,7 +834,7 @@ export default function MosqueHero() {
                       {/* Inner circle background */}
                       <div className={`absolute inset-3 rounded-full transition-all duration-500 ${
                         isCompleted
-                          ? 'bg-amber-500/20 shadow-[0_0_40px_-8px_rgba(245,158,11,0.6)]'
+                          ? 'bg-amber-500/20 shadow-theme-dhikr'
                           : 'bg-amber-950/60 hover:bg-amber-900/60 shadow-[inset_0_2px_8px_rgba(0,0,0,0.4)]'
                       }`} />
 
@@ -928,12 +925,12 @@ export default function MosqueHero() {
         })()}
 
         {/* Events Section */}
-        {showEvents && <section id="events" className="px-6 py-12 md:py-24 overflow-hidden">
+        {showEvents && <section id="events" className="px-6 py-8 md:py-24 overflow-hidden">
           <motion.div initial={{ opacity: 0, x: isRTL ? -100 : 100 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, margin: '-100px' }} transition={{ duration: 0.8, ease: 'easeOut' }} className="max-w-6xl w-full mx-auto">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 md:mb-12 gap-4 md:gap-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-5 md:mb-12 gap-3 md:gap-6">
               <div>
-                <h2 className="font-display text-3xl md:text-5xl text-amber-50 mb-2 md:mb-4"><AnimatedText>{t.eventsTitle}</AnimatedText></h2>
-                <p className="text-amber-200/60 text-lg"><AnimatedText>{t.eventsSubtitle}</AnimatedText></p>
+                <h2 className="font-display text-3xl md:text-5xl text-amber-50 mb-1 md:mb-4"><AnimatedText>{t.eventsTitle}</AnimatedText></h2>
+                <p className="text-amber-200/75 text-base md:text-lg"><AnimatedText>{t.eventsSubtitle}</AnimatedText></p>
               </div>
               <button onClick={() => router.push('/events')}
                 className="text-amber-400 hover:text-amber-300 flex items-center gap-2 font-medium transition-colors shrink-0">
@@ -942,25 +939,25 @@ export default function MosqueHero() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
               {events.length === 0 ? (
                 [1, 2, 3].map(i => (
-                  <div key={i} className="bg-amber-950/20 border border-amber-500/10 rounded-3xl p-5 md:p-8 animate-pulse">
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-amber-500/10 mb-3 md:mb-6" />
-                    <div className="h-5 bg-amber-500/10 rounded-lg mb-3 w-2/3" />
-                    <div className="h-3 bg-amber-500/10 rounded mb-4 w-1/2" />
+                  <div key={i} className="bg-amber-950/20 border border-amber-500/10 rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-8 animate-pulse">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl sm:rounded-2xl bg-amber-500/10 mb-3 md:mb-6" />
+                    <div className="h-4 bg-amber-500/10 rounded-lg mb-2 w-2/3" />
+                    <div className="h-3 bg-amber-500/10 rounded mb-3 w-1/2" />
                     <div className="h-3 bg-amber-500/5 rounded w-full" />
                   </div>
                 ))
               ) : events.map(event => (
-                <motion.div key={event.id} whileHover={{ y: -8 }}
-                  className="bg-amber-950/20 border border-amber-500/20 rounded-3xl p-5 md:p-8 hover:bg-amber-900/30 hover:border-amber-500/40 transition-all duration-300 group">
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-3 md:mb-6 group-hover:bg-amber-500/20 transition-colors">
-                    <Calendar className="w-5 h-5 md:w-6 md:h-6 text-amber-400" />
+                <motion.div key={event.id} whileHover={{ y: -4 }}
+                  className="bg-amber-950/20 border border-amber-500/20 rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-8 hover:bg-amber-900/30 hover:border-amber-500/40 transition-all duration-300 group">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl sm:rounded-2xl bg-amber-500/10 flex items-center justify-center mb-3 md:mb-6 group-hover:bg-amber-500/20 transition-colors">
+                    <Calendar className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-amber-400" />
                   </div>
-                  <h3 dir="auto" className="text-xl font-medium text-amber-50 mb-2">{getEventTitle(event)}</h3>
-                  <p className="text-amber-400/80 text-sm mb-3">{event.date_label}</p>
-                  {event.description && <p dir="auto" className="text-amber-100/60 leading-relaxed">{getEventDesc(event)}</p>}
+                  <h3 dir="auto" className="text-base sm:text-lg md:text-xl font-medium text-amber-50 mb-1.5">{getEventTitle(event)}</h3>
+                  <p className="text-amber-400/80 text-xs sm:text-sm mb-2">{event.date_label}</p>
+                  {event.description && <p dir="auto" className="text-amber-100/75 leading-relaxed text-xs sm:text-sm">{getEventDesc(event)}</p>}
                 </motion.div>
               ))}
             </div>
@@ -968,37 +965,37 @@ export default function MosqueHero() {
         </section>}
 
         {/* Courses Section */}
-        {showCourses && <section id="courses" className="px-6 py-12 md:py-24 bg-amber-950/10 overflow-hidden">
+        {showCourses && <section id="courses" className="px-6 py-8 md:py-24 bg-amber-950/10 overflow-hidden">
           <motion.div initial={{ opacity: 0, x: isRTL ? 100 : -100 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, margin: '-100px' }} transition={{ duration: 0.8, ease: 'easeOut' }} className="max-w-6xl w-full mx-auto">
-            <div className="text-center mb-8 md:mb-16">
-              <h2 className="font-display text-3xl md:text-5xl text-amber-50 mb-2 md:mb-4"><AnimatedText>{t.coursesTitle}</AnimatedText></h2>
-              <p className="text-amber-200/60 text-lg"><AnimatedText>{t.coursesSubtitle}</AnimatedText></p>
+            <div className="text-center mb-6 md:mb-16">
+              <h2 className="font-display text-3xl md:text-5xl text-amber-50 mb-1 md:mb-4"><AnimatedText>{t.coursesTitle}</AnimatedText></h2>
+              <p className="text-amber-200/75 text-base md:text-lg"><AnimatedText>{t.coursesSubtitle}</AnimatedText></p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
               {courses.length === 0 ? (
                 [1, 2, 3].map(i => (
-                  <div key={i} className="bg-[#0a0804] border border-amber-500/10 rounded-3xl p-5 md:p-8 animate-pulse">
+                  <div key={i} className="bg-[#0a0804] border border-amber-500/10 rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-8 animate-pulse">
                     <div className="flex justify-between mb-3 md:mb-6">
-                      <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-amber-500/10" />
-                      <div className="h-6 w-20 rounded-full bg-amber-500/10" />
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl sm:rounded-2xl bg-amber-500/10" />
+                      <div className="h-5 w-16 sm:h-6 sm:w-20 rounded-full bg-amber-500/10" />
                     </div>
-                    <div className="h-5 bg-amber-500/10 rounded-lg mb-3 w-2/3" />
+                    <div className="h-4 bg-amber-500/10 rounded-lg mb-2 w-2/3" />
                     <div className="h-3 bg-amber-500/5 rounded w-1/3" />
                   </div>
                 ))
               ) : courses.map(course => (
                 <motion.div key={course.id} whileHover={{ scale: 1.02 }}
-                  className="bg-[#0a0804] border border-amber-500/20 rounded-3xl p-5 md:p-8 hover:border-amber-500/40 transition-all duration-300 relative overflow-hidden group">
+                  className="bg-[#0a0804] border border-amber-500/20 rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-8 hover:border-amber-500/40 transition-all duration-300 relative overflow-hidden group">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-amber-500/10 transition-colors" />
                   <div className="flex justify-between items-start mb-3 md:mb-6">
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center">
-                      <BookOpen className="w-5 h-5 md:w-6 md:h-6 text-amber-400" />
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl sm:rounded-2xl bg-amber-500/10 flex items-center justify-center">
+                      <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-amber-400" />
                     </div>
-                    <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-medium border border-amber-500/20">{course.level}</span>
+                    <span className="px-2 py-0.5 sm:px-3 sm:py-1 rounded-full bg-amber-500/10 text-amber-400 text-[10px] sm:text-xs font-medium border border-amber-500/20">{course.level}</span>
                   </div>
-                  <h3 dir="auto" className="text-xl font-medium text-amber-50 mb-2">{getCourseTitle(course)}</h3>
-                  <p className="text-amber-100/60 text-sm flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500/50" />{course.duration}
+                  <h3 dir="auto" className="text-base sm:text-lg md:text-xl font-medium text-amber-50 mb-1.5">{getCourseTitle(course)}</h3>
+                  <p className="text-amber-100/75 text-xs sm:text-sm flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500/50 shrink-0" />{course.duration}
                   </p>
                 </motion.div>
               ))}
@@ -1010,7 +1007,7 @@ export default function MosqueHero() {
         {showDonate && <section id="donate" className="py-32 px-6 flex items-center justify-center relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-amber-900/20 pointer-events-none" />
           <motion.div initial={{ opacity: 0, y: 50, scale: 0.95 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true, margin: '-100px' }} transition={{ duration: 0.8, ease: 'easeOut' }}
-            className="max-w-4xl w-full mx-auto text-center relative z-10 bg-amber-950/30 border border-amber-500/30 rounded-[3rem] p-8 md:p-12 lg:p-20 backdrop-blur-md shadow-[0_0_50px_-15px_rgba(245,158,11,0.2)]">
+            className="max-w-4xl w-full mx-auto text-center relative z-10 bg-amber-950/30 border border-amber-500/30 rounded-[3rem] p-8 md:p-12 lg:p-20 backdrop-blur-md shadow-theme-top">
             <div className="w-20 h-20 mx-auto bg-amber-500/20 rounded-full flex items-center justify-center mb-8 border border-amber-400/30">
               <Heart className="w-10 h-10 text-amber-400" />
             </div>
@@ -1021,7 +1018,7 @@ export default function MosqueHero() {
             <p className="text-amber-100/70 text-base md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
               <AnimatedText nowrap={false}>{t.donateDesc}</AnimatedText>
             </p>
-            <button className="px-10 py-5 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 text-[#0a0804] font-bold text-lg hover:from-amber-300 hover:to-amber-500 transition-all duration-300 shadow-[0_0_30px_-5px_rgba(245,158,11,0.5)] hover:shadow-[0_0_50px_-5px_rgba(245,158,11,0.7)] hover:-translate-y-1">
+            <button className="px-10 py-5 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 text-[#0a0804] font-bold text-lg hover:from-amber-300 hover:to-amber-500 transition-all duration-300 shadow-theme-glow hover:shadow-theme-strong hover:-translate-y-1">
               <AnimatedText>{t.donateBtn}</AnimatedText>
             </button>
           </motion.div>
@@ -1033,7 +1030,7 @@ export default function MosqueHero() {
             className="max-w-6xl w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
             <div>
               <h2 className="font-display text-4xl text-amber-50 mb-6 break-words"><AnimatedText>{t.aboutTitle}</AnimatedText></h2>
-              <p className="text-amber-100/60 text-lg leading-relaxed mb-8 break-words">{aboutDesc}</p>
+              <p className="text-amber-100/75 text-lg leading-relaxed mb-8 break-words">{aboutDesc}</p>
               <div className="space-y-4">
                 <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(contactAddress)}`} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-4 text-amber-200/80 hover:text-amber-300 transition-colors group">
@@ -1122,7 +1119,7 @@ export default function MosqueHero() {
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.2 }}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="fixed z-40 bottom-32 md:bottom-8 right-6 w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center hover:bg-amber-500/30 transition-all duration-300 backdrop-blur-md shadow-[0_0_20px_-5px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.5)] hover:-translate-y-1"
+            className="fixed z-40 bottom-32 md:bottom-8 right-6 w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center hover:bg-amber-500/30 transition-all duration-300 backdrop-blur-md shadow-theme-soft hover:shadow-theme-glow hover:-translate-y-1"
             aria-label="Back to top"
           >
             <ArrowUp className="w-5 h-5" />

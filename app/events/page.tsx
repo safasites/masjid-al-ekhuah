@@ -110,18 +110,18 @@ export default function EventsPage() {
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           className="mb-16"
         >
-          <h1 className="font-display text-5xl md:text-7xl text-amber-50 mb-4 tracking-tight">{t.title}</h1>
-          <p className="text-amber-200/60 text-xl">{lang === 'en' ? t.subtitle.replace('Masjid Al-Ekhuah', mosqueName) : t.subtitle}</p>
+          <h1 className="font-display text-4xl md:text-7xl text-amber-50 mb-3 tracking-tight">{t.title}</h1>
+          <p className="text-amber-200/75 text-base md:text-xl">{lang === 'en' ? t.subtitle.replace('Masjid Al-Ekhuah', mosqueName) : t.subtitle}</p>
         </motion.div>
 
         {/* Events grid */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
             {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="bg-amber-950/20 border border-amber-500/10 rounded-3xl p-8 animate-pulse">
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 mb-6" />
-                <div className="h-5 bg-amber-500/10 rounded-lg mb-3 w-2/3" />
-                <div className="h-3 bg-amber-500/10 rounded mb-4 w-1/2" />
+              <div key={i} className="bg-amber-950/20 border border-amber-500/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 animate-pulse">
+                <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-amber-500/10 mb-4 sm:mb-6" />
+                <div className="h-4 bg-amber-500/10 rounded-lg mb-2 sm:mb-3 w-2/3" />
+                <div className="h-3 bg-amber-500/10 rounded mb-3 sm:mb-4 w-1/2" />
                 <div className="h-3 bg-amber-500/5 rounded w-full" />
                 <div className="h-3 bg-amber-500/5 rounded w-4/5 mt-2" />
               </div>
@@ -138,32 +138,32 @@ export default function EventsPage() {
             <p className="text-amber-500/30 text-sm mt-2">{t.noEventsDesc}</p>
           </motion.div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
             {events.map((event, i) => (
               <motion.div
                 key={event.id}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: i * 0.08, ease: 'easeOut' }}
-                whileHover={{ y: -8 }}
-                className={`rounded-3xl p-8 transition-all duration-300 group relative overflow-hidden ${
+                whileHover={{ y: -4 }}
+                className={`rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 transition-all duration-300 group relative overflow-hidden ${
                   event.is_featured
-                    ? 'bg-gradient-to-b from-amber-500/20 to-amber-800/10 border border-amber-400/40 shadow-[0_0_40px_-10px_rgba(245,158,11,0.3)]'
+                    ? 'bg-gradient-to-b from-amber-500/20 to-amber-800/10 border border-amber-400/40 shadow-theme-glow'
                     : 'bg-amber-950/20 border border-amber-500/20 hover:bg-amber-900/30 hover:border-amber-500/40'
                 }`}
               >
                 {event.is_featured && (
-                  <div className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} px-2 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-[10px] font-medium uppercase tracking-wider`}>
+                  <div className={`absolute top-3 ${isRTL ? 'left-3' : 'right-3'} px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-[10px] font-medium uppercase tracking-wider`}>
                     {t.featured}
                   </div>
                 )}
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-6 group-hover:bg-amber-500/20 transition-colors">
-                  <Calendar className="w-6 h-6 text-amber-400" />
+                <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-amber-500/10 flex items-center justify-center mb-4 sm:mb-6 group-hover:bg-amber-500/20 transition-colors">
+                  <Calendar className="w-4 h-4 sm:w-6 sm:h-6 text-amber-400" />
                 </div>
-                <h3 dir="auto" className="text-xl font-medium text-amber-50 mb-2">{getTitle(event)}</h3>
-                <p className="text-amber-400/80 text-sm mb-4">{event.date_label}</p>
+                <h3 dir="auto" className="text-base sm:text-xl font-medium text-amber-50 mb-1.5">{getTitle(event)}</h3>
+                <p className="text-amber-400/80 text-xs sm:text-sm mb-2 sm:mb-4">{event.date_label}</p>
                 {event.description && (
-                  <p dir="auto" className="text-amber-100/60 leading-relaxed text-sm">{getDesc(event)}</p>
+                  <p dir="auto" className="text-amber-100/75 leading-relaxed text-xs sm:text-sm">{getDesc(event)}</p>
                 )}
               </motion.div>
             ))}
@@ -180,7 +180,7 @@ export default function EventsPage() {
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.2 }}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="fixed z-40 bottom-8 right-6 w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center hover:bg-amber-500/30 transition-all duration-300 backdrop-blur-md shadow-[0_0_20px_-5px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.5)] hover:-translate-y-1"
+            className="fixed z-40 bottom-8 right-6 w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center hover:bg-amber-500/30 transition-all duration-300 backdrop-blur-md shadow-theme-soft hover:shadow-theme-glow hover:-translate-y-1"
             aria-label="Back to top"
           >
             <ArrowUp className="w-5 h-5" />
