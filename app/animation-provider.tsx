@@ -76,7 +76,7 @@ export function useAnimationConfig() {
     spinSlow: s ? {} : { animate: { rotate: 360 }, transition: { duration: 20, repeat: Infinity, ease: 'linear' as const } },
 
     // Blur filter string (expensive on GPU)
-    blur: (px: number) => s ? '' : `blur(${px}px)`,
+    blur: (px: number) => s ? 'none' : `blur(${px}px)`,
 
     // Whether to use scroll-driven parallax
     useParallax: !s,

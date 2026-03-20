@@ -505,7 +505,7 @@ export default function MosqueHero() {
   }
 
   return (
-    <main ref={containerRef} dir={isRTL ? 'rtl' : 'ltr'} className={`relative ${lightMode ? 'bg-[#f8f5ee]' : 'bg-[#0a0804]'} selection:bg-amber-500/30 selection:text-amber-100 overflow-x-hidden`}>
+    <main ref={containerRef} dir={isRTL ? 'rtl' : 'ltr'} className={`relative bg-[#0a0804] selection:bg-amber-500/30 selection:text-amber-100 overflow-x-hidden`}>
 
       {/* ── Desktop Navigation ────────────────────────────────────── */}
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
