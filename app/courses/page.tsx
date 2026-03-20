@@ -2,21 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Calendar, ArrowLeft, ArrowUp, X } from 'lucide-react';
+import { BookOpen, ArrowLeft, ArrowUp, X, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAnimationConfig } from '../animation-provider';
 import { useTheme, isLightTheme } from '../theme-provider';
 
 type Lang = 'en' | 'ku' | 'ar';
 
-interface Event {
+interface Course {
   id: string;
   title: string;
-  date_label: string;
+  level: string;
+  duration: string;
   description: string;
   details?: string;
   image_url?: string;
-  is_featured: boolean;
   title_ar?: string;
   title_ku?: string;
   description_ar?: string;
@@ -25,54 +25,54 @@ interface Event {
   details_ku?: string;
 }
 
-const eventsTranslations = {
+const coursesTranslations = {
   en: {
-    title: 'Upcoming Events',
-    subtitle: 'Join our community gatherings at Masjid Al-Ekhuah',
+    title: 'Islamic Courses',
+    subtitle: 'Expand your knowledge at Masjid Al-Ekhuah',
     backToHome: 'Back to Home',
-    featured: 'Featured',
-    noEvents: 'No events scheduled yet',
-    noEventsDesc: 'Check back soon for upcoming events',
-    viewDetails: 'View Details',
+    noCourses: 'No courses available yet',
+    noCoursesDesc: 'Check back soon for upcoming courses',
     close: 'Close',
+    duration: 'Duration',
+    level: 'Level',
   },
   ku: {
-    title: 'بۆنە ئامادەکراوەکان',
-    subtitle: 'بەشداری کۆبوونەوەکانی کۆمەڵگەکەمان بکە لە مزگەوتی ئەل-ئەخوە',
+    title: 'خولە ئیسلامییەکان',
+    subtitle: 'زانیارییەکانت فراوان بکە لە مزگەوتی ئەل-ئەخوە',
     backToHome: 'گەڕانەوە بۆ سەرەکی',
-    featured: 'تایبەتمەند',
-    noEvents: 'هێشتا هیچ بۆنەیەک دیاری نەکراوە',
-    noEventsDesc: 'دواتر دووبارە سەردان بکە بۆ بۆنە داهاتووەکان',
-    viewDetails: 'وردەکاری ببینە',
+    noCourses: 'هێشتا هیچ خولەیەک بەردەست نییە',
+    noCoursesDesc: 'دواتر دووبارە سەردان بکە',
     close: 'داخستن',
+    duration: 'ماوە',
+    level: 'ئاست',
   },
   ar: {
-    title: 'الفعاليات القادمة',
-    subtitle: 'انضم إلى تجمعات مجتمعنا في مسجد الإخوة',
+    title: 'الدورات الإسلامية',
+    subtitle: 'وسع معرفتك في مسجد الإخوة',
     backToHome: 'العودة إلى الرئيسية',
-    featured: 'مميز',
-    noEvents: 'لا توجد فعاليات مجدولة حتى الآن',
-    noEventsDesc: 'تحقق مرة أخرى قريبًا للفعاليات القادمة',
-    viewDetails: 'عرض التفاصيل',
+    noCourses: 'لا توجد دورات متاحة بعد',
+    noCoursesDesc: 'تحقق مرة أخرى قريبًا',
     close: 'إغلاق',
+    duration: 'المدة',
+    level: 'المستوى',
   },
 };
 
-export default function EventsPage() {
+export default function CoursesPage() {
   const router = useRouter();
   const anim = useAnimationConfig();
   const { theme } = useTheme();
   const lightMode = isLightTheme(theme);
 
-  const [events, setEvents] = useState<Event[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [lang, setLang] = useState<Lang>('en');
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [mosqueName, setMosqueName] = useState('Masjid Al-Ekhuah');
-  const [selected, setSelected] = useState<Event | null>(null);
+  const [selected, setSelected] = useState<Course | null>(null);
 
   const isRTL = lang === 'ar' || lang === 'ku';
-  const tr = eventsTranslations[lang];
+  const tr = coursesTranslations[lang];
   const bg = lightMode ? 'bg-[#f8f5ee]' : 'bg-[#0a0804]';
 
   useEffect(() => {
@@ -87,9 +87,9 @@ export default function EventsPage() {
   }, []);
 
   useEffect(() => {
-    fetch('/api/admin/events')
+    fetch('/api/admin/courses')
       .then(r => r.json())
-      .then(data => { if (Array.isArray(data)) setEvents(data); setLoading(false); })
+      .then(data => { if (Array.isArray(data)) setCourses(data); setLoading(false); })
       .catch(() => setLoading(false));
     fetch('/api/admin/content')
       .then(r => r.json())
@@ -97,9 +97,9 @@ export default function EventsPage() {
       .catch(() => {});
   }, []);
 
-  const getTitle   = (e: Event) => lang === 'ar' ? (e.title_ar || e.title) : lang === 'ku' ? (e.title_ku || e.title) : e.title;
-  const getDesc    = (e: Event) => lang === 'ar' ? (e.description_ar || e.description) : lang === 'ku' ? (e.description_ku || e.description) : e.description;
-  const getDetails = (e: Event) => lang === 'ar' ? (e.details_ar || e.details || e.description_ar || e.description) : lang === 'ku' ? (e.details_ku || e.details || e.description_ku || e.description) : (e.details || e.description);
+  const getTitle   = (c: Course) => lang === 'ar' ? (c.title_ar || c.title) : lang === 'ku' ? (c.title_ku || c.title) : c.title;
+  const getDesc    = (c: Course) => lang === 'ar' ? (c.description_ar || c.description) : lang === 'ku' ? (c.description_ku || c.description) : c.description;
+  const getDetails = (c: Course) => lang === 'ar' ? (c.details_ar || c.details || c.description_ar || c.description) : lang === 'ku' ? (c.details_ku || c.details || c.description_ku || c.description) : (c.details || c.description);
 
   return (
     <main dir={isRTL ? 'rtl' : 'ltr'} className={`min-h-screen ${bg} selection:bg-amber-500/30 selection:text-amber-100 px-6 py-16 md:py-24 relative overflow-hidden`}>
@@ -131,10 +131,10 @@ export default function EventsPage() {
           <p className="text-amber-200/75 text-base md:text-xl">{lang === 'en' ? tr.subtitle.replace('Masjid Al-Ekhuah', mosqueName) : tr.subtitle}</p>
         </motion.div>
 
-        {/* Events grid */}
+        {/* Courses grid */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {[1, 2, 3, 4, 5, 6].map(i => (
+            {[1, 2, 3].map(i => (
               <div key={i} className="bg-amber-950/20 border border-amber-500/10 rounded-3xl overflow-hidden animate-pulse">
                 <div className="aspect-video w-full bg-amber-500/10" />
                 <div className="p-5">
@@ -145,52 +145,53 @@ export default function EventsPage() {
               </div>
             ))}
           </div>
-        ) : events.length === 0 ? (
+        ) : courses.length === 0 ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-24">
-            <Calendar className="w-16 h-16 text-amber-500/20 mx-auto mb-4" />
-            <p className="text-amber-500/50 text-xl font-display">{tr.noEvents}</p>
-            <p className="text-amber-500/30 text-sm mt-2">{tr.noEventsDesc}</p>
+            <BookOpen className="w-16 h-16 text-amber-500/20 mx-auto mb-4" />
+            <p className="text-amber-500/50 text-xl font-display">{tr.noCourses}</p>
+            <p className="text-amber-500/30 text-sm mt-2">{tr.noCoursesDesc}</p>
           </motion.div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {events.map((event, i) => (
+            {courses.map((course, i) => (
               <motion.div
-                key={event.id}
+                key={course.id}
                 {...anim.cardEntry(i)}
                 {...anim.cardHover}
-                onClick={() => setSelected(event)}
-                className={`rounded-3xl overflow-hidden border cursor-pointer group transition-all duration-300 ${
-                  event.is_featured
-                    ? 'border-amber-400/40 shadow-theme-glow bg-gradient-to-b from-amber-500/15 to-amber-800/5'
-                    : 'border-amber-500/15 bg-amber-950/20 hover:bg-amber-900/25 hover:border-amber-500/35'
-                }`}
+                onClick={() => setSelected(course)}
+                className="rounded-3xl overflow-hidden border border-amber-500/15 bg-amber-950/20 hover:bg-amber-900/25 hover:border-amber-500/35 cursor-pointer group transition-all duration-300 relative"
               >
+                {/* Glow accent */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-amber-500/10 transition-colors pointer-events-none" />
+
                 {/* Image / placeholder */}
-                {event.image_url ? (
+                {course.image_url ? (
                   <div className="aspect-video w-full overflow-hidden">
                     <img
-                      src={event.image_url}
-                      alt={getTitle(event)}
+                      src={course.image_url}
+                      alt={getTitle(course)}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
                 ) : (
                   <div className="aspect-video w-full bg-amber-950/40 flex items-center justify-center">
-                    <Calendar className="w-10 h-10 text-amber-500/20" />
+                    <BookOpen className="w-10 h-10 text-amber-500/20" />
                   </div>
                 )}
 
                 {/* Card content */}
-                <div className="p-5 md:p-6">
-                  {event.is_featured && (
-                    <span className="inline-block px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-[10px] font-medium uppercase tracking-wider mb-2">
-                      {tr.featured}
+                <div className="p-5 md:p-6 relative z-10">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-[10px] font-medium border border-amber-500/20 uppercase tracking-wide">
+                      {course.level}
                     </span>
-                  )}
-                  <h3 dir="auto" className="text-base md:text-lg font-medium text-amber-50 mb-1.5 line-clamp-2">{getTitle(event)}</h3>
-                  <p className="text-amber-400/80 text-xs md:text-sm mb-2">{event.date_label}</p>
-                  {event.description && (
-                    <p dir="auto" className="text-amber-100/60 text-xs md:text-sm line-clamp-2 leading-relaxed">{getDesc(event)}</p>
+                    <span className="text-amber-500/50 text-xs flex items-center gap-1">
+                      <Clock className="w-3 h-3" />{course.duration}
+                    </span>
+                  </div>
+                  <h3 dir="auto" className="text-base md:text-lg font-medium text-amber-50 mb-2 line-clamp-2">{getTitle(course)}</h3>
+                  {course.description && (
+                    <p dir="auto" className="text-amber-100/60 text-xs md:text-sm line-clamp-2 leading-relaxed">{getDesc(course)}</p>
                   )}
                 </div>
               </motion.div>
@@ -212,7 +213,7 @@ export default function EventsPage() {
           >
             <motion.div
               {...anim.modalEntry}
-              className={`w-full sm:max-w-2xl ${lightMode ? 'bg-[#f0ede4]' : 'bg-[#111310]'} sm:${lightMode ? 'bg-[#f8f5ee]' : 'bg-[#0a0804]'} border border-amber-500/20 rounded-t-3xl sm:rounded-3xl overflow-hidden max-h-[90vh] overflow-y-auto`}
+              className={`w-full sm:max-w-2xl ${lightMode ? 'bg-[#f0ede4]' : 'bg-[#111310]'} border border-amber-500/20 rounded-t-3xl sm:rounded-3xl overflow-hidden max-h-[90vh] overflow-y-auto`}
               onClick={e => e.stopPropagation()}
             >
               {selected.image_url && (
@@ -228,16 +229,15 @@ export default function EventsPage() {
                 >
                   <X className="w-4 h-4" />
                 </button>
-                {selected.is_featured && (
-                  <span className="inline-block px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-[10px] font-medium uppercase tracking-wider mb-3">
-                    {tr.featured}
+                <div className="flex items-center gap-3 mb-3 flex-wrap">
+                  <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-xs font-medium border border-amber-500/20">
+                    {selected.level}
                   </span>
-                )}
-                <h2 dir="auto" className="text-2xl md:text-3xl font-display text-amber-50 mb-2 pr-8">{getTitle(selected)}</h2>
-                <p className="text-amber-400 text-sm mb-5 flex items-center gap-2">
-                  <Calendar className="w-4 h-4 shrink-0" />
-                  {selected.date_label}
-                </p>
+                  <span className="text-amber-500/60 text-xs flex items-center gap-1">
+                    <Clock className="w-3 h-3" />{selected.duration}
+                  </span>
+                </div>
+                <h2 dir="auto" className="text-2xl md:text-3xl font-display text-amber-50 mb-5 pr-8">{getTitle(selected)}</h2>
                 {getDetails(selected) && (
                   <p dir="auto" className="text-amber-100/80 leading-relaxed whitespace-pre-wrap">{getDetails(selected)}</p>
                 )}

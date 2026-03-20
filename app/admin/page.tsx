@@ -5,19 +5,19 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   LayoutGrid, Calendar, BookOpen, Clock, Image, Settings,
-  LogOut, Plus, Trash2, Edit2, Check, X, Upload, ChevronDown, ChevronUp, Globe, Sparkles
+  LogOut, Plus, Trash2, Edit2, Check, X, Upload, ChevronDown, ChevronUp, Globe, Sparkles, BookMarked, ExternalLink
 } from 'lucide-react';
 import { useTheme, type Theme } from '../theme-provider';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface Event { id: string; title: string; date_label: string; description: string; is_featured: boolean; sort_order: number; title_ar?: string; title_ku?: string; description_ar?: string; description_ku?: string; }
-interface Course { id: string; title: string; level: string; duration: string; description: string; sort_order: number; title_ar?: string; title_ku?: string; }
+interface Event { id: string; title: string; date_label: string; description: string; is_featured: boolean; sort_order: number; image_url?: string; details?: string; title_ar?: string; title_ku?: string; description_ar?: string; description_ku?: string; details_ar?: string; details_ku?: string; }
+interface Course { id: string; title: string; level: string; duration: string; description: string; sort_order: number; image_url?: string; details?: string; title_ar?: string; title_ku?: string; description_ar?: string; description_ku?: string; details_ar?: string; details_ku?: string; }
 interface JamatTime { prayer: string; time: string; }
 interface Content { [key: string]: string; }
 interface Timetable { id: string; label: string; image_url: string; is_active: boolean; created_at: string; }
 interface DhikrItem { id: string; arabic_text: string; transliteration: string; meaning_en: string; meaning_ar?: string; meaning_ku?: string; target_count: number; sort_order: number; is_active: boolean; }
 
-type Tab = 'prayer' | 'events' | 'courses' | 'timetable' | 'settings' | 'dhikr';
+type Tab = 'prayer' | 'events' | 'courses' | 'timetable' | 'settings' | 'dhikr' | 'books';
 
 const PRAYERS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha', 'jumuah'] as const;
 const PRAYER_LABELS: Record<string, string> = { fajr: 'Fajr', dhuhr: 'Dhuhr', asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha', jumuah: "Jumu'ah" };
@@ -129,6 +129,7 @@ export default function AdminDashboard() {
     { id: 'courses',   label: 'Courses',      shortLabel: 'Courses',   icon: <BookOpen className="w-4 h-4" /> },
     { id: 'timetable', label: 'Timetable',    shortLabel: 'Timetable', icon: <Image className="w-4 h-4" /> },
     { id: 'dhikr',     label: 'Dhikr',        shortLabel: 'Dhikr',     icon: <Sparkles className="w-4 h-4" /> },
+    { id: 'books',     label: 'Books',        shortLabel: 'Books',     icon: <BookMarked className="w-4 h-4" /> },
     { id: 'settings',  label: 'Settings',     shortLabel: 'Settings',  icon: <Settings className="w-4 h-4" /> },
   ];
 
@@ -205,6 +206,7 @@ export default function AdminDashboard() {
             {tab === 'courses'   && <CoursesTab showToast={showToast} />}
             {tab === 'timetable' && <TimetableTab showToast={showToast} />}
             {tab === 'dhikr'     && <DhikrTab showToast={showToast} />}
+            {tab === 'books'     && <BooksTab showToast={showToast} />}
             {tab === 'settings'  && <SettingsTab showToast={showToast} onMosqueNameChange={setMosqueName} />}
           </motion.div>
         </AnimatePresence>
@@ -322,14 +324,23 @@ function EventsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'erro
   const [events, setEvents] = useState<Event[]>([]);
   const [editing, setEditing] = useState<Event | null>(null);
   const [adding, setAdding] = useState(false);
-  const blank: Omit<Event, 'id'> = { title: '', date_label: '', description: '', is_featured: false, sort_order: 0, title_ar: '', title_ku: '', description_ar: '', description_ku: '' };
+  const blank: Omit<Event, 'id'> = { title: '', date_label: '', description: '', is_featured: false, sort_order: 0, details: '', title_ar: '', title_ku: '', description_ar: '', description_ku: '', details_ar: '', details_ku: '' };
   const [form, setForm] = useState(blank);
   const [saving, setSaving] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const load = useCallback(() => {
     fetch('/api/admin/events').then(r => r.json()).then((data) => { if (Array.isArray(data)) setEvents(data); }).catch(() => {});
   }, []);
   useEffect(() => { load(); }, [load]);
+
+  function handleImageFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setImageFile(f);
+    setImagePreview(URL.createObjectURL(f));
+  }
 
   async function save() {
     setSaving(true);
@@ -338,8 +349,17 @@ function EventsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'erro
         ? await fetch('/api/admin/events', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editing.id, ...form }) })
         : await fetch('/api/admin/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
       if (!res.ok) throw new Error();
+      const saved = await res.json();
+      const entityId = editing ? editing.id : (saved.id ?? saved[0]?.id);
+      if (imageFile && entityId) {
+        const fd = new FormData();
+        fd.append('file', imageFile);
+        fd.append('entity', 'event');
+        fd.append('entityId', entityId);
+        await fetch('/api/admin/media', { method: 'POST', body: fd });
+      }
       showToast(editing ? 'Event updated' : 'Event added');
-      setEditing(null); setAdding(false); setForm(blank); load();
+      setEditing(null); setAdding(false); setForm(blank); setImageFile(null); setImagePreview(null); load();
     } catch { showToast('Failed to save event', 'error'); }
     finally { setSaving(false); }
   }
@@ -353,7 +373,9 @@ function EventsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'erro
 
   function startEdit(e: Event) {
     setEditing(e);
-    setForm({ title: e.title, date_label: e.date_label, description: e.description ?? '', is_featured: e.is_featured, sort_order: e.sort_order, title_ar: e.title_ar ?? '', title_ku: e.title_ku ?? '', description_ar: e.description_ar ?? '', description_ku: e.description_ku ?? '' });
+    setForm({ title: e.title, date_label: e.date_label, description: e.description ?? '', is_featured: e.is_featured, sort_order: e.sort_order, details: e.details ?? '', title_ar: e.title_ar ?? '', title_ku: e.title_ku ?? '', description_ar: e.description_ar ?? '', description_ku: e.description_ku ?? '', details_ar: e.details_ar ?? '', details_ku: e.details_ku ?? '' });
+    setImageFile(null);
+    setImagePreview(e.image_url ?? null);
     setAdding(true);
   }
 
@@ -364,7 +386,7 @@ function EventsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'erro
           <h2 className="text-2xl font-medium text-amber-50 mb-1">Events</h2>
           <p className="text-amber-500/50 text-sm">Manage upcoming events shown on the website.</p>
         </div>
-        <Btn onClick={() => { setAdding(!adding); setEditing(null); setForm(blank); }}>
+        <Btn onClick={() => { setAdding(!adding); setEditing(null); setForm(blank); setImageFile(null); setImagePreview(null); }}>
           {adding ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
           {adding ? 'Cancel' : 'Add Event'}
         </Btn>
@@ -378,7 +400,20 @@ function EventsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'erro
               <div className="space-y-4">
                 <Input label="Title" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Friday Khutbah" />
                 <Input label="Date / Time" value={form.date_label} onChange={e => setForm(p => ({ ...p, date_label: e.target.value }))} placeholder="e.g. Every Friday, 1:00 PM" />
-                <Textarea label="Description" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Brief description..." />
+                <Textarea label="Short Description" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Brief description shown on the card..." />
+                <Textarea label="Full Details (shown in modal)" value={form.details ?? ''} onChange={e => setForm(p => ({ ...p, details: e.target.value }))} placeholder="Full details, schedule, speakers, etc..." />
+                {/* Image upload */}
+                <div>
+                  <label className="text-xs font-medium text-amber-400/70 uppercase tracking-wider block mb-1.5">Event Image (optional)</label>
+                  <label className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-amber-500/20 rounded-2xl p-6 cursor-pointer hover:border-amber-400/40 transition-colors text-center">
+                    <Upload className="w-6 h-6 text-amber-500/40" />
+                    <span className="text-amber-500/60 text-sm">{imageFile ? imageFile.name : 'Click to choose an image (JPEG, PNG, WebP)'}</span>
+                    <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageFile} className="hidden" />
+                  </label>
+                  {imagePreview && (
+                    <img src={imagePreview} alt="Preview" className="mt-3 w-full rounded-2xl border border-amber-500/10 max-h-48 object-cover" />
+                  )}
+                </div>
                 <div className="flex items-center gap-3">
                   <input type="checkbox" id="featured" checked={form.is_featured} onChange={e => setForm(p => ({ ...p, is_featured: e.target.checked }))} className="accent-amber-400 w-4 h-4" />
                   <label htmlFor="featured" className="text-sm text-amber-300">Show on homepage (featured)</label>
@@ -392,6 +427,8 @@ function EventsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'erro
                     <Input label="Kurdish Title (ناو)" dir="rtl" value={form.title_ku ?? ''} onChange={e => setForm(p => ({ ...p, title_ku: e.target.value }))} placeholder="ناوی کوردی" />
                     <Textarea label="Arabic Description (وصف)" dir="rtl" value={form.description_ar ?? ''} onChange={e => setForm(p => ({ ...p, description_ar: e.target.value }))} placeholder="الوصف بالعربي" />
                     <Textarea label="Kurdish Description (پوخته)" dir="rtl" value={form.description_ku ?? ''} onChange={e => setForm(p => ({ ...p, description_ku: e.target.value }))} placeholder="پوختەی کوردی" />
+                    <Textarea label="Arabic Details (تفاصيل)" dir="rtl" value={form.details_ar ?? ''} onChange={e => setForm(p => ({ ...p, details_ar: e.target.value }))} placeholder="التفاصيل بالعربي" />
+                    <Textarea label="Kurdish Details (وردەکاری)" dir="rtl" value={form.details_ku ?? ''} onChange={e => setForm(p => ({ ...p, details_ku: e.target.value }))} placeholder="وردەکاری کوردی" />
                   </div>
                 </div>
                 <Btn onClick={save} disabled={saving || !form.title || !form.date_label}>
@@ -408,8 +445,11 @@ function EventsTab({ showToast }: { showToast: (m: string, t?: 'success' | 'erro
       <div className="space-y-3">
         {events.length === 0 && <p className="text-amber-500/40 text-sm text-center py-8">No events yet. Add one above.</p>}
         {events.map(e => (
-          <div key={e.id} className="bg-amber-950/20 border border-amber-500/10 rounded-2xl p-4 flex items-start justify-between gap-4">
-            <div className="min-w-0">
+          <div key={e.id} className="bg-amber-950/20 border border-amber-500/10 rounded-2xl p-4 flex items-start gap-4">
+            {e.image_url && (
+              <img src={e.image_url} alt={e.title} className="w-16 h-16 rounded-xl object-cover shrink-0 border border-amber-500/10" />
+            )}
+            <div className="min-w-0 flex-1">
               <p className="text-amber-100 font-medium text-sm truncate">{e.title}</p>
               <p className="text-amber-500/60 text-xs mt-0.5">{e.date_label}</p>
               {e.description && <p className="text-amber-100/40 text-xs mt-1 line-clamp-2">{e.description}</p>}
@@ -430,14 +470,23 @@ function CoursesTab({ showToast }: { showToast: (m: string, t?: 'success' | 'err
   const [courses, setCourses] = useState<Course[]>([]);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Course | null>(null);
-  const blank = { title: '', level: 'Beginner', duration: '', description: '', sort_order: 0, title_ar: '', title_ku: '' };
+  const blank = { title: '', level: 'Beginner', duration: '', description: '', sort_order: 0, details: '', title_ar: '', title_ku: '', description_ar: '', description_ku: '', details_ar: '', details_ku: '' };
   const [form, setForm] = useState(blank);
   const [saving, setSaving] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const load = useCallback(() => {
     fetch('/api/admin/courses').then(r => r.json()).then((data) => { if (Array.isArray(data)) setCourses(data); }).catch(() => {});
   }, []);
   useEffect(() => { load(); }, [load]);
+
+  function handleImageFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setImageFile(f);
+    setImagePreview(URL.createObjectURL(f));
+  }
 
   async function save() {
     setSaving(true);
@@ -446,8 +495,17 @@ function CoursesTab({ showToast }: { showToast: (m: string, t?: 'success' | 'err
         ? await fetch('/api/admin/courses', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editing.id, ...form }) })
         : await fetch('/api/admin/courses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
       if (!res.ok) throw new Error();
+      const saved = await res.json();
+      const entityId = editing ? editing.id : (saved.id ?? saved[0]?.id);
+      if (imageFile && entityId) {
+        const fd = new FormData();
+        fd.append('file', imageFile);
+        fd.append('entity', 'course');
+        fd.append('entityId', entityId);
+        await fetch('/api/admin/media', { method: 'POST', body: fd });
+      }
       showToast(editing ? 'Course updated' : 'Course added');
-      setEditing(null); setAdding(false); setForm(blank); load();
+      setEditing(null); setAdding(false); setForm(blank); setImageFile(null); setImagePreview(null); load();
     } catch { showToast('Failed to save', 'error'); }
     finally { setSaving(false); }
   }
@@ -461,7 +519,9 @@ function CoursesTab({ showToast }: { showToast: (m: string, t?: 'success' | 'err
 
   function startEdit(c: Course) {
     setEditing(c);
-    setForm({ title: c.title, level: c.level, duration: c.duration, description: c.description ?? '', sort_order: c.sort_order, title_ar: c.title_ar ?? '', title_ku: c.title_ku ?? '' });
+    setForm({ title: c.title, level: c.level, duration: c.duration, description: c.description ?? '', sort_order: c.sort_order, details: c.details ?? '', title_ar: c.title_ar ?? '', title_ku: c.title_ku ?? '', description_ar: c.description_ar ?? '', description_ku: c.description_ku ?? '', details_ar: c.details_ar ?? '', details_ku: c.details_ku ?? '' });
+    setImageFile(null);
+    setImagePreview(c.image_url ?? null);
     setAdding(true);
   }
 
@@ -472,7 +532,7 @@ function CoursesTab({ showToast }: { showToast: (m: string, t?: 'success' | 'err
           <h2 className="text-2xl font-medium text-amber-50 mb-1">Courses</h2>
           <p className="text-amber-500/50 text-sm">Manage Islamic courses offered by the mosque.</p>
         </div>
-        <Btn onClick={() => { setAdding(!adding); setEditing(null); setForm(blank); }}>
+        <Btn onClick={() => { setAdding(!adding); setEditing(null); setForm(blank); setImageFile(null); setImagePreview(null); }}>
           {adding ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
           {adding ? 'Cancel' : 'Add Course'}
         </Btn>
@@ -494,7 +554,20 @@ function CoursesTab({ showToast }: { showToast: (m: string, t?: 'success' | 'err
                   </select>
                 </div>
                 <Input label="Duration" value={form.duration} onChange={e => setForm(p => ({ ...p, duration: e.target.value }))} placeholder="e.g. 12 Weeks" />
-                <Textarea label="Description" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Brief description..." />
+                <Textarea label="Short Description" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Brief description shown on the card..." />
+                <Textarea label="Full Details (shown in modal)" value={form.details ?? ''} onChange={e => setForm(p => ({ ...p, details: e.target.value }))} placeholder="Full syllabus, schedule, requirements, etc..." />
+                {/* Image upload */}
+                <div>
+                  <label className="text-xs font-medium text-amber-400/70 uppercase tracking-wider block mb-1.5">Course Image (optional)</label>
+                  <label className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-amber-500/20 rounded-2xl p-6 cursor-pointer hover:border-amber-400/40 transition-colors text-center">
+                    <Upload className="w-6 h-6 text-amber-500/40" />
+                    <span className="text-amber-500/60 text-sm">{imageFile ? imageFile.name : 'Click to choose an image (JPEG, PNG, WebP)'}</span>
+                    <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageFile} className="hidden" />
+                  </label>
+                  {imagePreview && (
+                    <img src={imagePreview} alt="Preview" className="mt-3 w-full rounded-2xl border border-amber-500/10 max-h-48 object-cover" />
+                  )}
+                </div>
                 <Input label="Sort Order" type="number" value={form.sort_order} onChange={e => setForm(p => ({ ...p, sort_order: Number(e.target.value) }))} />
                 {/* Manual Translations */}
                 <div className="pt-2 border-t border-amber-500/10">
@@ -502,6 +575,10 @@ function CoursesTab({ showToast }: { showToast: (m: string, t?: 'success' | 'err
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Input label="Arabic Title (عنوان)" dir="rtl" value={form.title_ar ?? ''} onChange={e => setForm(p => ({ ...p, title_ar: e.target.value }))} placeholder="العنوان بالعربي" />
                     <Input label="Kurdish Title (ناو)" dir="rtl" value={form.title_ku ?? ''} onChange={e => setForm(p => ({ ...p, title_ku: e.target.value }))} placeholder="ناوی کوردی" />
+                    <Textarea label="Arabic Description (وصف)" dir="rtl" value={form.description_ar ?? ''} onChange={e => setForm(p => ({ ...p, description_ar: e.target.value }))} placeholder="الوصف بالعربي" />
+                    <Textarea label="Kurdish Description (پوخته)" dir="rtl" value={form.description_ku ?? ''} onChange={e => setForm(p => ({ ...p, description_ku: e.target.value }))} placeholder="پوختەی کوردی" />
+                    <Textarea label="Arabic Details (تفاصيل)" dir="rtl" value={form.details_ar ?? ''} onChange={e => setForm(p => ({ ...p, details_ar: e.target.value }))} placeholder="التفاصيل بالعربي" />
+                    <Textarea label="Kurdish Details (وردەکاری)" dir="rtl" value={form.details_ku ?? ''} onChange={e => setForm(p => ({ ...p, details_ku: e.target.value }))} placeholder="وردەکاری کوردی" />
                   </div>
                 </div>
                 <Btn onClick={save} disabled={saving || !form.title || !form.duration}>
@@ -517,8 +594,11 @@ function CoursesTab({ showToast }: { showToast: (m: string, t?: 'success' | 'err
       <div className="space-y-3">
         {courses.length === 0 && <p className="text-amber-500/40 text-sm text-center py-8">No courses yet.</p>}
         {courses.map(c => (
-          <div key={c.id} className="bg-amber-950/20 border border-amber-500/10 rounded-2xl p-4 flex items-start justify-between gap-4">
-            <div className="min-w-0">
+          <div key={c.id} className="bg-amber-950/20 border border-amber-500/10 rounded-2xl p-4 flex items-start gap-4">
+            {c.image_url && (
+              <img src={c.image_url} alt={c.title} className="w-16 h-16 rounded-xl object-cover shrink-0 border border-amber-500/10" />
+            )}
+            <div className="min-w-0 flex-1">
               <p className="text-amber-100 font-medium text-sm">{c.title}</p>
               <p className="text-amber-500/60 text-xs mt-0.5">{c.level} · {c.duration}</p>
             </div>
@@ -635,6 +715,8 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
     feature_events: 'true',
     feature_courses: 'true',
     feature_donate: 'true',
+    feature_books: 'true',
+    animation_mode: 'full',
   });
   const [saving, setSaving] = useState(false);
   const [retranslating, setRetranslating] = useState(false);
@@ -664,6 +746,8 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
         feature_events:   c.feature_events   ?? prev.feature_events,
         feature_courses:  c.feature_courses  ?? prev.feature_courses,
         feature_donate:   c.feature_donate   ?? prev.feature_donate,
+        feature_books:    c.feature_books    ?? prev.feature_books,
+        animation_mode:   c.animation_mode   ?? prev.animation_mode,
       }));
     }).catch(() => {});
   }, []);
@@ -687,57 +771,26 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
     finally { setSaving(false); }
   }
 
-  const themes: { id: Theme; label: string; desc: string; bgHex: string; accentHigh: string; accentMid: string; accentLow: string; dotColor: string }[] = [
-    {
-      id: 'aurum',
-      label: 'Aurum',
-      desc: 'Classic gold and amber. Timeless warmth.',
-      bgHex: '#0a0804',
-      accentHigh: 'oklch(0.879 0.169 91.2)',
-      accentMid:  'oklch(0.769 0.188 70.1)',
-      accentLow:  'oklch(0.962 0.059 95.2)',
-      dotColor:   'oklch(0.828 0.189 84.4)',
-    },
-    {
-      id: 'emerald',
-      label: 'Emerald',
-      desc: 'Islamic green. Peaceful and traditional.',
-      bgHex: '#040a06',
-      accentHigh: 'oklch(0.879 0.169 145)',
-      accentMid:  'oklch(0.769 0.188 145)',
-      accentLow:  'oklch(0.962 0.059 145)',
-      dotColor:   'oklch(0.828 0.189 145)',
-    },
-    {
-      id: 'sapphire',
-      label: 'Sapphire',
-      desc: 'Deep midnight blue. Serene and distinguished.',
-      bgHex: '#04080f',
-      accentHigh: 'oklch(0.879 0.169 265)',
-      accentMid:  'oklch(0.769 0.188 265)',
-      accentLow:  'oklch(0.962 0.059 265)',
-      dotColor:   'oklch(0.828 0.189 265)',
-    },
-    {
-      id: 'teal',
-      label: 'Teal',
-      desc: 'Cool teal tones. Fresh and modern.',
-      bgHex: '#040b0b',
-      accentHigh: 'oklch(0.879 0.169 190)',
-      accentMid:  'oklch(0.769 0.188 190)',
-      accentLow:  'oklch(0.962 0.059 190)',
-      dotColor:   'oklch(0.828 0.189 190)',
-    },
-    {
-      id: 'copper',
-      label: 'Copper',
-      desc: 'Warm bronze tones. Rich and grounded.',
-      bgHex: '#0a0602',
-      accentHigh: 'oklch(0.879 0.169 45)',
-      accentMid:  'oklch(0.769 0.205 45)',
-      accentLow:  'oklch(0.962 0.059 45)',
-      dotColor:   'oklch(0.828 0.210 45)',
-    },
+  type ThemeOption = { id: Theme; label: string; desc: string; bgHex: string; accentHigh: string; accentMid: string; accentLow: string; dotColor: string; isLight?: boolean };
+  const darkThemes: ThemeOption[] = [
+    { id: 'aurum',    label: 'Aurum',    desc: 'Classic gold and amber.',       bgHex: '#0a0804', accentHigh: 'oklch(0.879 0.169 85)',  accentMid: 'oklch(0.769 0.188 85)',  accentLow: 'oklch(0.962 0.059 85)',  dotColor: 'oklch(0.828 0.189 85)' },
+    { id: 'emerald',  label: 'Emerald',  desc: 'Islamic green. Traditional.',   bgHex: '#040a06', accentHigh: 'oklch(0.879 0.169 145)', accentMid: 'oklch(0.769 0.188 145)', accentLow: 'oklch(0.962 0.059 145)', dotColor: 'oklch(0.828 0.189 145)' },
+    { id: 'sapphire', label: 'Sapphire', desc: 'Midnight blue. Distinguished.', bgHex: '#04080f', accentHigh: 'oklch(0.879 0.169 265)', accentMid: 'oklch(0.769 0.188 265)', accentLow: 'oklch(0.962 0.059 265)', dotColor: 'oklch(0.828 0.189 265)' },
+    { id: 'teal',     label: 'Teal',     desc: 'Cool teal. Fresh and modern.',  bgHex: '#040b0b', accentHigh: 'oklch(0.879 0.169 190)', accentMid: 'oklch(0.769 0.188 190)', accentLow: 'oklch(0.962 0.059 190)', dotColor: 'oklch(0.828 0.189 190)' },
+    { id: 'copper',   label: 'Copper',   desc: 'Warm bronze. Rich and earthy.', bgHex: '#0a0602', accentHigh: 'oklch(0.879 0.169 45)',  accentMid: 'oklch(0.769 0.205 45)',  accentLow: 'oklch(0.962 0.059 45)',  dotColor: 'oklch(0.828 0.210 45)' },
+    { id: 'rose',     label: 'Rose',     desc: 'Warm rose-red. Vibrant.',       bgHex: '#0f0405', accentHigh: 'oklch(0.879 0.169 10)',  accentMid: 'oklch(0.769 0.210 10)',  accentLow: 'oklch(0.962 0.059 10)',  dotColor: 'oklch(0.828 0.200 10)' },
+    { id: 'violet',   label: 'Violet',   desc: 'Rich purple. Regal.',           bgHex: '#090510', accentHigh: 'oklch(0.879 0.169 300)', accentMid: 'oklch(0.769 0.188 300)', accentLow: 'oklch(0.962 0.059 300)', dotColor: 'oklch(0.828 0.189 300)' },
+    { id: 'lime',     label: 'Lime',     desc: 'Yellow-green. Energetic.',      bgHex: '#060a04', accentHigh: 'oklch(0.879 0.169 130)', accentMid: 'oklch(0.769 0.205 130)', accentLow: 'oklch(0.962 0.059 130)', dotColor: 'oklch(0.828 0.210 130)' },
+  ];
+  const lightThemes: ThemeOption[] = [
+    { id: 'aurum-light',    label: 'Aurum Light',    desc: 'Warm gold on white.', bgHex: '#f8f5ee', accentHigh: 'oklch(0.20 0.055 85)',  accentMid: 'oklch(0.38 0.120 85)',  accentLow: 'oklch(0.15 0.035 85)',  dotColor: 'oklch(0.38 0.120 85)',  isLight: true },
+    { id: 'emerald-light',  label: 'Emerald Light',  desc: 'Green on white.',     bgHex: '#f0faf5', accentHigh: 'oklch(0.20 0.055 145)', accentMid: 'oklch(0.36 0.120 145)', accentLow: 'oklch(0.15 0.035 145)', dotColor: 'oklch(0.36 0.120 145)', isLight: true },
+    { id: 'sapphire-light', label: 'Sapphire Light', desc: 'Blue on white.',      bgHex: '#f0f4ff', accentHigh: 'oklch(0.20 0.055 265)', accentMid: 'oklch(0.38 0.120 265)', accentLow: 'oklch(0.15 0.035 265)', dotColor: 'oklch(0.38 0.120 265)', isLight: true },
+    { id: 'teal-light',     label: 'Teal Light',     desc: 'Teal on white.',      bgHex: '#f0fafa', accentHigh: 'oklch(0.20 0.055 190)', accentMid: 'oklch(0.36 0.120 190)', accentLow: 'oklch(0.15 0.035 190)', dotColor: 'oklch(0.36 0.120 190)', isLight: true },
+    { id: 'copper-light',   label: 'Copper Light',   desc: 'Bronze on white.',    bgHex: '#faf5ee', accentHigh: 'oklch(0.20 0.055 45)',  accentMid: 'oklch(0.38 0.130 45)',  accentLow: 'oklch(0.15 0.035 45)',  dotColor: 'oklch(0.38 0.130 45)',  isLight: true },
+    { id: 'rose-light',     label: 'Rose Light',     desc: 'Rose-pink on white.', bgHex: '#fff0f2', accentHigh: 'oklch(0.20 0.055 10)',  accentMid: 'oklch(0.38 0.130 10)',  accentLow: 'oklch(0.15 0.035 10)',  dotColor: 'oklch(0.38 0.130 10)',  isLight: true },
+    { id: 'violet-light',   label: 'Violet Light',   desc: 'Purple on white.',    bgHex: '#f5f0ff', accentHigh: 'oklch(0.20 0.055 300)', accentMid: 'oklch(0.38 0.120 300)', accentLow: 'oklch(0.15 0.035 300)', dotColor: 'oklch(0.38 0.120 300)', isLight: true },
+    { id: 'lime-light',     label: 'Lime Light',     desc: 'Green-lime on white.',bgHex: '#f5faf0', accentHigh: 'oklch(0.20 0.055 130)', accentMid: 'oklch(0.36 0.130 130)', accentLow: 'oklch(0.15 0.035 130)', dotColor: 'oklch(0.36 0.130 130)', isLight: true },
   ];
 
   return (
@@ -753,57 +806,56 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
       </Section>
 
       <Section title="Appearance">
-        <div className="space-y-4">
+        <div className="space-y-6">
           <p className="text-amber-500/50 text-sm -mt-2">Choose a colour palette for the entire site. Changes apply instantly.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {themes.map(t => (
-              <button
-                key={t.id}
-                onClick={() => setTheme(t.id)}
-                style={{ borderColor: activeTheme === t.id ? t.dotColor : undefined }}
-                className={`text-left rounded-2xl p-5 border-2 transition-all duration-200 ${
-                  activeTheme === t.id
-                    ? 'bg-white/5'
-                    : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20'
-                }`}
-              >
-                {/* Mini prayer row preview — always shows THIS theme's own colours */}
-                <div
-                  className="flex items-center gap-3 mb-4 rounded-xl px-4 py-3 border"
-                  style={{ backgroundColor: t.bgHex, borderColor: t.dotColor + '33' }}
-                >
-                  <span
-                    className="text-xs font-semibold uppercase tracking-wider w-16 shrink-0"
-                    style={{ color: t.accentHigh }}
-                  >Fajr</span>
-                  <div className="flex-1 text-center">
-                    <p className="text-[10px] uppercase tracking-widest mb-0.5" style={{ color: t.accentMid + 'aa' }}>Azan</p>
-                    <p className="font-display text-sm" style={{ color: t.accentLow }}>04:19</p>
-                  </div>
-                  <div className="w-px self-stretch" style={{ backgroundColor: t.dotColor + '33' }} />
-                  <div className="flex-1 text-center">
-                    <p className="text-[10px] uppercase tracking-widest mb-0.5" style={{ color: t.accentMid + 'aa' }}>Jama&apos;at</p>
-                    <p className="font-display text-sm" style={{ color: t.accentLow }}>06:00 AM</p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium" style={{ color: t.accentLow }}>{t.label}</p>
-                    <p className="text-xs mt-0.5 opacity-60" style={{ color: t.accentMid }}>{t.desc}</p>
-                  </div>
-                  <div
-                    className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ml-3 transition-colors"
-                    style={{
-                      borderColor: t.dotColor,
-                      backgroundColor: activeTheme === t.id ? t.dotColor : 'transparent',
-                    }}
+          {([
+            { label: '🌙 Dark Themes', items: darkThemes },
+            { label: '☀️ Light Themes', items: lightThemes },
+          ] as { label: string; items: ThemeOption[] }[]).map(group => (
+            <div key={group.label}>
+              <p className="text-xs font-medium text-amber-500/60 uppercase tracking-widest mb-3">{group.label}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {group.items.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => setTheme(t.id)}
+                    style={{ borderColor: activeTheme === t.id ? t.dotColor : undefined }}
+                    className={`text-left rounded-2xl p-4 border-2 transition-all duration-200 ${
+                      activeTheme === t.id
+                        ? 'bg-white/5'
+                        : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20'
+                    }`}
                   >
-                    {activeTheme === t.id && <Check className="w-3 h-3" style={{ color: t.bgHex }} />}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
+                    <div
+                      className="flex items-center gap-2 mb-3 rounded-xl px-3 py-2 border"
+                      style={{ backgroundColor: t.bgHex, borderColor: t.dotColor + '33' }}
+                    >
+                      <span className="text-[11px] font-semibold uppercase tracking-wide shrink-0" style={{ color: t.accentHigh }}>Fajr</span>
+                      <div className="flex-1 text-center">
+                        <p className="font-display text-xs" style={{ color: t.accentLow }}>04:19</p>
+                      </div>
+                      <div className="w-px self-stretch" style={{ backgroundColor: t.dotColor + '33' }} />
+                      <div className="flex-1 text-center">
+                        <p className="font-display text-xs" style={{ color: t.accentLow }}>06:00</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium" style={{ color: t.isLight ? t.accentHigh : t.accentLow }}>{t.label}</p>
+                        <p className="text-[10px] mt-0.5 opacity-60" style={{ color: t.accentMid }}>{t.desc}</p>
+                      </div>
+                      <div
+                        className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ml-2 transition-colors"
+                        style={{ borderColor: t.dotColor, backgroundColor: activeTheme === t.id ? t.dotColor : 'transparent' }}
+                      >
+                        {activeTheme === t.id && <Check className="w-2.5 h-2.5" style={{ color: t.bgHex }} />}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
           <p className="text-amber-500/40 text-xs">Theme is applied site-wide immediately. Save to persist across sessions.</p>
         </div>
       </Section>
@@ -833,8 +885,9 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
           {([
             { key: 'feature_events',  label: 'Events Section',  desc: 'Upcoming events and the events page link' },
             { key: 'feature_courses', label: 'Courses Section', desc: 'Islamic courses on the homepage' },
+            { key: 'feature_books',   label: 'Books Section',   desc: 'Recommended books on the homepage' },
             { key: 'feature_donate',  label: 'Donate Section',  desc: 'Donation call-to-action on the homepage' },
-          ] as { key: 'feature_events' | 'feature_courses' | 'feature_donate'; label: string; desc: string }[]).map(({ key, label, desc }) => {
+          ] as { key: 'feature_events' | 'feature_courses' | 'feature_books' | 'feature_donate'; label: string; desc: string }[]).map(({ key, label, desc }) => {
             const enabled = form[key] !== 'false';
             return (
               <div key={key} className="flex items-center justify-between p-4 rounded-2xl bg-amber-950/20 border border-amber-500/10">
@@ -852,6 +905,27 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
               </div>
             );
           })}
+        </div>
+      </Section>
+
+      <Section title="Animation Mode">
+        <p className="text-amber-500/50 text-sm -mt-2 mb-4">If the site feels slow on mobile, switch to Simplified to reduce GPU-heavy effects (blur, parallax, infinite rotations).</p>
+        <div className="flex gap-3">
+          {(['full', 'simplified'] as const).map(mode => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setForm(p => ({ ...p, animation_mode: mode }))}
+              className={`flex-1 py-4 px-4 rounded-2xl border text-sm font-medium transition-all duration-200 ${
+                form.animation_mode === mode
+                  ? 'bg-amber-500/20 border-amber-400/60 text-amber-200'
+                  : 'bg-amber-950/20 border-amber-500/10 text-amber-500/50 hover:border-amber-500/30 hover:text-amber-400'
+              }`}
+            >
+              <div className="font-semibold mb-0.5 capitalize">{mode}</div>
+              <div className="text-xs opacity-70">{mode === 'full' ? 'All effects enabled' : 'Reduced for performance'}</div>
+            </button>
+          ))}
         </div>
       </Section>
 
@@ -1110,6 +1184,263 @@ function DhikrTab({ showToast }: { showToast: (m: string, t?: 'success' | 'error
               <Plus className="w-4 h-4" /> Add Phrase
             </Btn>
           )}
+        </div>
+      </Section>
+    </div>
+  );
+}
+
+// ─── Books Tab ──────────────────────────────────────────────────────────────────
+interface BookCategory { id: string; name: string; name_ar?: string; name_ku?: string; sort_order: number; }
+interface Book { id: string; title: string; author?: string; description?: string; image_url?: string; external_link?: string; is_active: boolean; sort_order: number; category_id?: string; title_ar?: string; title_ku?: string; description_ar?: string; description_ku?: string; }
+
+function BooksTab({ showToast }: { showToast: (m: string, t?: 'success' | 'error') => void }) {
+  const [categories, setCategories] = useState<BookCategory[]>([]);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [selectedCatId, setSelectedCatId] = useState<string | null>(null);
+  const [addingCat, setAddingCat] = useState(false);
+  const [editingCat, setEditingCat] = useState<BookCategory | null>(null);
+  const [catForm, setCatForm] = useState({ name: '', name_ar: '', name_ku: '', sort_order: 0 });
+  const [addingBook, setAddingBook] = useState(false);
+  const [editingBook, setEditingBook] = useState<Book | null>(null);
+  const blankBook = { title: '', author: '', description: '', external_link: '', is_active: true, sort_order: 0, category_id: '', title_ar: '', title_ku: '', description_ar: '', description_ku: '' };
+  const [bookForm, setBookForm] = useState(blankBook);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [savingCat, setSavingCat] = useState(false);
+  const [savingBook, setSavingBook] = useState(false);
+
+  const loadAll = useCallback(() => {
+    fetch('/api/admin/book-categories').then(r => r.json()).then(d => { if (Array.isArray(d)) setCategories(d); }).catch(() => {});
+    fetch('/api/admin/books').then(r => r.json()).then(d => { if (Array.isArray(d)) setBooks(d); }).catch(() => {});
+  }, []);
+  useEffect(() => { loadAll(); }, [loadAll]);
+
+  const filteredBooks = selectedCatId === null
+    ? books
+    : selectedCatId === '__none__'
+      ? books.filter(b => !b.category_id || !categories.find(c => c.id === b.category_id))
+      : books.filter(b => b.category_id === selectedCatId);
+
+  function handleImageFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setImageFile(f);
+    setImagePreview(URL.createObjectURL(f));
+  }
+
+  async function saveCat() {
+    setSavingCat(true);
+    try {
+      const res = editingCat
+        ? await fetch('/api/admin/book-categories', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editingCat.id, ...catForm }) })
+        : await fetch('/api/admin/book-categories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(catForm) });
+      if (!res.ok) throw new Error();
+      showToast(editingCat ? 'Category updated' : 'Category added');
+      setEditingCat(null); setAddingCat(false); setCatForm({ name: '', name_ar: '', name_ku: '', sort_order: 0 }); loadAll();
+    } catch { showToast('Failed to save category', 'error'); }
+    finally { setSavingCat(false); }
+  }
+
+  async function delCat(id: string) {
+    if (!confirm('Delete this category? Books will not be deleted.')) return;
+    const res = await fetch('/api/admin/book-categories', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+    if (res.ok) { showToast('Category deleted'); if (selectedCatId === id) setSelectedCatId(null); loadAll(); }
+    else showToast('Failed to delete', 'error');
+  }
+
+  async function saveBook() {
+    setSavingBook(true);
+    try {
+      const payload = { ...bookForm, category_id: bookForm.category_id || null };
+      const res = editingBook
+        ? await fetch('/api/admin/books', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editingBook.id, ...payload }) })
+        : await fetch('/api/admin/books', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!res.ok) throw new Error();
+      const saved = await res.json();
+      const entityId = editingBook ? editingBook.id : (saved.id ?? saved[0]?.id);
+      if (imageFile && entityId) {
+        const fd = new FormData();
+        fd.append('file', imageFile);
+        fd.append('entity', 'book');
+        fd.append('entityId', entityId);
+        await fetch('/api/admin/media', { method: 'POST', body: fd });
+      }
+      showToast(editingBook ? 'Book updated' : 'Book added');
+      setEditingBook(null); setAddingBook(false); setBookForm(blankBook); setImageFile(null); setImagePreview(null); loadAll();
+    } catch { showToast('Failed to save book', 'error'); }
+    finally { setSavingBook(false); }
+  }
+
+  async function delBook(id: string) {
+    if (!confirm('Delete this book?')) return;
+    const res = await fetch('/api/admin/books', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+    if (res.ok) { showToast('Book deleted'); loadAll(); }
+    else showToast('Failed to delete', 'error');
+  }
+
+  function startEditBook(b: Book) {
+    setEditingBook(b);
+    setBookForm({ title: b.title, author: b.author ?? '', description: b.description ?? '', external_link: b.external_link ?? '', is_active: b.is_active, sort_order: b.sort_order, category_id: b.category_id ?? '', title_ar: b.title_ar ?? '', title_ku: b.title_ku ?? '', description_ar: b.description_ar ?? '', description_ku: b.description_ku ?? '' });
+    setImageFile(null); setImagePreview(b.image_url ?? null);
+    setAddingBook(true);
+  }
+
+  function startEditCat(c: BookCategory) {
+    setEditingCat(c);
+    setCatForm({ name: c.name, name_ar: c.name_ar ?? '', name_ku: c.name_ku ?? '', sort_order: c.sort_order });
+    setAddingCat(true);
+  }
+
+  return (
+    <div className="space-y-6 max-w-4xl mx-auto">
+      <div>
+        <h2 className="text-2xl font-medium text-amber-50 mb-1">Recommended Books</h2>
+        <p className="text-amber-500/50 text-sm">Manage book categories and books shown on the website.</p>
+      </div>
+
+      {/* Categories */}
+      <Section title="Categories">
+        <div className="space-y-3 mb-4">
+          {categories.length === 0 && <p className="text-amber-500/40 text-sm">No categories yet.</p>}
+          {categories.map(cat => (
+            <div key={cat.id} className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${selectedCatId === cat.id ? 'bg-amber-500/15 border-amber-400/40 text-amber-200' : 'bg-amber-950/20 border-amber-500/10 text-amber-100 hover:border-amber-500/30'}`}
+              onClick={() => setSelectedCatId(selectedCatId === cat.id ? null : cat.id)}>
+              <span className="text-sm font-medium">{cat.name}</span>
+              <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                <Btn size="sm" variant="ghost" onClick={() => startEditCat(cat)}><Edit2 className="w-3.5 h-3.5" /></Btn>
+                <Btn size="sm" variant="danger" onClick={() => delCat(cat.id)}><Trash2 className="w-3.5 h-3.5" /></Btn>
+              </div>
+            </div>
+          ))}
+        </div>
+        <AnimatePresence>
+          {addingCat && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+              <div className="bg-amber-950/30 border border-amber-500/20 rounded-2xl p-4 space-y-3 mb-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Input label="Category Name" value={catForm.name} onChange={e => setCatForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Kids" />
+                  <Input label="Sort Order" type="number" value={catForm.sort_order} onChange={e => setCatForm(p => ({ ...p, sort_order: Number(e.target.value) }))} />
+                  <Input label="Arabic Name (اسم)" dir="rtl" value={catForm.name_ar} onChange={e => setCatForm(p => ({ ...p, name_ar: e.target.value }))} placeholder="للأطفال" />
+                  <Input label="Kurdish Name (ناو)" dir="rtl" value={catForm.name_ku} onChange={e => setCatForm(p => ({ ...p, name_ku: e.target.value }))} placeholder="منداڵان" />
+                </div>
+                <div className="flex gap-2">
+                  <Btn onClick={saveCat} disabled={savingCat || !catForm.name}>
+                    {savingCat ? <span className="w-4 h-4 border-2 border-[#0a0804]/30 border-t-[#0a0804] rounded-full animate-spin" /> : <Check className="w-4 h-4" />}
+                    {editingCat ? 'Save' : 'Add Category'}
+                  </Btn>
+                  <Btn variant="ghost" size="sm" onClick={() => { setAddingCat(false); setEditingCat(null); setCatForm({ name: '', name_ar: '', name_ku: '', sort_order: 0 }); }}><X className="w-3.5 h-3.5" /> Cancel</Btn>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {!addingCat && (
+          <Btn variant="ghost" onClick={() => { setAddingCat(true); setEditingCat(null); }}>
+            <Plus className="w-4 h-4" /> Add Category
+          </Btn>
+        )}
+      </Section>
+
+      {/* Books */}
+      <Section title={selectedCatId ? `Books — ${categories.find(c => c.id === selectedCatId)?.name ?? ''}` : 'All Books'}>
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={() => setSelectedCatId(null)} className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${selectedCatId === null ? 'bg-amber-500/20 border-amber-400/40 text-amber-200' : 'bg-transparent border-amber-500/20 text-amber-500/60 hover:border-amber-500/40'}`}>All</button>
+            {categories.map(cat => (
+              <button key={cat.id} onClick={() => setSelectedCatId(selectedCatId === cat.id ? null : cat.id)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${selectedCatId === cat.id ? 'bg-amber-500/20 border-amber-400/40 text-amber-200' : 'bg-transparent border-amber-500/20 text-amber-500/60 hover:border-amber-500/40'}`}>
+                {cat.name}
+              </button>
+            ))}
+          </div>
+          <Btn onClick={() => { setAddingBook(!addingBook); setEditingBook(null); setBookForm({ ...blankBook, category_id: selectedCatId ?? '' }); setImageFile(null); setImagePreview(null); }}>
+            {addingBook ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+            {addingBook ? 'Cancel' : 'Add Book'}
+          </Btn>
+        </div>
+
+        <AnimatePresence>
+          {addingBook && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+              <div className="bg-amber-950/30 border border-amber-500/20 rounded-2xl p-4 space-y-4 mb-4">
+                <p className="text-xs font-medium text-amber-400/70 uppercase tracking-wider">{editingBook ? 'Edit Book' : 'New Book'}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Input label="Title" value={bookForm.title} onChange={e => setBookForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Don't Be Sad" />
+                  <Input label="Author" value={bookForm.author ?? ''} onChange={e => setBookForm(p => ({ ...p, author: e.target.value }))} placeholder="e.g. Aaidh al-Qarni" />
+                </div>
+                <Textarea label="Description" value={bookForm.description ?? ''} onChange={e => setBookForm(p => ({ ...p, description: e.target.value }))} placeholder="Brief description of the book..." />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-amber-400/70 uppercase tracking-wider">Category</label>
+                    <select value={bookForm.category_id ?? ''} onChange={e => setBookForm(p => ({ ...p, category_id: e.target.value }))}
+                      className="bg-amber-950/30 border border-amber-500/20 rounded-xl px-4 py-3 text-amber-100 text-sm focus:outline-none focus:border-amber-400/50">
+                      <option value="" className="bg-[#0a0804]">— No category —</option>
+                      {categories.map(cat => <option key={cat.id} value={cat.id} className="bg-[#0a0804]">{cat.name}</option>)}
+                    </select>
+                  </div>
+                  <Input label="External Link (optional)" value={bookForm.external_link ?? ''} onChange={e => setBookForm(p => ({ ...p, external_link: e.target.value }))} placeholder="https://..." />
+                </div>
+                {/* Cover image */}
+                <div>
+                  <label className="text-xs font-medium text-amber-400/70 uppercase tracking-wider block mb-1.5">Cover Image (optional)</label>
+                  <label className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-amber-500/20 rounded-2xl p-6 cursor-pointer hover:border-amber-400/40 transition-colors text-center">
+                    <Upload className="w-6 h-6 text-amber-500/40" />
+                    <span className="text-amber-500/60 text-sm">{imageFile ? imageFile.name : 'Click to choose an image (JPEG, PNG, WebP)'}</span>
+                    <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageFile} className="hidden" />
+                  </label>
+                  {imagePreview && (
+                    <img src={imagePreview} alt="Preview" className="mt-3 max-h-40 rounded-2xl border border-amber-500/10 object-contain mx-auto" />
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Input label="Sort Order" type="number" value={bookForm.sort_order} onChange={e => setBookForm(p => ({ ...p, sort_order: Number(e.target.value) }))} />
+                  <div className="flex items-center gap-3 pt-6">
+                    <input type="checkbox" id="book-active" checked={bookForm.is_active} onChange={e => setBookForm(p => ({ ...p, is_active: e.target.checked }))} className="accent-amber-400 w-4 h-4" />
+                    <label htmlFor="book-active" className="text-sm text-amber-300">Show on website</label>
+                  </div>
+                </div>
+                {/* Manual translations */}
+                <div className="pt-2 border-t border-amber-500/10">
+                  <p className="flex items-center gap-2 text-xs font-medium text-amber-400/50 uppercase tracking-wider mb-3"><Globe className="w-3.5 h-3.5" /> Translations (optional)</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Input label="Arabic Title" dir="rtl" value={bookForm.title_ar ?? ''} onChange={e => setBookForm(p => ({ ...p, title_ar: e.target.value }))} placeholder="العنوان بالعربي" />
+                    <Input label="Kurdish Title" dir="rtl" value={bookForm.title_ku ?? ''} onChange={e => setBookForm(p => ({ ...p, title_ku: e.target.value }))} placeholder="ناوی کوردی" />
+                    <Textarea label="Arabic Description" dir="rtl" value={bookForm.description_ar ?? ''} onChange={e => setBookForm(p => ({ ...p, description_ar: e.target.value }))} placeholder="الوصف بالعربي" />
+                    <Textarea label="Kurdish Description" dir="rtl" value={bookForm.description_ku ?? ''} onChange={e => setBookForm(p => ({ ...p, description_ku: e.target.value }))} placeholder="پوختەی کوردی" />
+                  </div>
+                </div>
+                <Btn onClick={saveBook} disabled={savingBook || !bookForm.title}>
+                  {savingBook ? <span className="w-4 h-4 border-2 border-[#0a0804]/30 border-t-[#0a0804] rounded-full animate-spin" /> : <Check className="w-4 h-4" />}
+                  {editingBook ? 'Save Changes' : 'Add Book'}
+                </Btn>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="space-y-3">
+          {filteredBooks.length === 0 && <p className="text-amber-500/40 text-sm text-center py-8">No books here yet.</p>}
+          {filteredBooks.map(b => (
+            <div key={b.id} className="bg-amber-950/20 border border-amber-500/10 rounded-2xl p-4 flex items-start gap-4">
+              {b.image_url && (
+                <img src={b.image_url} alt={b.title} className="w-12 h-16 rounded-xl object-cover shrink-0 border border-amber-500/10" />
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-amber-100 font-medium text-sm">{b.title}</p>
+                  {!b.is_active && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500/60 border border-amber-500/20">Hidden</span>}
+                  {b.external_link && <ExternalLink className="w-3 h-3 text-amber-500/40 shrink-0" />}
+                </div>
+                {b.author && <p className="text-amber-500/60 text-xs mt-0.5">{b.author}</p>}
+                {b.description && <p className="text-amber-100/40 text-xs mt-1 line-clamp-2">{b.description}</p>}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Btn size="sm" variant="ghost" onClick={() => startEditBook(b)}><Edit2 className="w-3.5 h-3.5" /></Btn>
+                <Btn size="sm" variant="danger" onClick={() => delBook(b.id)}><Trash2 className="w-3.5 h-3.5" /></Btn>
+              </div>
+            </div>
+          ))}
         </div>
       </Section>
     </div>

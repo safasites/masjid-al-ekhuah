@@ -3,6 +3,7 @@
 @theme {
   --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  --font-arabic: var(--font-arabic), 'Amiri', serif;
 }
 
 @keyframes gradient-xy {
@@ -255,3 +256,297 @@
 [data-theme="copper"] .text-\[\#0a0804\]         { color: #0a0602; }
 [data-theme="copper"] .border-t-\[\#0a0804\]     { border-top-color: #0a0602; }
 [data-theme="copper"] .border-\[\#0a0804\]\/30   { border-color: rgb(10 6 2 / 0.30); }
+
+/* ── Theme: rose ─────────────────────────────────────────────────────────────
+   Warm rose-red. H=10 (red-pink)
+   Background: #0f0405 (deep rose-black)
+   ──────────────────────────────────────────────────────────────────────────── */
+[data-theme="rose"] {
+  --theme-glow:      rgba(251, 113, 133, 0.4);
+  --theme-glow-soft: rgba(251, 113, 133, 0.2);
+  --theme-rgb:       251 113 133;
+  --color-amber-50:  oklch(0.987 0.022 10);
+  --color-amber-100: oklch(0.962 0.059 10);
+  --color-amber-200: oklch(0.924 0.120 10);
+  --color-amber-300: oklch(0.879 0.169 10);
+  --color-amber-400: oklch(0.828 0.200 10);
+  --color-amber-500: oklch(0.769 0.210 10);
+  --color-amber-600: oklch(0.666 0.190 10);
+  --color-amber-700: oklch(0.555 0.163 10);
+  --color-amber-800: oklch(0.473 0.137 10);
+  --color-amber-900: oklch(0.414 0.112 10);
+  --color-amber-950: oklch(0.279 0.077 10);
+}
+[data-theme="rose"] .bg-\[\#0a0804\]          { background-color: #0f0405; }
+[data-theme="rose"] .text-\[\#0a0804\]         { color: #0f0405; }
+[data-theme="rose"] .border-t-\[\#0a0804\]     { border-top-color: #0f0405; }
+[data-theme="rose"] .border-\[\#0a0804\]\/30   { border-color: rgb(15 4 5 / 0.30); }
+
+/* ── Theme: violet ───────────────────────────────────────────────────────────
+   Rich purple. H=300
+   Background: #090510 (deep purple-black)
+   ──────────────────────────────────────────────────────────────────────────── */
+[data-theme="violet"] {
+  --theme-glow:      rgba(167, 139, 250, 0.4);
+  --theme-glow-soft: rgba(167, 139, 250, 0.2);
+  --theme-rgb:       167 139 250;
+  --color-amber-50:  oklch(0.987 0.022 300);
+  --color-amber-100: oklch(0.962 0.059 300);
+  --color-amber-200: oklch(0.924 0.120 300);
+  --color-amber-300: oklch(0.879 0.169 300);
+  --color-amber-400: oklch(0.828 0.189 300);
+  --color-amber-500: oklch(0.769 0.188 300);
+  --color-amber-600: oklch(0.666 0.179 300);
+  --color-amber-700: oklch(0.555 0.163 300);
+  --color-amber-800: oklch(0.473 0.137 300);
+  --color-amber-900: oklch(0.414 0.112 300);
+  --color-amber-950: oklch(0.279 0.077 300);
+}
+[data-theme="violet"] .bg-\[\#0a0804\]          { background-color: #090510; }
+[data-theme="violet"] .text-\[\#0a0804\]         { color: #090510; }
+[data-theme="violet"] .border-t-\[\#0a0804\]     { border-top-color: #090510; }
+[data-theme="violet"] .border-\[\#0a0804\]\/30   { border-color: rgb(9 5 16 / 0.30); }
+
+/* ── Theme: lime ─────────────────────────────────────────────────────────────
+   Vibrant yellow-green. H=130
+   Background: #060a04 (deep lime-black)
+   ──────────────────────────────────────────────────────────────────────────── */
+[data-theme="lime"] {
+  --theme-glow:      rgba(163, 230, 53, 0.4);
+  --theme-glow-soft: rgba(163, 230, 53, 0.2);
+  --theme-rgb:       163 230 53;
+  --color-amber-50:  oklch(0.987 0.022 130);
+  --color-amber-100: oklch(0.962 0.059 130);
+  --color-amber-200: oklch(0.924 0.120 130);
+  --color-amber-300: oklch(0.879 0.169 130);
+  --color-amber-400: oklch(0.828 0.210 130);
+  --color-amber-500: oklch(0.769 0.205 130);
+  --color-amber-600: oklch(0.666 0.185 130);
+  --color-amber-700: oklch(0.555 0.163 130);
+  --color-amber-800: oklch(0.473 0.137 130);
+  --color-amber-900: oklch(0.414 0.112 130);
+  --color-amber-950: oklch(0.279 0.077 130);
+}
+[data-theme="lime"] .bg-\[\#0a0804\]          { background-color: #060a04; }
+[data-theme="lime"] .text-\[\#0a0804\]         { color: #060a04; }
+[data-theme="lime"] .border-t-\[\#0a0804\]     { border-top-color: #060a04; }
+[data-theme="lime"] .border-\[\#0a0804\]\/30   { border-color: rgb(6 10 4 / 0.30); }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   LIGHT THEMES
+   For light themes we invert the OKLCH scale: low L values become dark text,
+   high L values become near-white backgrounds.
+   The body background is controlled via [data-light] attribute.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* Base: flip body background and text for any light theme */
+[data-light] body {
+  background-color: oklch(0.97 0.012 85) !important;
+}
+
+/* Smooth theme transition on the root element */
+html {
+  transition: background-color 0.4s ease, color 0.3s ease;
+}
+
+/* ── Light: aurum-light ───────────────────────────────────────────────────── */
+[data-theme="aurum-light"] {
+  --theme-glow:      rgba(120, 80, 10, 0.25);
+  --theme-glow-soft: rgba(120, 80, 10, 0.12);
+  --theme-rgb:       120 80 10;
+  /* Inverted scale: 50=near-black, 950=near-white */
+  --color-amber-50:  oklch(0.15 0.035 85);
+  --color-amber-100: oklch(0.22 0.055 85);
+  --color-amber-200: oklch(0.32 0.075 85);
+  --color-amber-300: oklch(0.42 0.095 85);
+  --color-amber-400: oklch(0.42 0.110 85);
+  --color-amber-500: oklch(0.38 0.120 85);
+  --color-amber-600: oklch(0.50 0.100 85);
+  --color-amber-700: oklch(0.65 0.080 85);
+  --color-amber-800: oklch(0.80 0.050 85);
+  --color-amber-900: oklch(0.91 0.020 85);
+  --color-amber-950: oklch(0.96 0.010 85);
+}
+[data-theme="aurum-light"] .bg-\[\#0a0804\]      { background-color: oklch(0.97 0.012 85); }
+[data-theme="aurum-light"] .text-\[\#0a0804\]     { color: oklch(0.97 0.012 85); }
+[data-theme="aurum-light"] .border-t-\[\#0a0804\] { border-top-color: oklch(0.97 0.012 85); }
+[data-theme="aurum-light"] .bg-\[\#111310\]\/95   { background-color: oklch(0.93 0.012 85 / 0.95); }
+
+/* ── Light: emerald-light ─────────────────────────────────────────────────── */
+[data-theme="emerald-light"] {
+  --theme-glow:      rgba(10, 100, 60, 0.25);
+  --theme-glow-soft: rgba(10, 100, 60, 0.12);
+  --theme-rgb:       10 100 60;
+  --color-amber-50:  oklch(0.15 0.035 145);
+  --color-amber-100: oklch(0.22 0.055 145);
+  --color-amber-200: oklch(0.32 0.075 145);
+  --color-amber-300: oklch(0.42 0.095 145);
+  --color-amber-400: oklch(0.40 0.110 145);
+  --color-amber-500: oklch(0.36 0.120 145);
+  --color-amber-600: oklch(0.50 0.100 145);
+  --color-amber-700: oklch(0.65 0.080 145);
+  --color-amber-800: oklch(0.80 0.050 145);
+  --color-amber-900: oklch(0.91 0.020 145);
+  --color-amber-950: oklch(0.96 0.010 145);
+}
+[data-theme="emerald-light"] .bg-\[\#0a0804\]      { background-color: oklch(0.97 0.012 145); }
+[data-theme="emerald-light"] .text-\[\#0a0804\]     { color: oklch(0.97 0.012 145); }
+[data-theme="emerald-light"] .border-t-\[\#0a0804\] { border-top-color: oklch(0.97 0.012 145); }
+[data-theme="emerald-light"] .bg-\[\#111310\]\/95   { background-color: oklch(0.93 0.012 145 / 0.95); }
+
+/* ── Light: sapphire-light ────────────────────────────────────────────────── */
+[data-theme="sapphire-light"] {
+  --theme-glow:      rgba(30, 60, 160, 0.25);
+  --theme-glow-soft: rgba(30, 60, 160, 0.12);
+  --theme-rgb:       30 60 160;
+  --color-amber-50:  oklch(0.15 0.035 265);
+  --color-amber-100: oklch(0.22 0.055 265);
+  --color-amber-200: oklch(0.32 0.075 265);
+  --color-amber-300: oklch(0.42 0.095 265);
+  --color-amber-400: oklch(0.42 0.110 265);
+  --color-amber-500: oklch(0.38 0.120 265);
+  --color-amber-600: oklch(0.50 0.100 265);
+  --color-amber-700: oklch(0.65 0.080 265);
+  --color-amber-800: oklch(0.80 0.050 265);
+  --color-amber-900: oklch(0.91 0.020 265);
+  --color-amber-950: oklch(0.96 0.010 265);
+}
+[data-theme="sapphire-light"] .bg-\[\#0a0804\]      { background-color: oklch(0.97 0.012 265); }
+[data-theme="sapphire-light"] .text-\[\#0a0804\]     { color: oklch(0.97 0.012 265); }
+[data-theme="sapphire-light"] .border-t-\[\#0a0804\] { border-top-color: oklch(0.97 0.012 265); }
+[data-theme="sapphire-light"] .bg-\[\#111310\]\/95   { background-color: oklch(0.93 0.012 265 / 0.95); }
+
+/* ── Light: teal-light ────────────────────────────────────────────────────── */
+[data-theme="teal-light"] {
+  --theme-glow:      rgba(10, 100, 90, 0.25);
+  --theme-glow-soft: rgba(10, 100, 90, 0.12);
+  --theme-rgb:       10 100 90;
+  --color-amber-50:  oklch(0.15 0.035 190);
+  --color-amber-100: oklch(0.22 0.055 190);
+  --color-amber-200: oklch(0.32 0.075 190);
+  --color-amber-300: oklch(0.42 0.095 190);
+  --color-amber-400: oklch(0.40 0.110 190);
+  --color-amber-500: oklch(0.36 0.120 190);
+  --color-amber-600: oklch(0.50 0.100 190);
+  --color-amber-700: oklch(0.65 0.080 190);
+  --color-amber-800: oklch(0.80 0.050 190);
+  --color-amber-900: oklch(0.91 0.020 190);
+  --color-amber-950: oklch(0.96 0.010 190);
+}
+[data-theme="teal-light"] .bg-\[\#0a0804\]      { background-color: oklch(0.97 0.012 190); }
+[data-theme="teal-light"] .text-\[\#0a0804\]     { color: oklch(0.97 0.012 190); }
+[data-theme="teal-light"] .border-t-\[\#0a0804\] { border-top-color: oklch(0.97 0.012 190); }
+[data-theme="teal-light"] .bg-\[\#111310\]\/95   { background-color: oklch(0.93 0.012 190 / 0.95); }
+
+/* ── Light: copper-light ──────────────────────────────────────────────────── */
+[data-theme="copper-light"] {
+  --theme-glow:      rgba(140, 70, 10, 0.25);
+  --theme-glow-soft: rgba(140, 70, 10, 0.12);
+  --theme-rgb:       140 70 10;
+  --color-amber-50:  oklch(0.15 0.035 45);
+  --color-amber-100: oklch(0.22 0.055 45);
+  --color-amber-200: oklch(0.32 0.075 45);
+  --color-amber-300: oklch(0.42 0.095 45);
+  --color-amber-400: oklch(0.42 0.120 45);
+  --color-amber-500: oklch(0.38 0.130 45);
+  --color-amber-600: oklch(0.50 0.110 45);
+  --color-amber-700: oklch(0.65 0.080 45);
+  --color-amber-800: oklch(0.80 0.050 45);
+  --color-amber-900: oklch(0.91 0.020 45);
+  --color-amber-950: oklch(0.96 0.010 45);
+}
+[data-theme="copper-light"] .bg-\[\#0a0804\]      { background-color: oklch(0.97 0.014 45); }
+[data-theme="copper-light"] .text-\[\#0a0804\]     { color: oklch(0.97 0.014 45); }
+[data-theme="copper-light"] .border-t-\[\#0a0804\] { border-top-color: oklch(0.97 0.014 45); }
+[data-theme="copper-light"] .bg-\[\#111310\]\/95   { background-color: oklch(0.93 0.014 45 / 0.95); }
+
+/* ── Light: rose-light ────────────────────────────────────────────────────── */
+[data-theme="rose-light"] {
+  --theme-glow:      rgba(160, 30, 50, 0.25);
+  --theme-glow-soft: rgba(160, 30, 50, 0.12);
+  --theme-rgb:       160 30 50;
+  --color-amber-50:  oklch(0.15 0.035 10);
+  --color-amber-100: oklch(0.22 0.055 10);
+  --color-amber-200: oklch(0.32 0.075 10);
+  --color-amber-300: oklch(0.42 0.095 10);
+  --color-amber-400: oklch(0.42 0.120 10);
+  --color-amber-500: oklch(0.38 0.130 10);
+  --color-amber-600: oklch(0.50 0.110 10);
+  --color-amber-700: oklch(0.65 0.080 10);
+  --color-amber-800: oklch(0.80 0.050 10);
+  --color-amber-900: oklch(0.91 0.020 10);
+  --color-amber-950: oklch(0.96 0.010 10);
+}
+[data-theme="rose-light"] .bg-\[\#0a0804\]      { background-color: oklch(0.97 0.012 10); }
+[data-theme="rose-light"] .text-\[\#0a0804\]     { color: oklch(0.97 0.012 10); }
+[data-theme="rose-light"] .border-t-\[\#0a0804\] { border-top-color: oklch(0.97 0.012 10); }
+[data-theme="rose-light"] .bg-\[\#111310\]\/95   { background-color: oklch(0.93 0.012 10 / 0.95); }
+
+/* ── Light: violet-light ──────────────────────────────────────────────────── */
+[data-theme="violet-light"] {
+  --theme-glow:      rgba(80, 30, 160, 0.25);
+  --theme-glow-soft: rgba(80, 30, 160, 0.12);
+  --theme-rgb:       80 30 160;
+  --color-amber-50:  oklch(0.15 0.035 300);
+  --color-amber-100: oklch(0.22 0.055 300);
+  --color-amber-200: oklch(0.32 0.075 300);
+  --color-amber-300: oklch(0.42 0.095 300);
+  --color-amber-400: oklch(0.42 0.110 300);
+  --color-amber-500: oklch(0.38 0.120 300);
+  --color-amber-600: oklch(0.50 0.100 300);
+  --color-amber-700: oklch(0.65 0.080 300);
+  --color-amber-800: oklch(0.80 0.050 300);
+  --color-amber-900: oklch(0.91 0.020 300);
+  --color-amber-950: oklch(0.96 0.010 300);
+}
+[data-theme="violet-light"] .bg-\[\#0a0804\]      { background-color: oklch(0.97 0.012 300); }
+[data-theme="violet-light"] .text-\[\#0a0804\]     { color: oklch(0.97 0.012 300); }
+[data-theme="violet-light"] .border-t-\[\#0a0804\] { border-top-color: oklch(0.97 0.012 300); }
+[data-theme="violet-light"] .bg-\[\#111310\]\/95   { background-color: oklch(0.93 0.012 300 / 0.95); }
+
+/* ── Light: lime-light ────────────────────────────────────────────────────── */
+[data-theme="lime-light"] {
+  --theme-glow:      rgba(50, 110, 10, 0.25);
+  --theme-glow-soft: rgba(50, 110, 10, 0.12);
+  --theme-rgb:       50 110 10;
+  --color-amber-50:  oklch(0.15 0.035 130);
+  --color-amber-100: oklch(0.22 0.055 130);
+  --color-amber-200: oklch(0.32 0.075 130);
+  --color-amber-300: oklch(0.42 0.095 130);
+  --color-amber-400: oklch(0.40 0.120 130);
+  --color-amber-500: oklch(0.36 0.130 130);
+  --color-amber-600: oklch(0.50 0.110 130);
+  --color-amber-700: oklch(0.65 0.080 130);
+  --color-amber-800: oklch(0.80 0.050 130);
+  --color-amber-900: oklch(0.91 0.020 130);
+  --color-amber-950: oklch(0.96 0.010 130);
+}
+[data-theme="lime-light"] .bg-\[\#0a0804\]      { background-color: oklch(0.97 0.012 130); }
+[data-theme="lime-light"] .text-\[\#0a0804\]     { color: oklch(0.97 0.012 130); }
+[data-theme="lime-light"] .border-t-\[\#0a0804\] { border-top-color: oklch(0.97 0.012 130); }
+[data-theme="lime-light"] .bg-\[\#111310\]\/95   { background-color: oklch(0.93 0.012 130 / 0.95); }
+
+/* ── Tajweed colour coding ────────────────────────────────────────────────── */
+.tajweed-text {
+  font-family: var(--font-arabic), 'Amiri', serif;
+  font-size: 1.6rem;
+  line-height: 2.5;
+  direction: rtl;
+  text-align: right;
+}
+.tajweed-text .ham_wasl,
+.tajweed-text .slnt              { color: #9CA3AF; }
+.tajweed-text .madda_normal      { color: #3B82F6; }
+.tajweed-text .madda_permissible { color: #60A5FA; }
+.tajweed-text .madda_obligatory  { color: #1D4ED8; }
+.tajweed-text .madda_necessary   { color: #1E3A8A; }
+.tajweed-text .qalaqah           { color: #F97316; }
+.tajweed-text .ghunnah           { color: #16A34A; }
+.tajweed-text .ikhafa            { color: #4ADE80; }
+.tajweed-text .ikhafa_shafawi    { color: #2DD4BF; }
+.tajweed-text .idgham_ghunnah    { color: #15803D; }
+.tajweed-text .idgham_wo_ghunnah { color: #65A30D; }
+.tajweed-text .idgham_shafawi    { color: #059669; }
+.tajweed-text .iqlab             { color: #9333EA; }
+.tajweed-text .lam_shamsiyah     { color: #9F1239; }
+.tajweed-text .noon_toone_tashdeed { color: #B91C1C; }
