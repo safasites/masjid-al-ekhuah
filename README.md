@@ -1,4 +1,4 @@
-# Masjid Al-Ekhuah Website
+# Masjid Al-Ekhuah Website (Public)
 
 Website for Masjid Al-Ekhuah, Birmingham — built with Next.js, Supabase, and deployed on Netlify.
 
