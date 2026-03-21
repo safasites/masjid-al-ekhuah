@@ -595,9 +595,9 @@ export default function MosqueHero() {
       {/* ── Fixed Hero ────────────────────────────────────────────── */}
       <div className="fixed inset-0 z-0 flex flex-col items-center justify-center pointer-events-none overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <div className={`absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-amber-500/20 blur-[80px] md:blur-[120px] ${anim.isSimplified ? '' : 'animate-float'}`} style={{ animationDelay: '0s' }} />
-          <div className={`absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-yellow-500/20 blur-[100px] md:blur-[150px] ${anim.isSimplified ? '' : 'animate-float'}`} style={{ animationDelay: '2s' }} />
-          <div className={`absolute top-[30%] left-[50%] w-[40%] h-[40%] rounded-full bg-amber-400/15 blur-[80px] md:blur-[100px] ${anim.isSimplified ? '' : 'animate-float'}`} style={{ animationDelay: '4s' }} />
+          <div className={`hidden md:block absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-amber-500/20 blur-[120px] ${anim.isSimplified ? '' : 'animate-float'}`} style={{ animationDelay: '0s' }} />
+          <div className={`hidden md:block absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-yellow-500/20 blur-[150px] ${anim.isSimplified ? '' : 'animate-float'}`} style={{ animationDelay: '2s' }} />
+          <div className={`hidden md:block absolute top-[30%] left-[50%] w-[40%] h-[40%] rounded-full bg-amber-400/15 blur-[100px] ${anim.isSimplified ? '' : 'animate-float'}`} style={{ animationDelay: '4s' }} />
           <div className="absolute inset-0 opacity-[0.04] mix-blend-overlay" style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }} />
         </div>
 
@@ -638,13 +638,13 @@ export default function MosqueHero() {
       <div className={`relative z-20 ${lightMode ? 'bg-[#f8f5ee]' : 'bg-[#0a0804]'} rounded-t-[3rem] md:rounded-t-[5rem] shadow-theme-top overflow-hidden pb-32 md:pb-0`}>
 
         {/* Prayer Times Section */}
-        <section id="times" className="min-h-screen bg-gradient-to-b from-amber-900/40 via-amber-950/40 to-[#0a0804] backdrop-blur-3xl border-t border-amber-500/30 flex flex-col items-center justify-center px-6 py-24">
+        <section id="times" className={`min-h-screen ${lightMode ? 'bg-gradient-to-b from-amber-200/40 via-amber-100/30 to-[#f8f5ee]' : 'bg-gradient-to-b from-amber-900/40 via-amber-950/40 to-[#0a0804]'} backdrop-blur-3xl border-t border-amber-500/30 flex flex-col items-center justify-center px-6 py-24`}>
           <div className="max-w-6xl w-full mx-auto">
             <motion.div {...anim.sectionEntry} className="text-center mb-16">
-              <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-amber-50 mb-6 tracking-tight">
+              <h2 className={`font-display text-4xl md:text-5xl lg:text-6xl ${lightMode ? 'text-amber-900' : 'text-amber-50'} mb-6 tracking-tight`}>
                 <AnimatedText>{t.todaysPrayers}</AnimatedText>
               </h2>
-              <div className="flex items-center justify-center gap-4 text-sm md:text-base text-amber-200/70">
+              <div className={`flex items-center justify-center gap-4 text-sm md:text-base ${lightMode ? 'text-amber-700/70' : 'text-amber-200/70'}`}>
                 <span className="flex items-center gap-1.5">
                   <MapPin className="w-4 h-4 text-amber-400" />
                   <AnimatedText>{t.birmingham}</AnimatedText>
@@ -673,12 +673,12 @@ export default function MosqueHero() {
                       className={`relative flex items-center gap-4 rounded-2xl px-5 py-4 md:py-5 md:px-8 transition-all duration-500 ${
                         isActive
                           ? 'bg-gradient-to-r from-amber-500/25 to-amber-700/15 border border-amber-400/60 shadow-theme-glow'
-                          : 'bg-amber-950/30 border border-amber-800/30 hover:border-amber-500/40 hover:bg-amber-900/30'
+                          : lightMode ? 'bg-amber-50/80 border border-amber-300/40 hover:border-amber-400/60 hover:bg-amber-100/60' : 'bg-amber-950/30 border border-amber-800/30 hover:border-amber-500/40 hover:bg-amber-900/30'
                       }`}
                     >
                       {/* Prayer name */}
                       <div className="w-28 md:w-32 shrink-0 flex items-center gap-2">
-                        <p className={`text-[13px] md:text-sm font-semibold tracking-wider uppercase ${isActive ? 'text-amber-200' : 'text-amber-500/80'}`}>
+                        <p className={`text-[13px] md:text-sm font-semibold tracking-wider uppercase ${isActive ? (lightMode ? 'text-amber-900' : 'text-amber-200') : (lightMode ? 'text-amber-700' : 'text-amber-500/80')}`}>
                           {t.prayers[prayer.id as keyof typeof t.prayers]}
                         </p>
                         {isActive && (
@@ -695,17 +695,17 @@ export default function MosqueHero() {
                       </div>
                       {/* Azan */}
                       <div className="flex-1 text-center">
-                        <p className="text-amber-500/40 text-[11px] md:text-xs uppercase tracking-widest mb-0.5">{t.azan}</p>
-                        <p dir="ltr" className={`font-display text-base md:text-xl tracking-tight ${isActive ? 'text-white' : 'text-amber-100/70'}`}>
+                        <p className={`text-[11px] md:text-xs uppercase tracking-widest mb-0.5 ${lightMode ? 'text-amber-600/60' : 'text-amber-500/40'}`}>{t.azan}</p>
+                        <p dir="ltr" className={`font-display text-base md:text-xl tracking-tight ${isActive ? (lightMode ? 'text-amber-900' : 'text-white') : (lightMode ? 'text-amber-800/80' : 'text-amber-100/70')}`}>
                           {prayer.azan || '—'}
                         </p>
                       </div>
                       {/* Separator */}
-                      <div className={`w-px self-stretch ${isActive ? 'bg-amber-400/20' : 'bg-amber-800/30'}`} />
+                      <div className={`w-px self-stretch ${isActive ? 'bg-amber-400/20' : (lightMode ? 'bg-amber-300/40' : 'bg-amber-800/30')}`} />
                       {/* Jamat */}
                       <div className="flex-1 text-center">
-                        <p className="text-amber-500/40 text-[11px] md:text-xs uppercase tracking-widest mb-0.5">{t.jamat}</p>
-                        <p dir="ltr" className={`font-display text-base md:text-xl tracking-tight ${isActive ? 'text-amber-300' : 'text-amber-400/70'}`}>
+                        <p className={`text-[11px] md:text-xs uppercase tracking-widest mb-0.5 ${lightMode ? 'text-amber-600/60' : 'text-amber-500/40'}`}>{t.jamat}</p>
+                        <p dir="ltr" className={`font-display text-base md:text-xl tracking-tight ${isActive ? (lightMode ? 'text-amber-700' : 'text-amber-300') : (lightMode ? 'text-amber-700/70' : 'text-amber-400/70')}`}>
                           {prayer.jamat ? formatJamat(prayer.jamat, t) : '—'}
                         </p>
                       </div>
@@ -719,10 +719,10 @@ export default function MosqueHero() {
             {prayerData?.jumuah && (
               <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.55, ease: 'easeOut' }}
                 className="mt-6 flex justify-center">
-                <div className="px-6 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm font-medium flex items-center gap-3">
-                  <Calendar className="w-4 h-4 text-amber-400" />
+                <div className={`px-6 py-3 rounded-2xl text-sm font-medium flex items-center gap-3 ${lightMode ? 'bg-amber-100 border border-amber-300/60 text-amber-800' : 'bg-amber-500/10 border border-amber-500/20 text-amber-300'}`}>
+                  <Calendar className={`w-4 h-4 ${lightMode ? 'text-amber-600' : 'text-amber-400'}`} />
                   <span><AnimatedText>{t.jumuah}</AnimatedText></span>
-                  <span dir="ltr" className="text-amber-400 font-display text-base">{prayerData.jumuah}</span>
+                  <span dir="ltr" className={`font-display text-base ${lightMode ? 'text-amber-700' : 'text-amber-400'}`}>{prayerData.jumuah}</span>
                 </div>
               </motion.div>
             )}
@@ -730,7 +730,7 @@ export default function MosqueHero() {
             {/* View Full Timetable */}
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-50px' }} transition={{ duration: 0.6, delay: 0.6, ease: 'easeOut' }} className="mt-8 flex justify-center">
               <button onClick={() => setShowTimetable(true)}
-                className="px-8 py-4 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 font-medium text-base hover:bg-amber-500/20 transition-all duration-300 flex items-center justify-center gap-2 group hover:shadow-theme-glow">
+                className={`px-8 py-4 rounded-full font-medium text-base transition-all duration-300 flex items-center justify-center gap-2 group hover:shadow-theme-glow ${lightMode ? 'bg-amber-100/80 border border-amber-400/40 text-amber-800 hover:bg-amber-200/80' : 'bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20'}`}>
                 <AnimatedText>{t.viewFullTimetable}</AnimatedText>
                 <Calendar className="w-4 h-4 group-hover:scale-110 transition-transform" />
               </button>
@@ -755,7 +755,7 @@ export default function MosqueHero() {
             <section id="dhikr" className="px-6 py-16 md:py-28 overflow-hidden relative">
               {/* Subtle radial background glow */}
               <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-amber-500/5 blur-[100px]" />
+                <div className="hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-amber-500/5 blur-[100px]" />
               </div>
 
               <div className="max-w-2xl mx-auto w-full relative z-10">

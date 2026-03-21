@@ -310,8 +310,8 @@ export default function SurahReaderPage() {
   if (loading) {
     return (
       <main className={`min-h-screen ${bg} px-6 py-16 relative overflow-hidden`}>
-        <div className="fixed top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-amber-500/10 blur-[120px] pointer-events-none" />
-        <div className="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-yellow-500/10 blur-[150px] pointer-events-none" />
+        <div className="hidden md:block fixed top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-amber-500/10 blur-[120px] pointer-events-none" />
+        <div className="hidden md:block fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-yellow-500/10 blur-[150px] pointer-events-none" />
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="h-5 w-28 bg-amber-500/10 rounded-full mb-12 animate-pulse" />
           <div className="h-12 w-56 bg-amber-500/10 rounded-2xl mb-2 animate-pulse" />

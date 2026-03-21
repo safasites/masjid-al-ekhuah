@@ -50,17 +50,27 @@ export async function POST(req: NextRequest) {
   // Retranslate all courses (overwrite existing translations)
   const { data: courses } = await db
     .from('courses')
-    .select('id, title');
+    .select('id, title, description, details');
 
   if (courses && courses.length > 0) {
     for (const c of courses) {
       try {
-        const [titleAr] = await translateBatch([c.title], 'ar');
-        const [titleKu] = await translateBatch([c.title], 'ckb');
-        await db.from('courses').update({
-          title_ar: titleAr || null,
-          title_ku: titleKu || null,
-        }).eq('id', c.id);
+        const textsToTranslate = [c.title, c.description, c.details].filter(Boolean) as string[];
+        const [arResults, kuResults] = await Promise.all([
+          translateBatch(textsToTranslate, 'ar'),
+          translateBatch(textsToTranslate, 'ckb'),
+        ]);
+        const hasDesc = Boolean(c.description);
+        const hasDetails = Boolean(c.details);
+        let arIdx = 0; let kuIdx = 0;
+        const update: Record<string, string | null> = {
+          title_ar: arResults[arIdx] || null,
+          title_ku: kuResults[kuIdx] || null,
+        };
+        arIdx++; kuIdx++;
+        if (hasDesc) { update.description_ar = arResults[arIdx] || null; update.description_ku = kuResults[kuIdx] || null; arIdx++; kuIdx++; }
+        if (hasDetails) { update.details_ar = arResults[arIdx] || null; update.details_ku = kuResults[kuIdx] || null; }
+        await db.from('courses').update(update).eq('id', c.id);
         results.courses++;
       } catch { /* non-fatal */ }
     }
