@@ -7,6 +7,7 @@ import {
   LayoutGrid, Calendar, BookOpen, Clock, Image, Settings,
   LogOut, Plus, Trash2, Edit2, Check, X, Upload, ChevronDown, ChevronUp, Globe, Sparkles, BookMarked, ExternalLink
 } from 'lucide-react';
+import { type Theme, DARK_THEMES, LIGHT_THEMES, isLightTheme } from '../theme-provider';
 
 
 
@@ -729,6 +730,7 @@ function TimetableTab({ showToast }: { showToast: (m: string, t?: 'success' | 'e
 
 // ─── Settings Tab ──────────────────────────────────────────────────────────────
 type SectionKey = 'hero' | 'prayer' | 'dhikr' | 'events' | 'courses' | 'books' | 'donate' | 'about' | 'footer';
+type SavedTheme = { id: string; name: string; globalTheme: Theme; sections: Record<SectionKey, { bg: string; accent: string }> };
 const SECTION_LABELS: Record<SectionKey, string> = {
   hero: 'Hero / Header', prayer: 'Prayer Times', dhikr: 'Dhikr',
   events: 'Events', courses: 'Courses', books: 'Books',
@@ -756,6 +758,9 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
   const [sectionColors, setSectionColors] = useState<Record<SectionKey, { bg: string; accent: string }>>(
     () => Object.fromEntries(SECTION_KEYS.map(k => [k, { bg: DEFAULT_BG, accent: DEFAULT_ACCENT }])) as Record<SectionKey, { bg: string; accent: string }>
   );
+  const [globalTheme, setGlobalTheme] = useState<Theme>('aurum');
+  const [savedThemes, setSavedThemes] = useState<SavedTheme[]>([]);
+  const [newThemeName, setNewThemeName] = useState('');
   const [saving, setSaving] = useState(false);
   const [retranslating, setRetranslating] = useState(false);
 
@@ -797,6 +802,12 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
         }
         return next;
       });
+      const gt = (c.global_theme ?? 'aurum') as Theme;
+      setGlobalTheme(gt);
+      document.documentElement.setAttribute('data-theme', gt);
+      if (isLightTheme(gt)) document.documentElement.setAttribute('data-light', '');
+      else document.documentElement.removeAttribute('data-light');
+      try { setSavedThemes(JSON.parse(c.saved_themes ?? '[]')); } catch { setSavedThemes([]); }
     }).catch(() => {});
   }, []);
 
@@ -805,6 +816,7 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
     try {
       const updates = [
         ...Object.entries(form).map(([key, value]) => ({ key, value })),
+        { key: 'global_theme', value: globalTheme },
         ...SECTION_KEYS.flatMap(k => [
           { key: `section_${k}_bg`,     value: sectionColors[k].bg },
           { key: `section_${k}_accent`, value: sectionColors[k].accent },
@@ -822,6 +834,50 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
     finally { setSaving(false); }
   }
 
+  function applyGlobalTheme(t: Theme) {
+    setGlobalTheme(t);
+    document.documentElement.setAttribute('data-theme', t);
+    if (isLightTheme(t)) document.documentElement.setAttribute('data-light', '');
+    else document.documentElement.removeAttribute('data-light');
+  }
+
+  async function persistSavedThemes(updated: SavedTheme[]) {
+    await fetch('/api/admin/content', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify([{ key: 'saved_themes', value: JSON.stringify(updated) }]),
+    });
+  }
+
+  function saveCurrentTheme() {
+    if (!newThemeName.trim()) return;
+    const theme: SavedTheme = {
+      id: crypto.randomUUID(),
+      name: newThemeName.trim(),
+      globalTheme,
+      sections: sectionColors,
+    };
+    const updated = [...savedThemes, theme];
+    setSavedThemes(updated);
+    setNewThemeName('');
+    persistSavedThemes(updated)
+      .then(() => showToast('Theme saved'))
+      .catch(() => showToast('Failed to save theme', 'error'));
+  }
+
+  function loadSavedTheme(t: SavedTheme) {
+    applyGlobalTheme(t.globalTheme);
+    setSectionColors(t.sections);
+  }
+
+  function deleteSavedTheme(id: string) {
+    const updated = savedThemes.filter(t => t.id !== id);
+    setSavedThemes(updated);
+    persistSavedThemes(updated)
+      .then(() => showToast('Theme deleted'))
+      .catch(() => showToast('Failed to delete theme', 'error'));
+  }
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div>
@@ -832,6 +888,38 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
       <Section title="General">
         <Input label="Mosque Name" value={form.mosque_name} onChange={e => setForm(p => ({ ...p, mosque_name: e.target.value }))} placeholder="Masjid Al-Ekhuah" />
         <p className="text-amber-500/40 text-xs mt-2">This name appears in the site header, browser tab, and throughout the site.</p>
+      </Section>
+
+      <Section title="Global Theme">
+        <p className="text-amber-500/50 text-sm -mt-2 mb-4">Applies to the admin panel, Quran reader, and all sub-pages. Home page sections have their own colour pickers below.</p>
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+          {[...DARK_THEMES, ...LIGHT_THEMES].map(t => (
+            <button
+              key={t}
+              type="button"
+              title={t}
+              onClick={() => applyGlobalTheme(t)}
+              className={`relative h-10 rounded-xl border-2 transition-all duration-150 overflow-hidden ${
+                globalTheme === t ? 'border-amber-400 scale-105' : 'border-transparent opacity-60 hover:opacity-90 hover:scale-105'
+              }`}
+              style={{ background: isLightTheme(t) ? '#f8f5ee' : '#0a0804' }}
+            >
+              <span
+                className="absolute bottom-1 right-1 w-3 h-3 rounded-full"
+                style={{ background: {
+                  aurum: '#d97706', emerald: '#10b981', sapphire: '#3b82f6', teal: '#14b8a6',
+                  copper: '#ea580c', rose: '#f43f5e', violet: '#8b5cf6', lime: '#84cc16',
+                  'aurum-light': '#d97706', 'emerald-light': '#10b981', 'sapphire-light': '#3b82f6', 'teal-light': '#14b8a6',
+                  'copper-light': '#ea580c', 'rose-light': '#f43f5e', 'violet-light': '#8b5cf6', 'lime-light': '#84cc16',
+                }[t] }}
+              />
+              <span className="absolute top-1 left-1.5 text-[9px] font-medium leading-none" style={{ color: isLightTheme(t) ? '#78716c' : '#a8a29e' }}>
+                {t.replace('-light', '')}
+              </span>
+            </button>
+          ))}
+        </div>
+        <p className="text-amber-500/40 text-xs mt-3">Click a theme for live preview. Save All Settings to persist.</p>
       </Section>
 
       <Section title="Section Colours">
@@ -867,6 +955,57 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
           </table>
         </div>
         <p className="text-amber-500/40 text-xs mt-3">Changes are applied to the home page after saving.</p>
+      </Section>
+
+      <Section title="Saved Themes">
+        <p className="text-amber-500/50 text-sm -mt-2 mb-4">Save the current global theme + all section colours as a named preset to restore later.</p>
+        <div className="flex gap-2 mb-4">
+          <input
+            type="text"
+            value={newThemeName}
+            onChange={e => setNewThemeName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && saveCurrentTheme()}
+            placeholder="Theme name (e.g. Ramadan)"
+            className="flex-1 bg-amber-950/30 border border-amber-500/20 rounded-xl px-3 py-2 text-amber-100 text-sm focus:outline-none focus:border-amber-400/50 transition-colors placeholder:text-amber-500/30"
+          />
+          <button
+            type="button"
+            onClick={saveCurrentTheme}
+            disabled={!newThemeName.trim()}
+            className="px-4 py-2 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-200 text-sm font-medium hover:bg-amber-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            Save Current
+          </button>
+        </div>
+        {savedThemes.length === 0 ? (
+          <p className="text-amber-500/30 text-sm text-center py-4">No saved themes yet.</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {savedThemes.map(t => (
+              <div key={t.id} className="p-3 rounded-2xl bg-amber-950/20 border border-amber-500/10 flex flex-col gap-2">
+                <p className="text-amber-100 text-sm font-medium truncate">{t.name}</p>
+                <p className="text-amber-500/40 text-xs">{SECTION_KEYS.length} sections · {t.globalTheme}</p>
+                <div className="flex gap-1.5 mt-auto">
+                  <button
+                    type="button"
+                    onClick={() => loadSavedTheme(t)}
+                    className="flex-1 py-1.5 rounded-lg bg-amber-500/15 border border-amber-500/20 text-amber-300 text-xs font-medium hover:bg-amber-500/25 transition-all"
+                  >
+                    Load
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteSavedTheme(t.id)}
+                    className="py-1.5 px-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs hover:bg-red-500/20 transition-all"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="text-amber-500/40 text-xs mt-3">Load populates all pickers. Click Save All Settings to apply site-wide.</p>
       </Section>
 
       <Section title="Hero Section">
