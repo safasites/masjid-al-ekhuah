@@ -12,9 +12,11 @@ const amiri = Amiri({ subsets: ['arabic', 'latin'], weight: ['400', '700'], vari
 export async function generateMetadata(): Promise<Metadata> {
   let mosqueName = 'Masjid Al-Ekhuah';
   try {
-    const db = createServerSupabase();
-    const { data } = await db.from('content').select('key, value').eq('key', 'mosque_name').single();
-    if (data?.value) mosqueName = data.value;
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const db = createServerSupabase();
+      const { data } = await db.from('content').select('key, value').eq('key', 'mosque_name').single();
+      if (data?.value) mosqueName = data.value;
+    }
   } catch { /* use default */ }
   return {
     title: `${mosqueName} | Birmingham`,
