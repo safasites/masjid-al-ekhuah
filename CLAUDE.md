@@ -43,6 +43,13 @@ if (err) return err;
 
 Client-side uses the anon client from `lib/supabase.ts`.
 
+**Database tables** (see `supabase-schema.sql` for full schema):
+- `content` — key-value store for all site settings (mosque name, hero text, about, theme, animation mode, feature flags)
+- `events`, `courses` — with auto-translated `*_ar` / `*_ku` fields
+- `jamat_times` — congregation times (fajr, dhuhr, asr, maghrib, isha, jumuah)
+- `timetable` — monthly prayer schedule image URLs (Supabase Storage)
+- `dhikr_items` — Islamic remembrance phrases with transliteration and target count
+
 ### Theming (Tailwind v4)
 No `tailwind.config.*` file. Theme tokens live in `app/globals.css` under `@theme {}`. There are 16 colour themes (8 dark + 8 light) applied via `data-theme` / `data-light` attributes on `<html>`. Each theme remaps `--color-amber-*` variables in OKLCH. Always use `text-amber-*` / `bg-amber-*` Tailwind classes — they automatically remap with the theme.
 
@@ -63,13 +70,14 @@ Named shadow utilities in `globals.css`: `shadow-theme-glow`, `shadow-theme-soft
 - `anim.modalEntry` — spring modal
 - `anim.isSimplified` — boolean; skip delays/blur when true
 - `anim.blur(n)` — GPU-expensive; avoid in large lists
+- `anim.useParallax` — false on mobile (< 768px) and in simplified mode; always check before applying scroll-driven transforms
 
 Import motion from `motion/react` (not `framer-motion`).
 
 ### Multi-Language
-UI strings for en/ku/ar are inlined as a `translations` constant at the top of each page component. Language is stored in `localStorage('mosque-lang')`. Arabic/Kurdish content uses `dir="rtl"` on the wrapper; use `dir="auto"` on individual text nodes of unknown language.
+UI strings for en/ku/ar are inlined as a `translations` constant at the top of each page component. Language is stored in `localStorage('mosque-lang')`. Arabic/Kurdish content uses `dir="rtl"` on the wrapper; use `dir="auto"` on individual text nodes of unknown language. Use `dir="ltr"` on Latin-only fields (phone, email, address) even when the page is in RTL mode.
 
-For admin-created content, `lib/translate.ts` calls MyMemory API: `translateText(text, 'ar' | 'ckb')`. Kurdish locale code is `'ckb'` (not `'ku'`).
+For admin-created content, `lib/translate.ts` calls MyMemory API: `translateText(text, 'ar' | 'ckb')` for a single string, `translateBatch(texts[], 'ar' | 'ckb')` for parallel translation. Kurdish locale code is `'ckb'` (not `'ku'`).
 
 ### Fonts
 Three fonts loaded in `app/layout.tsx` via `next/font/google`:
@@ -79,6 +87,10 @@ Three fonts loaded in `app/layout.tsx` via `next/font/google`:
 
 ### Auth / Middleware
 `middleware.ts` protects `/admin/*` (except `/admin/login`) using a JWT in `admin_session` cookie signed with `ADMIN_SESSION_SECRET`. API routes under `/api/admin/*` handle their own auth checks — the middleware matcher intentionally excludes them to avoid Edge Runtime issues.
+
+### Utilities
+- `lib/utils.ts` — exports `cn(...classes)` for conditional Tailwind class merging (wraps `clsx` + `tailwind-merge`)
+- `hooks/use-mobile.ts` — `useMobile()` hook returning boolean; prefer `anim.useParallax` / `anim.isSimplified` from the animation provider for animation decisions
 
 ### Path Aliases
 `@/` maps to the repository root. Use `@/lib/...`, `@/app/...` etc.

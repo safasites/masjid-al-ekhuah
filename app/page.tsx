@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useScroll, useTransform, useAnimationControls, AnimatePresence } from 'motion/react';
+import { motion, useScroll, useTransform, useAnimationControls, AnimatePresence, LayoutGroup } from 'motion/react';
 import { MapPin, ArrowRight, ArrowUp, Globe, Home, BookOpen, BookMarked, Calendar, LayoutGrid, Heart, Info, Menu, X, Settings, Phone, Mail } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -278,6 +278,7 @@ export default function MosqueHero() {
   const [content, setContent] = useState<Record<string, string>>({});
   const [timetableUrl, setTimetableUrl] = useState<string | null>(null);
   const [dhikrItems, setDhikrItems] = useState<DhikrItem[]>([]);
+  const [hasDhikrCached, setHasDhikrCached] = useState(false);
   const [dhikrIndex, setDhikrIndex] = useState(0);
   const [dhikrCounts, setDhikrCounts] = useState<Record<string, number>>({});
   const [dhikrCompleted, setDhikrCompleted] = useState<Record<string, boolean>>({});
@@ -301,10 +302,11 @@ export default function MosqueHero() {
   const heroOpacity  = anim.useParallax ? _heroOpacity : 1;
   const heroY        = anim.useParallax ? _heroY : '0%';
 
-  // Restore persisted language
+  // Restore persisted language + dhikr visibility hint
   useEffect(() => {
     const stored = localStorage.getItem('mosque-lang') as Lang | null;
     if (stored && (stored === 'en' || stored === 'ku' || stored === 'ar')) setLang(stored);
+    if (localStorage.getItem('mosque-hasDhikr') === '1') setHasDhikrCached(true);
   }, []);
 
   // Scroll state — header backdrop + back-to-top visibility
@@ -406,6 +408,8 @@ export default function MosqueHero() {
       .then((items) => {
         if (!Array.isArray(items)) return;
         setDhikrItems(items);
+        localStorage.setItem('mosque-hasDhikr', items.length > 0 ? '1' : '0');
+        if (items.length > 0) setHasDhikrCached(true);
         // Restore persisted counts and index from localStorage
         try {
           const stored = localStorage.getItem('mosque-dhikr');
@@ -509,11 +513,11 @@ export default function MosqueHero() {
   }
 
   return (
-    <main ref={containerRef} dir={isRTL ? 'rtl' : 'ltr'} className={`relative bg-[#0a0804] selection:bg-amber-500/30 selection:text-amber-100 overflow-x-hidden`}>
+    <main ref={containerRef} dir={isRTL ? 'rtl' : 'ltr'} className={`relative ${lightMode ? 'bg-[#f8f5ee]' : 'bg-[#0a0804]'} selection:bg-amber-500/30 selection:text-amber-100 overflow-x-hidden`}>
 
       {/* ── Desktop Navigation ────────────────────────────────────── */}
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled ? 'bg-[#0a0804]/80 backdrop-blur-xl py-4 border-b border-amber-500/20' : 'bg-transparent py-6'
+        scrolled ? `${lightMode ? 'bg-[#f8f5ee]/80' : 'bg-[#0a0804]/80'} backdrop-blur-xl py-4 border-b border-amber-500/20` : 'bg-transparent py-6'
       }`}>
         <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between">
           {/* Logo */}
@@ -536,9 +540,10 @@ export default function MosqueHero() {
           </motion.div>
 
           {/* Desktop nav — active section glow */}
+          <LayoutGroup>
           <nav className="hidden lg:flex items-center gap-8">
             {Object.entries(t.nav).filter(([key]) => {
-              if (key === 'dhikr')   return showDhikr && dhikrItems.length > 0;
+              if (key === 'dhikr')   return showDhikr && (dhikrItems.length > 0 || hasDhikrCached);
               if (key === 'events')  return showEvents;
               if (key === 'courses') return showCourses;
               if (key === 'donate')  return showDonate;
@@ -547,7 +552,7 @@ export default function MosqueHero() {
               const isActive = activeSection === key;
               const href = key === 'courses' ? '/courses' : key === 'quran' ? '/quran' : key === 'events' ? '#events' : `#${key}`;
               return (
-                <motion.a key={key} href={href}
+                <motion.a key={key} href={href} layout
                   initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.1 * i }}
                   className={`text-sm font-medium tracking-wide relative group transition-colors duration-300 ${
@@ -566,6 +571,7 @@ export default function MosqueHero() {
               );
             })}
           </nav>
+          </LayoutGroup>
 
           <motion.div initial={{ opacity: 0, x: isRTL ? -20 : 20 }} animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -629,7 +635,7 @@ export default function MosqueHero() {
       <div className="h-[100vh]" />
 
       {/* ── Content Sections ──────────────────────────────────────── */}
-      <div className="relative z-20 bg-[#0a0804] rounded-t-[3rem] md:rounded-t-[5rem] shadow-theme-top overflow-hidden pb-32 md:pb-0">
+      <div className={`relative z-20 ${lightMode ? 'bg-[#f8f5ee]' : 'bg-[#0a0804]'} rounded-t-[3rem] md:rounded-t-[5rem] shadow-theme-top overflow-hidden pb-32 md:pb-0`}>
 
         {/* Prayer Times Section */}
         <section id="times" className="min-h-screen bg-gradient-to-b from-amber-900/40 via-amber-950/40 to-[#0a0804] backdrop-blur-3xl border-t border-amber-500/30 flex flex-col items-center justify-center px-6 py-24">
@@ -1020,7 +1026,7 @@ export default function MosqueHero() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
               {courses.length === 0 ? (
                 [1, 2, 3].map(i => (
-                  <div key={i} className="bg-[#0a0804] border border-amber-500/10 rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-8 animate-pulse">
+                  <div key={i} className={`${lightMode ? 'bg-[#f0ede4]' : 'bg-[#0a0804]'} border border-amber-500/10 rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-8 animate-pulse`}>
                     <div className="flex justify-between mb-3 md:mb-6">
                       <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl sm:rounded-2xl bg-amber-500/10" />
                       <div className="h-5 w-16 sm:h-6 sm:w-20 rounded-full bg-amber-500/10" />
@@ -1032,7 +1038,7 @@ export default function MosqueHero() {
               ) : courses.map(course => (
                 <motion.div key={course.id} {...anim.courseCardHover}
                   onClick={() => router.push('/courses')}
-                  className="bg-[#0a0804] border border-amber-500/20 rounded-2xl sm:rounded-3xl overflow-hidden hover:border-amber-500/40 transition-all duration-300 relative group cursor-pointer">
+                  className={`${lightMode ? 'bg-[#f0ede4]' : 'bg-[#0a0804]'} border border-amber-500/20 rounded-2xl sm:rounded-3xl overflow-hidden hover:border-amber-500/40 transition-all duration-300 relative group cursor-pointer`}>
                   <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-amber-500/10 transition-colors pointer-events-none" />
                   {course.image_url ? (
                     <div className="aspect-video w-full overflow-hidden">
@@ -1181,7 +1187,7 @@ export default function MosqueHero() {
             </button>
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               transition={{ type: 'spring', bounce: 0.3 }}
-              className="w-full max-w-5xl max-h-[90vh] overflow-auto rounded-3xl border border-amber-500/30 bg-[#0a0804] shadow-2xl">
+              className={`w-full max-w-5xl max-h-[90vh] overflow-auto rounded-3xl border border-amber-500/30 ${lightMode ? 'bg-[#f0ede4]' : 'bg-[#0a0804]'} shadow-2xl`}>
               {timetableUrl ? (
                 timetableUrl.match(/\.(jpg|jpeg|png|webp)$/i) ? (
                   <img src={timetableUrl} alt="Prayer Timetable" className="w-full h-auto rounded-3xl" style={{ touchAction: 'pinch-zoom' }} />

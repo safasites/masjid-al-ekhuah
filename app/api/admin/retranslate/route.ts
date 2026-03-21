@@ -22,11 +22,10 @@ export async function POST(req: NextRequest) {
   if (errRes) return errRes;
   const results = { events: 0, courses: 0, dhikr: 0, about: false };
 
-  // Retranslate events with missing translations
+  // Retranslate all events (overwrite existing translations)
   const { data: events } = await db
     .from('events')
-    .select('id, title, description')
-    .or('title_ar.is.null,title_ku.is.null');
+    .select('id, title, description');
 
   if (events && events.length > 0) {
     for (const ev of events) {
@@ -48,11 +47,10 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Retranslate courses with missing translations
+  // Retranslate all courses (overwrite existing translations)
   const { data: courses } = await db
     .from('courses')
-    .select('id, title')
-    .or('title_ar.is.null,title_ku.is.null');
+    .select('id, title');
 
   if (courses && courses.length > 0) {
     for (const c of courses) {
@@ -68,11 +66,10 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Retranslate dhikr meanings with missing translations
+  // Retranslate all dhikr meanings (overwrite existing translations)
   const { data: dhikrItems } = await db
     .from('dhikr_items')
-    .select('id, meaning_en')
-    .or('meaning_ar.is.null,meaning_ku.is.null');
+    .select('id, meaning_en');
 
   if (dhikrItems && dhikrItems.length > 0) {
     for (const d of dhikrItems) {

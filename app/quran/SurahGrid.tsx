@@ -225,7 +225,7 @@ export default function SurahGrid({ chapters }: { chapters: Chapter[] }) {
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.2 }}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="hidden md:flex fixed z-40 bottom-8 right-6 w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 items-center justify-center hover:bg-amber-500/30 transition-all duration-300 backdrop-blur-md shadow-theme-soft hover:shadow-theme-glow hover:-translate-y-1"
+            className="fixed z-40 bottom-[5.5rem] md:bottom-8 right-4 md:right-6 w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center hover:bg-amber-500/30 transition-all duration-300 backdrop-blur-md shadow-theme-soft hover:shadow-theme-glow hover:-translate-y-1"
             aria-label="Back to top"
           >
             <ArrowUp className="w-5 h-5" />
@@ -243,13 +243,6 @@ export default function SurahGrid({ chapters }: { chapters: Chapter[] }) {
           <button className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-full text-amber-400 transition-colors" disabled>
             <BookOpen className="w-5 h-5" />
             <span className="text-[10px] font-medium">Surahs</span>
-          </button>
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-full text-amber-100/50 hover:text-amber-300 transition-colors"
-          >
-            <ArrowUp className="w-5 h-5" />
-            <span className="text-[10px] font-medium">Top</span>
           </button>
         </div>
       </div>

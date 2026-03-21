@@ -42,15 +42,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('aurum');
 
   useEffect(() => {
-    // 1. Check localStorage first (instant, no network)
+    // 1. Apply localStorage immediately for no-FOUC
     const raw = localStorage.getItem('mosque-theme');
     const stored = normalizeTheme(raw);
     if (stored) {
       apply(stored);
       if (raw !== stored) localStorage.setItem('mosque-theme', stored);
-      return;
     }
-    // 2. Fallback: fetch admin-configured theme from Supabase content
+    // 2. Always fetch DB to get the global admin-set theme (overrides stale localStorage)
     fetch('/api/admin/content')
       .then(r => r.json())
       .then((c: Record<string, string>) => {
@@ -58,7 +57,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         apply(t);
         localStorage.setItem('mosque-theme', t);
       })
-      .catch(() => apply('aurum'));
+      .catch(() => { if (!stored) apply('aurum'); });
   }, []);
 
   function apply(t: Theme) {
