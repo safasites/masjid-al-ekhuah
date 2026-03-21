@@ -5,7 +5,7 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Play, Pause,
-  ChevronDown, Volume2, BookOpen, ArrowUp, Loader2,
+  ChevronDown, Volume2, BookOpen, ArrowUp, Loader2, Home,
 } from 'lucide-react';
 import DOMPurify from 'isomorphic-dompurify';
 import Link from 'next/link';
@@ -502,9 +502,9 @@ export default function SurahReaderPage() {
 
         {/* Bismillah (for all except Al-Fatiha and At-Tawbah) */}
         {chapter?.bismillah_pre && surahId !== 1 && surahId !== 9 && (
-          <div className="text-center mb-8">
-            <p className="font-arabic text-3xl text-amber-200/80">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
-            <p className="text-amber-500/40 text-xs mt-1">In the name of Allah, the Entirely Merciful, the Especially Merciful</p>
+          <div className="text-center mb-8 py-5 border-y border-amber-500/15">
+            <p className="font-arabic text-3xl text-amber-200/90 leading-relaxed">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
+            <p className="text-amber-400/60 text-xs mt-2 tracking-wide">In the name of Allah, the Entirely Merciful, the Especially Merciful</p>
           </div>
         )}
 
@@ -674,13 +674,34 @@ export default function SurahReaderPage() {
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.2 }}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="fixed z-40 bottom-8 right-6 w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center hover:bg-amber-500/30 transition-all duration-300 backdrop-blur-md shadow-theme-soft hover:shadow-theme-glow hover:-translate-y-1"
+            className="fixed z-40 bottom-[5.5rem] md:bottom-8 right-4 md:right-6 w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center hover:bg-amber-500/30 transition-all duration-300 backdrop-blur-md shadow-theme-soft hover:shadow-theme-glow hover:-translate-y-1"
             aria-label="Back to top"
           >
             <ArrowUp className="w-5 h-5" />
           </motion.button>
         )}
       </AnimatePresence>
+
+      {/* ── Mobile Bottom Nav ─────────────────────────────────────────────── */}
+      <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-2 w-full max-w-xs">
+        <div className="bg-[#111310]/95 backdrop-blur-xl border border-amber-500/20 rounded-full p-2 flex items-center justify-between shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)]">
+          <Link href="/" className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-full text-amber-100/50 hover:text-amber-300 transition-colors">
+            <Home className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Home</span>
+          </Link>
+          <Link href="/quran" className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-full text-amber-400 transition-colors">
+            <BookOpen className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Surahs</span>
+          </Link>
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-full text-amber-100/50 hover:text-amber-300 transition-colors"
+          >
+            <ArrowUp className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Top</span>
+          </button>
+        </div>
+      </div>
     </main>
   );
 }

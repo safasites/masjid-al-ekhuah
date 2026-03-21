@@ -208,6 +208,8 @@ function getNextPrayer(prayers: Prayer[]): string {
 function formatJamat(jamat: string, t: typeof translations['en']): string {
   const match = jamat.match(/^(\d+)\s*min/i);
   if (match) return t.minsAfterAzan(parseInt(match[1]));
+  const numMatch = jamat.match(/^\d+$/);
+  if (numMatch) return t.minsAfterAzan(parseInt(jamat));
   return jamat;
 }
 
@@ -292,9 +294,10 @@ export default function MosqueHero() {
   const showDhikr   = content.feature_dhikr   !== 'false';
 
   // Scroll animations — always called (rules of hooks), but only applied when parallax is enabled
-  const { scrollYProgress } = useScroll({ target: containerRef, offset: ['start start', 'end end'] });
-  const _heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
-  const _heroY       = useTransform(scrollYProgress, [0, 0.2], ['0%', '8%']);
+  // Use window scroll (not containerRef) to avoid iOS/Android momentum scroll jitter
+  const { scrollY } = useScroll();
+  const _heroOpacity = useTransform(scrollY, [0, 300], [1, 0]);
+  const _heroY       = useTransform(scrollY, [0, 300], ['0%', '5%']);
   const heroOpacity  = anim.useParallax ? _heroOpacity : 1;
   const heroY        = anim.useParallax ? _heroY : '0%';
 
@@ -316,6 +319,7 @@ export default function MosqueHero() {
       }
     };
     window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll(); // run once on mount to reset any stale router-cached state
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
@@ -350,7 +354,7 @@ export default function MosqueHero() {
     if (activeSection === 'times') {
       setActiveMobileTab('times');
     } else if (activeSection === 'dhikr') {
-      setActiveMobileTab('dhikr');
+      setActiveMobileTab('more');
     } else if (activeSection === 'events' && showEvents) {
       setActiveMobileTab('events');
     } else if (activeSection === 'courses' && showCourses) {
@@ -585,13 +589,13 @@ export default function MosqueHero() {
       {/* ── Fixed Hero ────────────────────────────────────────────── */}
       <div className="fixed inset-0 z-0 flex flex-col items-center justify-center pointer-events-none overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-amber-500/20 blur-[120px] animate-float" style={{ animationDelay: '0s' }} />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-yellow-500/20 blur-[150px] animate-float" style={{ animationDelay: '2s' }} />
-          <div className="absolute top-[30%] left-[50%] w-[40%] h-[40%] rounded-full bg-amber-400/15 blur-[100px] animate-float" style={{ animationDelay: '4s' }} />
+          <div className={`absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-amber-500/20 blur-[80px] md:blur-[120px] ${anim.isSimplified ? '' : 'animate-float'}`} style={{ animationDelay: '0s' }} />
+          <div className={`absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-yellow-500/20 blur-[100px] md:blur-[150px] ${anim.isSimplified ? '' : 'animate-float'}`} style={{ animationDelay: '2s' }} />
+          <div className={`absolute top-[30%] left-[50%] w-[40%] h-[40%] rounded-full bg-amber-400/15 blur-[80px] md:blur-[100px] ${anim.isSimplified ? '' : 'animate-float'}`} style={{ animationDelay: '4s' }} />
           <div className="absolute inset-0 opacity-[0.04] mix-blend-overlay" style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }} />
         </div>
 
-        <motion.div style={{ opacity: heroOpacity, y: heroY, willChange: 'transform, opacity' }}
+        <motion.div style={{ opacity: heroOpacity, y: heroY, willChange: anim.useParallax ? 'transform, opacity' : 'auto' }}
           className="relative z-10 flex flex-col items-center justify-center px-6 w-full max-w-7xl mx-auto text-center">
           <motion.h1
             initial={{ opacity: 0, y: anim.isSimplified ? 0 : 30, filter: anim.blur(10) }}
@@ -1122,14 +1126,14 @@ export default function MosqueHero() {
             className="max-w-6xl w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
             <div>
               <h2 className="font-display text-4xl text-amber-50 mb-6 break-words"><AnimatedText>{t.aboutTitle}</AnimatedText></h2>
-              <p className="text-amber-100/75 text-lg leading-relaxed mb-8 break-words">{aboutDesc}</p>
+              <p dir="auto" className="text-amber-100/75 text-lg leading-relaxed mb-8 break-words">{aboutDesc}</p>
               <div className="space-y-4">
                 <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(contactAddress)}`} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-4 text-amber-200/80 hover:text-amber-300 transition-colors group">
                   <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shrink-0 group-hover:bg-amber-500/20 transition-colors">
                     <MapPin className="w-4 h-4 text-amber-400" />
                   </div>
-                  <span className="break-words">{contactAddress}</span>
+                  <span dir="ltr" className="break-words">{contactAddress}</span>
                 </a>
                 <a href={`tel:${contactPhone.replace(/\s/g, '')}`}
                   className="flex items-center gap-4 text-amber-200/80 hover:text-amber-300 transition-colors group">
@@ -1170,7 +1174,7 @@ export default function MosqueHero() {
       <AnimatePresence>
         {showTimetable && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 md:p-8">
+            className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 md:p-8">
             <button onClick={() => setShowTimetable(false)}
               className="absolute top-6 right-6 text-amber-100 hover:text-amber-400 z-50 bg-amber-900/50 p-3 rounded-full border border-amber-500/30 transition-colors">
               <X className="w-6 h-6" />
@@ -1211,7 +1215,7 @@ export default function MosqueHero() {
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.2 }}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="fixed z-40 bottom-32 md:bottom-8 right-6 w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center hover:bg-amber-500/30 transition-all duration-300 backdrop-blur-md shadow-theme-soft hover:shadow-theme-glow hover:-translate-y-1"
+            className="fixed z-40 bottom-[5.5rem] md:bottom-8 right-4 md:right-6 w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center hover:bg-amber-500/30 transition-all duration-300 backdrop-blur-md shadow-theme-soft hover:shadow-theme-glow hover:-translate-y-1"
             aria-label="Back to top"
           >
             <ArrowUp className="w-5 h-5" />

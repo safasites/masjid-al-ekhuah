@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Search, ChevronDown, BookOpen } from 'lucide-react';
+import { ArrowLeft, Search, ChevronDown, BookOpen, ArrowUp, Home } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAnimationConfig } from '../animation-provider';
@@ -39,6 +39,7 @@ export default function SurahGrid({ chapters }: { chapters: Chapter[] }) {
   const [search, setSearch] = useState('');
   const [showGuide, setShowGuide] = useState(false);
   const [lang, setLang] = useState<Lang>('en');
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   const bg = lightMode ? 'bg-[#f8f5ee]' : 'bg-[#0a0804]';
   const isRTL = lang === 'ar' || lang === 'ku';
@@ -46,6 +47,12 @@ export default function SurahGrid({ chapters }: { chapters: Chapter[] }) {
   useEffect(() => {
     const stored = localStorage.getItem('mosque-lang') as Lang | null;
     if (stored && (stored === 'en' || stored === 'ku' || stored === 'ar')) setLang(stored);
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 400);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   const filtered = chapters.filter(ch => {
@@ -207,6 +214,44 @@ export default function SurahGrid({ chapters }: { chapters: Chapter[] }) {
             ))}
           </div>
         )}
+      </div>
+
+      {/* ── Back to Top ─────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showBackToTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="fixed z-40 bottom-[5.5rem] md:bottom-8 right-4 md:right-6 w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center hover:bg-amber-500/30 transition-all duration-300 backdrop-blur-md shadow-theme-soft hover:shadow-theme-glow hover:-translate-y-1"
+            aria-label="Back to top"
+          >
+            <ArrowUp className="w-5 h-5" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* ── Mobile Bottom Nav ───────────────────────────────────────────── */}
+      <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-2 w-full max-w-xs">
+        <div className="bg-[#111310]/95 backdrop-blur-xl border border-amber-500/20 rounded-full p-2 flex items-center justify-between shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)]">
+          <Link href="/" className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-full text-amber-100/50 hover:text-amber-300 transition-colors">
+            <Home className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Home</span>
+          </Link>
+          <button className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-full text-amber-400 transition-colors" disabled>
+            <BookOpen className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Surahs</span>
+          </button>
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-full text-amber-100/50 hover:text-amber-300 transition-colors"
+          >
+            <ArrowUp className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Top</span>
+          </button>
+        </div>
       </div>
     </main>
   );

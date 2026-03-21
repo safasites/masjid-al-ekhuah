@@ -15,8 +15,12 @@ const AnimationContext = createContext<{
 // ─── Provider ─────────────────────────────────────────────────────────────────
 export function AnimationProvider({ children }: { children: React.ReactNode }) {
   const [mode, setModeState] = useState<AnimationMode>('full');
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    // Detect mobile once on mount — used to disable Y parallax on mobile
+    setIsMobile(window.innerWidth < 768);
+
     const raw = localStorage.getItem(LS_KEY) as AnimationMode | null;
     if (raw && VALID_MODES.includes(raw)) {
       setModeState(raw);
@@ -51,6 +55,10 @@ export function useAnimationConfig() {
   const { mode, setMode } = useContext(AnimationContext);
   const s = mode === 'simplified';
 
+  // isMobile is read from the provider; default false (SSR-safe — no hydration mismatch)
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => { setIsMobile(window.innerWidth < 768); }, []);
+
   return {
     mode,
     setMode,
@@ -79,7 +87,8 @@ export function useAnimationConfig() {
     blur: (px: number) => s ? 'none' : `blur(${px}px)`,
 
     // Whether to use scroll-driven parallax
-    useParallax: !s,
+    // Disabled on mobile to prevent jitter with iOS/Android momentum scrolling
+    useParallax: !s && !isMobile,
 
     // AnimatedText transition
     textTransition: s
