@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(netlify deploy --build --prod --skip-functions-cache)"
+      "Bash(netlify deploy --build --prod --skip-functions-cache)",
+      "Bash(claude mcp add --transport http vercel https://mcp.vercel.com)",
+      "Bash(node -e \"console.log\\(require\\(''crypto''\\).randomBytes\\(32\\).toString\\(''hex''\\)\\)\")"
     ]
   }
 }

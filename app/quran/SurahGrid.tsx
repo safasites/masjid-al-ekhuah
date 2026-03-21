@@ -93,9 +93,9 @@ export default function SurahGrid({ chapters }: { chapters: Chapter[] }) {
         >
           <div className="flex items-center gap-3 mb-3">
             <BookOpen className="w-8 h-8 text-amber-400" />
-            <h1 className="font-display text-4xl md:text-6xl text-amber-50 tracking-tight">The Noble Quran</h1>
+            <h1 className={`font-display text-4xl md:text-6xl ${lightMode ? 'text-amber-900' : 'text-amber-50'} tracking-tight`}>The Noble Quran</h1>
           </div>
-          <p className="text-amber-200/60 text-base md:text-lg">Browse all 114 surahs — tap any to read with tajweed, translation, and audio</p>
+          <p className={`text-base md:text-lg ${lightMode ? 'text-amber-700/60' : 'text-amber-200/60'}`}>Browse all 114 surahs — tap any to read with tajweed, translation, and audio</p>
         </motion.div>
 
         {/* Search + Tajweed Guide toggle */}
@@ -133,13 +133,13 @@ export default function SurahGrid({ chapters }: { chapters: Chapter[] }) {
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
               className="overflow-hidden"
             >
-              <div className="mb-8 p-5 rounded-3xl border border-amber-500/15 bg-amber-950/20">
-                <p className="text-amber-400/60 text-xs font-medium uppercase tracking-wider mb-4">Tajweed Rules — Colour Key</p>
+              <div className={`mb-8 p-5 rounded-3xl border ${lightMode ? 'border-amber-300/30 bg-amber-100/60' : 'border-amber-500/15 bg-amber-950/20'}`}>
+                <p className={`text-xs font-medium uppercase tracking-wider mb-4 ${lightMode ? 'text-amber-600/70' : 'text-amber-400/60'}`}>Tajweed Rules — Colour Key</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                   {tajweedRules.map(rule => (
                     <div key={rule.cls} className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: rule.color }} />
-                      <span className="text-xs text-amber-200/60">{rule.name}</span>
+                      <span className={`text-xs ${lightMode ? 'text-amber-700/60' : 'text-amber-200/60'}`}>{rule.name}</span>
                     </div>
                   ))}
                 </div>

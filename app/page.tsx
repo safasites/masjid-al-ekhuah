@@ -764,10 +764,10 @@ export default function MosqueHero() {
                   {...anim.sectionEntry}
                   className="text-center mb-10 md:mb-14"
                 >
-                  <h2 className="font-display text-3xl md:text-5xl text-amber-50 mb-2 tracking-tight">
+                  <h2 className={`font-display text-3xl md:text-5xl ${lightMode ? 'text-amber-900' : 'text-amber-50'} mb-2 tracking-tight`}>
                     <AnimatedText>{dhikrTitle}</AnimatedText>
                   </h2>
-                  <p className="text-amber-200/50 text-base md:text-lg">
+                  <p className={`text-base md:text-lg ${lightMode ? 'text-amber-700/50' : 'text-amber-200/50'}`}>
                     <AnimatedText>{t.dhikrSubtitle}</AnimatedText>
                   </p>
                 </motion.div>
@@ -804,13 +804,13 @@ export default function MosqueHero() {
                       transition={{ duration: anim.phraseDuration }}
                       className="text-center mb-8 md:mb-10"
                     >
-                      <p dir="rtl" className="text-4xl md:text-5xl font-bold text-amber-50 mb-3 leading-tight" style={{ fontFamily: 'serif' }}>
+                      <p dir="rtl" className={`text-4xl md:text-5xl font-bold ${lightMode ? 'text-amber-900' : 'text-amber-50'} mb-3 leading-tight`} style={{ fontFamily: 'serif' }}>
                         {item?.arabic_text}
                       </p>
                       <p className="text-xl md:text-2xl font-medium text-amber-400 mb-2 tracking-wide">
                         {item?.transliteration}
                       </p>
-                      <p className="text-sm md:text-base text-amber-200/50">
+                      <p className={`text-sm md:text-base ${lightMode ? 'text-amber-700/50' : 'text-amber-200/50'}`}>
                         {item && getDhikrMeaning(item)}
                       </p>
                     </motion.div>
@@ -965,8 +965,8 @@ export default function MosqueHero() {
           <motion.div {...anim.sectionEntry} className="max-w-6xl w-full mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-5 md:mb-12 gap-3 md:gap-6">
               <div>
-                <h2 className="font-display text-3xl md:text-5xl text-amber-50 mb-1 md:mb-4"><AnimatedText>{t.eventsTitle}</AnimatedText></h2>
-                <p className="text-amber-200/75 text-base md:text-lg"><AnimatedText>{t.eventsSubtitle}</AnimatedText></p>
+                <h2 className={`font-display text-3xl md:text-5xl ${lightMode ? 'text-amber-900' : 'text-amber-50'} mb-1 md:mb-4`}><AnimatedText>{t.eventsTitle}</AnimatedText></h2>
+                <p className={`text-base md:text-lg ${lightMode ? 'text-amber-700/75' : 'text-amber-200/75'}`}><AnimatedText>{t.eventsSubtitle}</AnimatedText></p>
               </div>
               <button onClick={() => router.push('/events')}
                 className="text-amber-400 hover:text-amber-300 flex items-center gap-2 font-medium transition-colors shrink-0">
@@ -988,7 +988,7 @@ export default function MosqueHero() {
               ) : events.map(event => (
                 <motion.div key={event.id} {...anim.cardHover}
                   onClick={() => router.push('/events')}
-                  className="bg-amber-950/20 border border-amber-500/20 rounded-2xl sm:rounded-3xl overflow-hidden hover:bg-amber-900/30 hover:border-amber-500/40 transition-all duration-300 group cursor-pointer">
+                  className={`${lightMode ? 'bg-amber-50 border border-amber-300/40 hover:bg-amber-100/80 hover:border-amber-400/60' : 'bg-amber-950/20 border border-amber-500/20 hover:bg-amber-900/30 hover:border-amber-500/40'} rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-300 group cursor-pointer`}>
                   {event.image_url ? (
                     <div className="aspect-video w-full overflow-hidden">
                       <img src={event.image_url} alt={getEventTitle(event)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -999,9 +999,9 @@ export default function MosqueHero() {
                     </div>
                   )}
                   <div className="p-3 sm:p-4 md:p-6">
-                    <h3 dir="auto" className="text-base sm:text-lg md:text-xl font-medium text-amber-50 mb-1.5">{getEventTitle(event)}</h3>
-                    <p className="text-amber-400/80 text-xs sm:text-sm mb-2">{event.date_label}</p>
-                    {event.description && <p dir="auto" className="text-amber-100/75 leading-relaxed text-xs sm:text-sm line-clamp-2">{getEventDesc(event)}</p>}
+                    <h3 dir="auto" className={`text-base sm:text-lg md:text-xl font-medium ${lightMode ? 'text-amber-900' : 'text-amber-50'} mb-1.5`}>{getEventTitle(event)}</h3>
+                    <p className="text-amber-500/80 text-xs sm:text-sm mb-2">{event.date_label}</p>
+                    {event.description && <p dir="auto" className={`leading-relaxed text-xs sm:text-sm line-clamp-2 ${lightMode ? 'text-amber-800/75' : 'text-amber-100/75'}`}>{getEventDesc(event)}</p>}
                   </div>
                 </motion.div>
               ))}
@@ -1010,12 +1010,12 @@ export default function MosqueHero() {
         </section>}
 
         {/* Courses Section */}
-        {showCourses && <section id="courses" className="px-6 py-8 md:py-24 bg-amber-950/10 overflow-hidden">
+        {showCourses && <section id="courses" className={`px-6 py-8 md:py-24 ${lightMode ? 'bg-amber-100/30' : 'bg-amber-950/10'} overflow-hidden`}>
           <motion.div {...anim.sectionEntry} className="max-w-6xl w-full mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-5 md:mb-12 gap-3 md:gap-6">
               <div>
-                <h2 className="font-display text-3xl md:text-5xl text-amber-50 mb-1 md:mb-4"><AnimatedText>{t.coursesTitle}</AnimatedText></h2>
-                <p className="text-amber-200/75 text-base md:text-lg"><AnimatedText>{t.coursesSubtitle}</AnimatedText></p>
+                <h2 className={`font-display text-3xl md:text-5xl ${lightMode ? 'text-amber-900' : 'text-amber-50'} mb-1 md:mb-4`}><AnimatedText>{t.coursesTitle}</AnimatedText></h2>
+                <p className={`text-base md:text-lg ${lightMode ? 'text-amber-700/75' : 'text-amber-200/75'}`}><AnimatedText>{t.coursesSubtitle}</AnimatedText></p>
               </div>
               <button onClick={() => router.push('/courses')}
                 className="text-amber-400 hover:text-amber-300 flex items-center gap-2 font-medium transition-colors shrink-0">
@@ -1054,8 +1054,8 @@ export default function MosqueHero() {
                       )}
                       <span className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded-full bg-amber-500/10 text-amber-400 text-[10px] sm:text-xs font-medium border border-amber-500/20 ${!course.image_url ? '' : 'ml-auto'}`}>{course.level}</span>
                     </div>
-                    <h3 dir="auto" className="text-base sm:text-lg md:text-xl font-medium text-amber-50 mb-1.5">{getCourseTitle(course)}</h3>
-                    <p className="text-amber-100/75 text-xs sm:text-sm flex items-center gap-2">
+                    <h3 dir="auto" className={`text-base sm:text-lg md:text-xl font-medium ${lightMode ? 'text-amber-900' : 'text-amber-50'} mb-1.5`}>{getCourseTitle(course)}</h3>
+                    <p className={`text-xs sm:text-sm flex items-center gap-2 ${lightMode ? 'text-amber-800/75' : 'text-amber-100/75'}`}>
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-500/50 shrink-0" />{course.duration}
                     </p>
                   </div>
@@ -1070,8 +1070,8 @@ export default function MosqueHero() {
           <motion.div {...anim.sectionEntry} className="max-w-6xl w-full mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-5 md:mb-12 gap-3 md:gap-6">
               <div>
-                <h2 className="font-display text-3xl md:text-5xl text-amber-50 mb-1 md:mb-4"><AnimatedText>{t.booksTitle}</AnimatedText></h2>
-                <p className="text-amber-200/75 text-base md:text-lg"><AnimatedText>{t.booksSubtitle}</AnimatedText></p>
+                <h2 className={`font-display text-3xl md:text-5xl ${lightMode ? 'text-amber-900' : 'text-amber-50'} mb-1 md:mb-4`}><AnimatedText>{t.booksTitle}</AnimatedText></h2>
+                <p className={`text-base md:text-lg ${lightMode ? 'text-amber-700/75' : 'text-amber-200/75'}`}><AnimatedText>{t.booksSubtitle}</AnimatedText></p>
               </div>
               <button onClick={() => router.push('/books')}
                 className="text-amber-400 hover:text-amber-300 flex items-center gap-2 font-medium transition-colors shrink-0">
@@ -1083,19 +1083,19 @@ export default function MosqueHero() {
               {books.map((book, i) => (
                 <motion.div key={book.id} {...anim.cardEntry(i)} {...anim.cardHover}
                   onClick={() => router.push('/books')}
-                  className="rounded-2xl overflow-hidden border border-amber-500/15 bg-amber-950/20 hover:border-amber-500/35 cursor-pointer group transition-all duration-300">
+                  className={`rounded-2xl overflow-hidden border ${lightMode ? 'bg-amber-50 border-amber-300/30 hover:border-amber-400/50' : 'bg-amber-950/20 border-amber-500/15 hover:border-amber-500/35'} cursor-pointer group transition-all duration-300`}>
                   {book.image_url ? (
                     <div className="aspect-[2/3] w-full overflow-hidden">
                       <img src={book.image_url} alt={lang === 'ar' ? (book.title_ar || book.title) : lang === 'ku' ? (book.title_ku || book.title) : book.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     </div>
                   ) : (
-                    <div className="aspect-[2/3] w-full bg-amber-950/40 flex items-center justify-center">
+                    <div className={`aspect-[2/3] w-full ${lightMode ? 'bg-amber-100' : 'bg-amber-950/40'} flex items-center justify-center`}>
                       <BookMarked className="w-6 h-6 text-amber-500/20" />
                     </div>
                   )}
                   <div className="p-2">
-                    <p dir="auto" className="text-amber-50 text-[10px] sm:text-xs font-medium line-clamp-2 leading-snug">
+                    <p dir="auto" className={`${lightMode ? 'text-amber-900' : 'text-amber-50'} text-[10px] sm:text-xs font-medium line-clamp-2 leading-snug`}>
                       {lang === 'ar' ? (book.title_ar || book.title) : lang === 'ku' ? (book.title_ku || book.title) : book.title}
                     </p>
                   </div>
@@ -1109,15 +1109,15 @@ export default function MosqueHero() {
         {showDonate && <section id="donate" className="py-32 px-6 flex items-center justify-center relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-amber-900/20 pointer-events-none" />
           <motion.div {...anim.sectionEntry}
-            className="max-w-4xl w-full mx-auto text-center relative z-10 bg-amber-950/30 border border-amber-500/30 rounded-[3rem] p-8 md:p-12 lg:p-20 backdrop-blur-md shadow-theme-top">
+            className={`max-w-4xl w-full mx-auto text-center relative z-10 ${lightMode ? 'bg-amber-100/80 border border-amber-300/50' : 'bg-amber-950/30 border border-amber-500/30'} rounded-[3rem] p-8 md:p-12 lg:p-20 backdrop-blur-md shadow-theme-top`}>
             <div className="w-20 h-20 mx-auto bg-amber-500/20 rounded-full flex items-center justify-center mb-8 border border-amber-400/30">
               <Heart className="w-10 h-10 text-amber-400" />
             </div>
-            <h2 className="font-display text-4xl md:text-6xl text-amber-50 mb-6 break-words">
+            <h2 className={`font-display text-4xl md:text-6xl ${lightMode ? 'text-amber-900' : 'text-amber-50'} mb-6 break-words`}>
               <AnimatedText>{t.donateTitle}</AnimatedText>
             </h2>
             {/* nowrap={false} allows the description to wrap naturally, fixing overflow */}
-            <p className="text-amber-100/70 text-base md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
+            <p className={`text-base md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed ${lightMode ? 'text-amber-800/70' : 'text-amber-100/70'}`}>
               <AnimatedText nowrap={false}>{t.donateDesc}</AnimatedText>
             </p>
             <button className="px-10 py-5 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 text-[#0a0804] font-bold text-lg hover:from-amber-300 hover:to-amber-500 transition-all duration-300 shadow-theme-glow hover:shadow-theme-strong hover:-translate-y-1">
@@ -1131,25 +1131,25 @@ export default function MosqueHero() {
           <motion.div {...anim.sectionEntry}
             className="max-w-6xl w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
             <div>
-              <h2 className="font-display text-4xl text-amber-50 mb-6 break-words"><AnimatedText>{t.aboutTitle}</AnimatedText></h2>
-              <p dir="auto" className="text-amber-100/75 text-lg leading-relaxed mb-8 break-words">{aboutDesc}</p>
+              <h2 className={`font-display text-4xl ${lightMode ? 'text-amber-900' : 'text-amber-50'} mb-6 break-words`}><AnimatedText>{t.aboutTitle}</AnimatedText></h2>
+              <p dir="auto" className={`text-lg leading-relaxed mb-8 break-words ${lightMode ? 'text-amber-800/75' : 'text-amber-100/75'}`}>{aboutDesc}</p>
               <div className="space-y-4">
                 <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(contactAddress)}`} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-4 text-amber-200/80 hover:text-amber-300 transition-colors group">
+                  className={`flex items-center gap-4 ${lightMode ? 'text-amber-700/80 hover:text-amber-600' : 'text-amber-200/80 hover:text-amber-300'} transition-colors group`}>
                   <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shrink-0 group-hover:bg-amber-500/20 transition-colors">
                     <MapPin className="w-4 h-4 text-amber-400" />
                   </div>
                   <span dir="ltr" className="break-words">{contactAddress}</span>
                 </a>
                 <a href={`tel:${contactPhone.replace(/\s/g, '')}`}
-                  className="flex items-center gap-4 text-amber-200/80 hover:text-amber-300 transition-colors group">
+                  className={`flex items-center gap-4 ${lightMode ? 'text-amber-700/80 hover:text-amber-600' : 'text-amber-200/80 hover:text-amber-300'} transition-colors group`}>
                   <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shrink-0 group-hover:bg-amber-500/20 transition-colors">
                     <Phone className="w-4 h-4 text-amber-400" />
                   </div>
                   <span dir="ltr">{contactPhone}</span>
                 </a>
                 <a href={`mailto:${contactEmail}`}
-                  className="flex items-center gap-4 text-amber-200/80 hover:text-amber-300 transition-colors group">
+                  className={`flex items-center gap-4 ${lightMode ? 'text-amber-700/80 hover:text-amber-600' : 'text-amber-200/80 hover:text-amber-300'} transition-colors group`}>
                   <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shrink-0 group-hover:bg-amber-500/20 transition-colors">
                     <Mail className="w-4 h-4 text-amber-400" />
                   </div>
@@ -1165,7 +1165,7 @@ export default function MosqueHero() {
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2428.178789289!2d-1.9207!3d52.4872!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4870bc8b0a8f5f3d%3A0x123!2sNew%20Spring%20St%2C%20Birmingham%20B18%207PW!5e0!3m2!1sen!2suk!4v1234567890"
                 width="100%"
                 height="100%"
-                style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg)' }}
+                style={{ border: 0, filter: lightMode ? 'none' : 'invert(90%) hue-rotate(180deg)' }}
                 allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"

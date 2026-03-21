@@ -31,6 +31,7 @@ These must be set in the Netlify dashboard under Site Settings → Environment V
 - `ADMIN_SESSION_SECRET`
 
 ### Rules to Prevent Recurrence
+- **Git Contributor Matching**: Since this is a private repo on Netlify's free Starter plan, only one verified team member (`iboyprime68-web` / `iboyprime68@gmail.com`) is allowed to trigger builds. Always ensure your local git config (`user.name` and `user.email`) matches exactly before committing. If Netlify blocks a deploy for "unrecognized Git contributor", amend the last commit to use the correct email and force push.
 - **Never throw in `createServerSupabase()`** — return `null` and let callers handle it
 - **Always use `requireDb()`** in API routes — never call `createServerSupabase()` directly
 - **Never add API route paths to the middleware matcher** — API routes handle their own auth
