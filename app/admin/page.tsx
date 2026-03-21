@@ -7,7 +7,8 @@ import {
   LayoutGrid, Calendar, BookOpen, Clock, Image, Settings,
   LogOut, Plus, Trash2, Edit2, Check, X, Upload, ChevronDown, ChevronUp, Globe, Sparkles, BookMarked, ExternalLink
 } from 'lucide-react';
-import { useTheme, type Theme } from '../theme-provider';
+
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Event { id: string; title: string; date_label: string; description: string; is_featured: boolean; sort_order: number; image_url?: string; details?: string; title_ar?: string; title_ku?: string; description_ar?: string; description_ku?: string; details_ar?: string; details_ku?: string; }
@@ -44,6 +45,31 @@ function Toast({ msg, type }: { msg: string; type: 'success' | 'error' }) {
     >
       {msg}
     </motion.div>
+  );
+}
+
+function ColorInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const isValidHex = (s: string) => /^#[0-9a-fA-F]{6}$/.test(s);
+  return (
+    <div className="flex items-center gap-2">
+      <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-amber-500/20 shrink-0">
+        <input
+          type="color"
+          value={isValidHex(value) ? value : '#000000'}
+          onChange={e => onChange(e.target.value)}
+          className="absolute inset-0 w-full h-full cursor-pointer opacity-0"
+        />
+        <div className="w-full h-full rounded-lg" style={{ backgroundColor: isValidHex(value) ? value : '#000000' }} />
+      </div>
+      <input
+        type="text"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        maxLength={7}
+        className="w-24 bg-amber-950/30 border border-amber-500/20 rounded-lg px-2 py-1.5 text-amber-100 text-xs font-mono focus:outline-none focus:border-amber-400/50 transition-colors"
+        placeholder="#000000"
+      />
+    </div>
   );
 }
 
@@ -702,8 +728,17 @@ function TimetableTab({ showToast }: { showToast: (m: string, t?: 'success' | 'e
 }
 
 // ─── Settings Tab ──────────────────────────────────────────────────────────────
+type SectionKey = 'hero' | 'prayer' | 'dhikr' | 'events' | 'courses' | 'books' | 'donate' | 'about' | 'footer';
+const SECTION_LABELS: Record<SectionKey, string> = {
+  hero: 'Hero / Header', prayer: 'Prayer Times', dhikr: 'Dhikr',
+  events: 'Events', courses: 'Courses', books: 'Books',
+  donate: 'Donate', about: 'About', footer: 'Footer',
+};
+const SECTION_KEYS = Object.keys(SECTION_LABELS) as SectionKey[];
+const DEFAULT_BG = '#0a0804';
+const DEFAULT_ACCENT = '#d97706';
+
 function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string, t?: 'success' | 'error') => void; onMosqueNameChange?: (name: string) => void }) {
-  const { theme: activeTheme, setTheme } = useTheme();
   const [form, setForm] = useState({
     mosque_name: '',
     hero_line1: '',
@@ -718,6 +753,9 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
     feature_books: 'true',
     animation_mode: 'full',
   });
+  const [sectionColors, setSectionColors] = useState<Record<SectionKey, { bg: string; accent: string }>>(
+    () => Object.fromEntries(SECTION_KEYS.map(k => [k, { bg: DEFAULT_BG, accent: DEFAULT_ACCENT }])) as Record<SectionKey, { bg: string; accent: string }>
+  );
   const [saving, setSaving] = useState(false);
   const [retranslating, setRetranslating] = useState(false);
 
@@ -749,6 +787,16 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
         feature_books:    c.feature_books    ?? prev.feature_books,
         animation_mode:   c.animation_mode   ?? prev.animation_mode,
       }));
+      setSectionColors(prev => {
+        const next = { ...prev };
+        for (const k of SECTION_KEYS) {
+          next[k] = {
+            bg:     c[`section_${k}_bg`]     ?? DEFAULT_BG,
+            accent: c[`section_${k}_accent`] ?? DEFAULT_ACCENT,
+          };
+        }
+        return next;
+      });
     }).catch(() => {});
   }, []);
 
@@ -757,7 +805,10 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
     try {
       const updates = [
         ...Object.entries(form).map(([key, value]) => ({ key, value })),
-        { key: 'theme', value: activeTheme },
+        ...SECTION_KEYS.flatMap(k => [
+          { key: `section_${k}_bg`,     value: sectionColors[k].bg },
+          { key: `section_${k}_accent`, value: sectionColors[k].accent },
+        ]),
       ];
       const res = await fetch('/api/admin/content', {
         method: 'PUT',
@@ -771,28 +822,6 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
     finally { setSaving(false); }
   }
 
-  type ThemeOption = { id: Theme; label: string; desc: string; bgHex: string; accentHigh: string; accentMid: string; accentLow: string; dotColor: string; isLight?: boolean };
-  const darkThemes: ThemeOption[] = [
-    { id: 'aurum',    label: 'Aurum',    desc: 'Classic gold and amber.',       bgHex: '#0a0804', accentHigh: 'oklch(0.879 0.169 85)',  accentMid: 'oklch(0.769 0.188 85)',  accentLow: 'oklch(0.962 0.059 85)',  dotColor: 'oklch(0.828 0.189 85)' },
-    { id: 'emerald',  label: 'Emerald',  desc: 'Islamic green. Traditional.',   bgHex: '#040a06', accentHigh: 'oklch(0.879 0.169 145)', accentMid: 'oklch(0.769 0.188 145)', accentLow: 'oklch(0.962 0.059 145)', dotColor: 'oklch(0.828 0.189 145)' },
-    { id: 'sapphire', label: 'Sapphire', desc: 'Midnight blue. Distinguished.', bgHex: '#04080f', accentHigh: 'oklch(0.879 0.169 265)', accentMid: 'oklch(0.769 0.188 265)', accentLow: 'oklch(0.962 0.059 265)', dotColor: 'oklch(0.828 0.189 265)' },
-    { id: 'teal',     label: 'Teal',     desc: 'Cool teal. Fresh and modern.',  bgHex: '#040b0b', accentHigh: 'oklch(0.879 0.169 190)', accentMid: 'oklch(0.769 0.188 190)', accentLow: 'oklch(0.962 0.059 190)', dotColor: 'oklch(0.828 0.189 190)' },
-    { id: 'copper',   label: 'Copper',   desc: 'Warm bronze. Rich and earthy.', bgHex: '#0a0602', accentHigh: 'oklch(0.879 0.169 45)',  accentMid: 'oklch(0.769 0.205 45)',  accentLow: 'oklch(0.962 0.059 45)',  dotColor: 'oklch(0.828 0.210 45)' },
-    { id: 'rose',     label: 'Rose',     desc: 'Warm rose-red. Vibrant.',       bgHex: '#0f0405', accentHigh: 'oklch(0.879 0.169 10)',  accentMid: 'oklch(0.769 0.210 10)',  accentLow: 'oklch(0.962 0.059 10)',  dotColor: 'oklch(0.828 0.200 10)' },
-    { id: 'violet',   label: 'Violet',   desc: 'Rich purple. Regal.',           bgHex: '#090510', accentHigh: 'oklch(0.879 0.169 300)', accentMid: 'oklch(0.769 0.188 300)', accentLow: 'oklch(0.962 0.059 300)', dotColor: 'oklch(0.828 0.189 300)' },
-    { id: 'lime',     label: 'Lime',     desc: 'Yellow-green. Energetic.',      bgHex: '#060a04', accentHigh: 'oklch(0.879 0.169 130)', accentMid: 'oklch(0.769 0.205 130)', accentLow: 'oklch(0.962 0.059 130)', dotColor: 'oklch(0.828 0.210 130)' },
-  ];
-  const lightThemes: ThemeOption[] = [
-    { id: 'aurum-light',    label: 'Aurum Light',    desc: 'Warm gold on white.', bgHex: '#f8f5ee', accentHigh: 'oklch(0.20 0.055 85)',  accentMid: 'oklch(0.38 0.120 85)',  accentLow: 'oklch(0.15 0.035 85)',  dotColor: 'oklch(0.38 0.120 85)',  isLight: true },
-    { id: 'emerald-light',  label: 'Emerald Light',  desc: 'Green on white.',     bgHex: '#f0faf5', accentHigh: 'oklch(0.20 0.055 145)', accentMid: 'oklch(0.36 0.120 145)', accentLow: 'oklch(0.15 0.035 145)', dotColor: 'oklch(0.36 0.120 145)', isLight: true },
-    { id: 'sapphire-light', label: 'Sapphire Light', desc: 'Blue on white.',      bgHex: '#f0f4ff', accentHigh: 'oklch(0.20 0.055 265)', accentMid: 'oklch(0.38 0.120 265)', accentLow: 'oklch(0.15 0.035 265)', dotColor: 'oklch(0.38 0.120 265)', isLight: true },
-    { id: 'teal-light',     label: 'Teal Light',     desc: 'Teal on white.',      bgHex: '#f0fafa', accentHigh: 'oklch(0.20 0.055 190)', accentMid: 'oklch(0.36 0.120 190)', accentLow: 'oklch(0.15 0.035 190)', dotColor: 'oklch(0.36 0.120 190)', isLight: true },
-    { id: 'copper-light',   label: 'Copper Light',   desc: 'Bronze on white.',    bgHex: '#faf5ee', accentHigh: 'oklch(0.20 0.055 45)',  accentMid: 'oklch(0.38 0.130 45)',  accentLow: 'oklch(0.15 0.035 45)',  dotColor: 'oklch(0.38 0.130 45)',  isLight: true },
-    { id: 'rose-light',     label: 'Rose Light',     desc: 'Rose-pink on white.', bgHex: '#fff0f2', accentHigh: 'oklch(0.20 0.055 10)',  accentMid: 'oklch(0.38 0.130 10)',  accentLow: 'oklch(0.15 0.035 10)',  dotColor: 'oklch(0.38 0.130 10)',  isLight: true },
-    { id: 'violet-light',   label: 'Violet Light',   desc: 'Purple on white.',    bgHex: '#f5f0ff', accentHigh: 'oklch(0.20 0.055 300)', accentMid: 'oklch(0.38 0.120 300)', accentLow: 'oklch(0.15 0.035 300)', dotColor: 'oklch(0.38 0.120 300)', isLight: true },
-    { id: 'lime-light',     label: 'Lime Light',     desc: 'Green-lime on white.',bgHex: '#f5faf0', accentHigh: 'oklch(0.20 0.055 130)', accentMid: 'oklch(0.36 0.130 130)', accentLow: 'oklch(0.15 0.035 130)', dotColor: 'oklch(0.36 0.130 130)', isLight: true },
-  ];
-
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div>
@@ -805,59 +834,39 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
         <p className="text-amber-500/40 text-xs mt-2">This name appears in the site header, browser tab, and throughout the site.</p>
       </Section>
 
-      <Section title="Appearance">
-        <div className="space-y-6">
-          <p className="text-amber-500/50 text-sm -mt-2">Choose a colour palette for the entire site. Changes apply instantly.</p>
-          {([
-            { label: '🌙 Dark Themes', items: darkThemes },
-            { label: '☀️ Light Themes', items: lightThemes },
-          ] as { label: string; items: ThemeOption[] }[]).map(group => (
-            <div key={group.label}>
-              <p className="text-xs font-medium text-amber-500/60 uppercase tracking-widest mb-3">{group.label}</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {group.items.map(t => (
-                  <button
-                    key={t.id}
-                    onClick={() => setTheme(t.id)}
-                    style={{ borderColor: activeTheme === t.id ? t.dotColor : undefined }}
-                    className={`text-left rounded-2xl p-4 border-2 transition-all duration-200 ${
-                      activeTheme === t.id
-                        ? 'bg-white/5'
-                        : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20'
-                    }`}
-                  >
-                    <div
-                      className="flex items-center gap-2 mb-3 rounded-xl px-3 py-2 border"
-                      style={{ backgroundColor: t.bgHex, borderColor: t.dotColor + '33' }}
-                    >
-                      <span className="text-[11px] font-semibold uppercase tracking-wide shrink-0" style={{ color: t.accentHigh }}>Fajr</span>
-                      <div className="flex-1 text-center">
-                        <p className="font-display text-xs" style={{ color: t.accentLow }}>04:19</p>
-                      </div>
-                      <div className="w-px self-stretch" style={{ backgroundColor: t.dotColor + '33' }} />
-                      <div className="flex-1 text-center">
-                        <p className="font-display text-xs" style={{ color: t.accentLow }}>06:00</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-medium" style={{ color: t.isLight ? t.accentHigh : t.accentLow }}>{t.label}</p>
-                        <p className="text-[10px] mt-0.5 opacity-60" style={{ color: t.accentMid }}>{t.desc}</p>
-                      </div>
-                      <div
-                        className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ml-2 transition-colors"
-                        style={{ borderColor: t.dotColor, backgroundColor: activeTheme === t.id ? t.dotColor : 'transparent' }}
-                      >
-                        {activeTheme === t.id && <Check className="w-2.5 h-2.5" style={{ color: t.bgHex }} />}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-          <p className="text-amber-500/40 text-xs">Theme is applied site-wide immediately. Save to persist across sessions.</p>
+      <Section title="Section Colours">
+        <p className="text-amber-500/50 text-sm -mt-2 mb-4">Set a background and accent colour for each section of the home page independently.</p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left">
+                <th className="text-xs font-medium text-amber-500/60 uppercase tracking-widest pb-3 pr-4 min-w-[120px]">Section</th>
+                <th className="text-xs font-medium text-amber-500/60 uppercase tracking-widest pb-3 pr-6 min-w-[180px]">Background</th>
+                <th className="text-xs font-medium text-amber-500/60 uppercase tracking-widest pb-3 min-w-[180px]">Accent / UI Colour</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-amber-500/10">
+              {SECTION_KEYS.map(key => (
+                <tr key={key}>
+                  <td className="py-3 pr-4 text-amber-100 font-medium whitespace-nowrap">{SECTION_LABELS[key]}</td>
+                  <td className="py-3 pr-6">
+                    <ColorInput
+                      value={sectionColors[key].bg}
+                      onChange={v => setSectionColors(p => ({ ...p, [key]: { ...p[key], bg: v } }))}
+                    />
+                  </td>
+                  <td className="py-3">
+                    <ColorInput
+                      value={sectionColors[key].accent}
+                      onChange={v => setSectionColors(p => ({ ...p, [key]: { ...p[key], accent: v } }))}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+        <p className="text-amber-500/40 text-xs mt-3">Changes are applied to the home page after saving.</p>
       </Section>
 
       <Section title="Hero Section">

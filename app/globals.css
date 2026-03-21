@@ -32,8 +32,9 @@
 
 /* Theme glow defaults (aurum/amber) — overridden per theme below */
 :root {
-  --theme-glow: rgba(245, 158, 11, 0.4);
-  --theme-glow-soft: rgba(245, 158, 11, 0.2);
+  --theme-glow:        rgba(245, 158, 11, 0.4);
+  --theme-glow-soft:   rgba(245, 158, 11, 0.2);
+  --theme-glow-strong: rgba(245, 158, 11, 0.6);
   --theme-rgb: 245 158 11;
 }
 
@@ -57,18 +58,43 @@
 
 /* ── Theme-aware shadow utilities ────────────────────────────────────────────
    Use these instead of hardcoded amber shadow Tailwind classes so glows
-   automatically match the active colour theme.
+   automatically match the active colour theme (including per-section overrides).
    ──────────────────────────────────────────────────────────────────────────── */
-.shadow-theme-glow   { box-shadow: 0 0 30px -8px rgba(var(--theme-rgb) / 0.4); }
-.shadow-theme-strong { box-shadow: 0 0 40px -8px rgba(var(--theme-rgb) / 0.6); }
-.shadow-theme-soft   { box-shadow: 0 0 20px -5px rgba(var(--theme-rgb) / 0.3); }
-.shadow-theme-top    { box-shadow: 0 -30px 60px -15px rgba(var(--theme-rgb) / 0.2); }
-.shadow-theme-nav    { box-shadow: 0 0 8px 2px rgba(var(--theme-rgb) / 0.5); }
-.shadow-theme-dhikr  { box-shadow: 0 0 40px -8px rgba(var(--theme-rgb) / 0.6); }
+.shadow-theme-glow   { box-shadow: 0 0 30px -8px var(--theme-glow); }
+.shadow-theme-strong { box-shadow: 0 0 40px -8px var(--theme-glow-strong); }
+.shadow-theme-soft   { box-shadow: 0 0 20px -5px var(--theme-glow-soft); }
+.shadow-theme-top    { box-shadow: 0 -30px 60px -15px var(--theme-glow-soft); }
+.shadow-theme-nav    { box-shadow: 0 0 8px 2px var(--theme-glow); }
+.shadow-theme-dhikr  { box-shadow: 0 0 40px -8px var(--theme-glow-strong); }
 
 /* Hover variants */
-.hover\:shadow-theme-soft:hover  { box-shadow: 0 0 20px -5px rgba(var(--theme-rgb) / 0.3); }
-.hover\:shadow-theme-glow:hover  { box-shadow: 0 0 30px -5px rgba(var(--theme-rgb) / 0.4); }
+.hover\:shadow-theme-soft:hover  { box-shadow: 0 0 20px -5px var(--theme-glow-soft); }
+.hover\:shadow-theme-glow:hover  { box-shadow: 0 0 30px -5px var(--theme-glow); }
+
+/* ── Per-section theming ─────────────────────────────────────────────────────
+   Add class="section-themed" and set CSS variables via inline style:
+     --section-accent: <hex color>   (accent/UI colour)
+   Background is applied directly via inline style={{ backgroundColor }}.
+   All text-amber-* / bg-amber-* / border-amber-* classes auto-remap to the
+   accent colour via color-mix(). Glow variables are also overridden so
+   shadow utilities match the per-section accent.
+   ──────────────────────────────────────────────────────────────────────────── */
+.section-themed {
+  --color-amber-50:    color-mix(in srgb, var(--section-accent) 6%,  white);
+  --color-amber-100:   color-mix(in srgb, var(--section-accent) 12%, white);
+  --color-amber-200:   color-mix(in srgb, var(--section-accent) 22%, white);
+  --color-amber-300:   color-mix(in srgb, var(--section-accent) 38%, white);
+  --color-amber-400:   color-mix(in srgb, var(--section-accent) 58%, white);
+  --color-amber-500:   var(--section-accent);
+  --color-amber-600:   color-mix(in srgb, var(--section-accent) 85%, black);
+  --color-amber-700:   color-mix(in srgb, var(--section-accent) 70%, black);
+  --color-amber-800:   color-mix(in srgb, var(--section-accent) 50%, black);
+  --color-amber-900:   color-mix(in srgb, var(--section-accent) 30%, black);
+  --color-amber-950:   color-mix(in srgb, var(--section-accent) 12%, black);
+  --theme-glow:        color-mix(in srgb, var(--section-accent) 40%, transparent);
+  --theme-glow-soft:   color-mix(in srgb, var(--section-accent) 20%, transparent);
+  --theme-glow-strong: color-mix(in srgb, var(--section-accent) 60%, transparent);
+}
 
 /* ── Reduced motion ───────────────────────────────────────────────────────────
    Respects OS-level "reduce motion" accessibility setting.
