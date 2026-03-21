@@ -530,8 +530,8 @@ export default function MosqueHero() {
     <main ref={containerRef} dir={isRTL ? 'rtl' : 'ltr'} style={{ backgroundColor: secBg('hero') }} className="relative selection:bg-amber-500/30 selection:text-amber-100 overflow-x-hidden">
 
       {/* ── Desktop Navigation ────────────────────────────────────── */}
-      <header style={scrolled ? { backgroundColor: secBg('hero') + 'cc' } : undefined} className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled ? 'backdrop-blur-xl py-4 border-b border-amber-500/20' : 'bg-transparent py-6'
+      <header style={{ ...secStyle('hero'), ...(scrolled ? { backgroundColor: secBg('hero') + 'cc' } : { backgroundColor: 'transparent' }) }} className={`section-themed fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        scrolled ? 'backdrop-blur-xl py-4 border-b border-amber-500/20' : 'py-6'
       }`}>
         <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between">
           {/* Logo */}
@@ -550,7 +550,7 @@ export default function MosqueHero() {
                 <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9L12 2Z" fill="currentColor"/>
               </svg>
             </div>
-            <span className="font-display font-medium text-lg md:text-xl text-amber-50 tracking-wide whitespace-nowrap">{content.mosque_name || 'Masjid Al-Ekhuah'}</span>
+            <span className={`font-display font-medium text-lg md:text-xl tracking-wide whitespace-nowrap ${secLM('hero') ? 'text-amber-900' : 'text-amber-50'}`}>{content.mosque_name || 'Masjid Al-Ekhuah'}</span>
           </motion.div>
 
           {/* Desktop nav — active section glow */}
@@ -570,7 +570,9 @@ export default function MosqueHero() {
                   initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.1 * i }}
                   className={`text-sm font-medium tracking-wide relative group transition-colors duration-300 ${
-                    isActive ? 'text-amber-400' : 'text-amber-100/60 hover:text-amber-400'
+                    isActive
+                      ? (secLM('hero') ? 'text-amber-600' : 'text-amber-400')
+                      : (secLM('hero') ? 'text-amber-700/70 hover:text-amber-600' : 'text-amber-100/60 hover:text-amber-400')
                   }`}>
                   <AnimatedText>{item}</AnimatedText>
                   {isActive ? (
@@ -591,12 +593,12 @@ export default function MosqueHero() {
             transition={{ duration: 0.8, ease: 'easeOut' }}
             className="flex items-center gap-2 md:gap-4">
             <button onClick={() => changeLang(nextLang[lang])}
-              className="flex items-center justify-center px-3 md:px-4 py-2 md:py-2.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-300 text-sm font-medium backdrop-blur-sm transition-all duration-300 hover:shadow-theme-soft gap-2 group">
+              className={`flex items-center justify-center px-3 md:px-4 py-2 md:py-2.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-sm font-medium backdrop-blur-sm transition-all duration-300 hover:shadow-theme-soft gap-2 group ${secLM('hero') ? 'text-amber-700' : 'text-amber-300'}`}>
               <Globe className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
               <AnimatedText>{t.langToggle}</AnimatedText>
             </button>
             <button onMouseEnter={handlePinInteraction} onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
-              className="hidden md:flex items-center justify-center px-6 py-2.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-sm font-medium backdrop-blur-sm transition-all duration-300 hover:shadow-theme-soft gap-2 group">
+              className={`hidden md:flex items-center justify-center px-6 py-2.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-sm font-medium backdrop-blur-sm transition-all duration-300 hover:shadow-theme-soft gap-2 group ${secLM('hero') ? 'text-amber-700' : 'text-amber-300'}`}>
               <motion.div animate={pinControls} className="animate-pin-breathe group-hover:animate-none">
                 <MapPin className="w-4 h-4" />
               </motion.div>
