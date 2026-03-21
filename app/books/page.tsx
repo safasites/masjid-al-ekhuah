@@ -7,6 +7,7 @@ import { BookMarked, ArrowLeft, ArrowUp, X, ExternalLink } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAnimationConfig } from '../animation-provider';
 import { useTheme, isLightTheme } from '../theme-provider';
+import { GeometricPattern } from '../components/GeometricPattern';
 
 type Lang = 'en' | 'ku' | 'ar';
 
@@ -169,10 +170,12 @@ export default function BooksPage() {
           initial={{ opacity: 0, y: anim.isSimplified ? 0 : 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: anim.isSimplified ? 0.2 : 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-16"
+          className="mb-16 relative"
         >
-          <h1 className="font-display text-4xl md:text-7xl text-amber-50 mb-3 tracking-tight">{tr.title}</h1>
-          <p className="text-amber-200/75 text-base md:text-xl">
+          {!anim.isSimplified && <GeometricPattern size={200} opacity={0.04} className="absolute top-0 right-0 hidden md:block" />}
+          <p className="text-xs uppercase tracking-widest text-amber-500/50 mb-3">{mosqueName}</p>
+          <h1 className="font-display text-5xl md:text-8xl text-amber-50 mb-4 tracking-tight">{tr.title}</h1>
+          <p className="text-amber-200/60 text-lg">
             {lang === 'en' ? tr.subtitle.replace('Masjid Al-Ekhuah', mosqueName) : tr.subtitle}
           </p>
         </motion.div>
@@ -182,10 +185,10 @@ export default function BooksPage() {
           <div className="space-y-12">
             {[1, 2].map(g => (
               <div key={g}>
-                <div className="h-6 bg-amber-500/10 rounded w-32 mb-6 animate-pulse" />
+                <div className="h-6 shimmer rounded w-32 mb-6" />
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                   {[1,2,3,4,5,6].map(i => (
-                    <div key={i} className="aspect-[2/3] bg-amber-950/20 border border-amber-500/10 rounded-2xl animate-pulse" />
+                    <div key={i} className="aspect-[2/3] glass rounded-2xl shimmer" />
                   ))}
                 </div>
               </div>
@@ -201,7 +204,7 @@ export default function BooksPage() {
           <div className="space-y-14">
             {categorised.map(({ cat, items }) => (
               <div key={cat.id}>
-                <h2 className="text-xl md:text-2xl font-display text-amber-200 mb-6 pb-3 border-b border-amber-500/15">
+                <h2 className="text-2xl md:text-3xl font-display text-amber-200 mb-6 pb-3 border-b border-amber-500/15">
                   {getCatName(cat)}
                 </h2>
                 <BookGrid books={items} getTitle={getTitle} getDesc={getDesc} setSelected={setSelected} anim={anim} />
@@ -209,7 +212,7 @@ export default function BooksPage() {
             ))}
             {uncategorised.length > 0 && (
               <div>
-                <h2 className="text-xl md:text-2xl font-display text-amber-200 mb-6 pb-3 border-b border-amber-500/15">
+                <h2 className="text-2xl md:text-3xl font-display text-amber-200 mb-6 pb-3 border-b border-amber-500/15">
                   {tr.uncategorised}
                 </h2>
                 <BookGrid books={uncategorised} getTitle={getTitle} getDesc={getDesc} setSelected={setSelected} anim={anim} />
@@ -227,7 +230,7 @@ export default function BooksPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center"
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center"
             onClick={() => setSelected(null)}
           >
             <motion.div
@@ -237,7 +240,7 @@ export default function BooksPage() {
               aria-modal="true"
               aria-labelledby="modal-title"
               {...anim.modalEntry}
-              className={`w-full sm:max-w-2xl ${lightMode ? 'bg-[#f0ede4]' : 'bg-[#111310]'} border border-amber-500/20 rounded-t-3xl sm:rounded-3xl overflow-hidden max-h-[90vh] overflow-y-auto outline-none`}
+              className={`w-full sm:max-w-2xl ${lightMode ? 'bg-[#f0ede4]/95' : 'bg-[#111310]/95'} backdrop-blur-xl border border-amber-500/20 shadow-elevation-3 rounded-t-[2rem] sm:rounded-[2rem] overflow-hidden max-h-[90vh] overflow-y-auto outline-none`}
               onClick={e => e.stopPropagation()}
             >
               {selected.image_url && (
@@ -323,7 +326,7 @@ function BookGrid({
               setSelected(book);
             }
           }}
-          className="rounded-2xl overflow-hidden border border-amber-500/15 bg-amber-950/20 hover:bg-amber-900/25 hover:border-amber-500/35 cursor-pointer group transition-all duration-300"
+          className="glass rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:shadow-elevation-2 hover:shadow-theme-soft"
         >
           {book.image_url ? (
             <div className="aspect-[2/3] w-full overflow-hidden relative">
@@ -334,6 +337,8 @@ function BookGrid({
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
                 sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 14vw"
               />
+              {/* Gradient overlay on bottom third */}
+              <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
             </div>
           ) : (
             <div className="aspect-[2/3] w-full bg-amber-950/40 flex items-center justify-center">

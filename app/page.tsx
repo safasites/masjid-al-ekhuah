@@ -1,11 +1,12 @@
 'use client';
 
 import { motion, useScroll, useTransform, useAnimationControls, AnimatePresence, LayoutGroup } from 'motion/react';
-import { MapPin, ArrowRight, ArrowUp, Globe, Home, BookOpen, BookMarked, Calendar, LayoutGrid, Heart, Info, Menu, X, Settings, Phone, Mail, Check, Palette } from 'lucide-react';
+import { MapPin, ArrowRight, ArrowUp, Globe, Home, BookOpen, BookMarked, Calendar, LayoutGrid, Heart, Info, Menu, X, Settings, Phone, Mail, Check, Palette, Clock } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAnimationConfig } from './animation-provider';
+import { GeometricPattern } from './components/GeometricPattern';
 
 function isDarkBg(hex: string): boolean {
   if (!hex || !hex.startsWith('#') || hex.length !== 7) return true;
@@ -109,6 +110,12 @@ const translations = {
     dhikrOf: 'of',
     nextPrayer: 'Next prayer',
     prayerIn: 'in',
+    nextPrayerCard: 'Next Prayer',
+    todayEventsCard: "Today's Events",
+    weeklyCoursesCard: 'Courses',
+    findUsCard: 'Find Us',
+    jumuahSpecial: "Jumu'ah Today",
+    announcementDismiss: 'Dismiss',
     footerTagline: 'A welcoming community in the heart of Birmingham',
     footerQuickLinks: 'Quick Links',
     footerContact: 'Contact',
@@ -153,6 +160,12 @@ const translations = {
     dhikrOf: 'لە',
     nextPrayer: 'نوێژی داهاتوو',
     prayerIn: 'لە ماوەی',
+    nextPrayerCard: 'نوێژی داهاتوو',
+    todayEventsCard: 'بۆنەکانی ئەمڕۆ',
+    weeklyCoursesCard: 'خولەکان',
+    findUsCard: 'ناونیشان',
+    jumuahSpecial: 'ئینی ئەمڕۆ',
+    announcementDismiss: 'داخستن',
     footerTagline: 'کۆمەڵگەیەکی بەخێرهاتوو لە دڵی بیرمینگام',
     footerQuickLinks: 'بەستەرە خێراکان',
     footerContact: 'پەیوەندی',
@@ -197,6 +210,12 @@ const translations = {
     dhikrOf: 'من',
     nextPrayer: 'الصلاة القادمة',
     prayerIn: 'خلال',
+    nextPrayerCard: 'الصلاة القادمة',
+    todayEventsCard: 'فعاليات اليوم',
+    weeklyCoursesCard: 'الدورات',
+    findUsCard: 'موقعنا',
+    jumuahSpecial: 'الجمعة اليوم',
+    announcementDismiss: 'إغلاق',
     footerTagline: 'مجتمع مرحب في قلب برمنغهام',
     footerQuickLinks: 'روابط سريعة',
     footerContact: 'تواصل معنا',
@@ -325,6 +344,14 @@ export default function MosqueHero() {
   const [dhikrCompleted, setDhikrCompleted] = useState<Record<string, boolean>>({});
   const [dhikrBurst, setDhikrBurst] = useState(false);
 
+  // Announcement banner
+  const [announcementDismissed, setAnnouncementDismissed] = useState(false);
+  const bannerRef = useRef<HTMLDivElement>(null);
+  const [bannerHeight, setBannerHeight] = useState(0);
+
+  // Hero prayer ring progress (0–1, seconds within current minute)
+  const [minuteProgress, setMinuteProgress] = useState(0);
+
   // Visual Customizer mode
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [customizeColors, setCustomizeColors] = useState<Record<string, { bg: string; accent: string }>>({});
@@ -334,6 +361,7 @@ export default function MosqueHero() {
 
   const t = translations[lang];
   const isRTL = lang === 'ar' || lang === 'ku';
+  const isFriday = new Date().getDay() === 5;
 
   // Feature flags — derived from content (default true until content loads)
   const showEvents  = content.feature_events  !== 'false';
@@ -350,7 +378,7 @@ export default function MosqueHero() {
   const heroOpacity  = anim.useParallax ? _heroOpacity : 1;
   const heroY        = anim.useParallax ? _heroY : '0%';
 
-  // Restore persisted language + dhikr visibility hint
+  // Restore persisted language + dhikr visibility hint + announcement dismissed
   useEffect(() => {
     const stored = localStorage.getItem('mosque-lang') as Lang | null;
     if (stored && (stored === 'en' || stored === 'ku' || stored === 'ar')) setLang(stored);
@@ -359,6 +387,10 @@ export default function MosqueHero() {
     if (new URLSearchParams(window.location.search).get('customize') === '1') {
       setIsCustomizing(true);
     }
+    // Announcement dismissed — compare against text to re-show if text changes
+    const dismissedText = localStorage.getItem('mosque-announcement-dismissed-text');
+    // Will be compared to content.announcement_text once content loads
+    if (dismissedText) setAnnouncementDismissed(true); // may be reset once content loads
   }, []);
 
   // Scroll state — header backdrop + back-to-top visibility
@@ -489,6 +521,24 @@ export default function MosqueHero() {
       .catch(() => {});
   }, []);
 
+  // Sync announcement dismissed state once content loads
+  useEffect(() => {
+    if (!content.announcement_text) return;
+    const dismissedText = localStorage.getItem('mosque-announcement-dismissed-text');
+    if (dismissedText !== content.announcement_text) {
+      setAnnouncementDismissed(false);
+    }
+  }, [content.announcement_text]);
+
+  // Track banner height for header offset
+  useEffect(() => {
+    const el = bannerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setBannerHeight(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   // Re-check active prayer every minute
   useEffect(() => {
     if (!prayerData) return;
@@ -517,6 +567,8 @@ export default function MosqueHero() {
       const s = diff % 60;
       const pad = (n: number) => String(n).padStart(2, '0');
       setCountdown(h > 0 ? `${h}h ${pad(mm)}m ${pad(s)}s` : `${pad(mm)}m ${pad(s)}s`);
+      // minuteProgress: how far through the current minute (for hero ring arc)
+      setMinuteProgress(1 - (diff % 60) / 60);
     }
     tick();
     const id = setInterval(tick, 1000);
@@ -618,6 +670,11 @@ export default function MosqueHero() {
     finally { setCustomizeSaving(false); }
   }
 
+  function dismissAnnouncement() {
+    setAnnouncementDismissed(true);
+    localStorage.setItem('mosque-announcement-dismissed-text', content.announcement_text ?? '');
+  }
+
   function handleDhikrReset() {
     const item = dhikrItems[dhikrIndex];
     if (!item) return;
@@ -634,13 +691,46 @@ export default function MosqueHero() {
     saveDhikrState(dhikrCounts, dhikrCompleted, idx);
   }
 
+  const bannerVisible = content.announcement_enabled === 'true' && !!content.announcement_text && !announcementDismissed;
+
   return (
     <main ref={containerRef} dir={isRTL ? 'rtl' : 'ltr'} style={{ backgroundColor: secBg('hero') }} className={`relative selection:bg-amber-500/30 selection:text-amber-100 overflow-x-hidden${isCustomizing ? ' pb-36' : ''}`}>
 
+      {/* ── Announcement Banner ───────────────────────────────────── */}
+      {bannerVisible && (
+        <div
+          ref={bannerRef}
+          style={secStyle('hero')}
+          className="section-themed animate-slide-down sticky top-0 z-[55] flex items-center justify-between gap-4 px-4 py-3 border-b border-amber-500/25 backdrop-blur-lg"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-amber-400 shrink-0" aria-hidden="true">
+              <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9L12 2Z"/>
+            </svg>
+            <p className={`text-sm truncate ${secLM('hero') ? 'text-amber-800/90' : 'text-amber-200/90'}`}>
+              {content.announcement_text}
+            </p>
+          </div>
+          {content.announcement_dismissible !== 'false' && (
+            <button onClick={dismissAnnouncement}
+              className={`shrink-0 transition-colors ${secLM('hero') ? 'text-amber-700/60 hover:text-amber-800' : 'text-amber-400/60 hover:text-amber-300'}`}
+              aria-label={t.announcementDismiss}>
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
+
       {/* ── Desktop Navigation ────────────────────────────────────── */}
-      <header style={{ ...secStyle('hero'), ...(scrolled ? { backgroundColor: secBg('hero') + 'cc' } : { backgroundColor: 'transparent' }) }} className={`section-themed fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled ? 'backdrop-blur-xl py-4 border-b border-amber-500/20' : 'py-6'
-      }`}>
+      <header
+        style={{
+          ...secStyle('hero'),
+          ...(scrolled ? {} : { backgroundColor: 'transparent', backdropFilter: 'none', WebkitBackdropFilter: 'none' }),
+          top: bannerVisible ? bannerHeight : 0,
+        }}
+        className={`section-themed fixed left-0 right-0 z-50 transition-all duration-500 ${
+          scrolled ? 'glass border-b border-amber-500/15 py-4' : 'py-6'
+        }`}>
         <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between">
           {/* Logo */}
           <motion.div
@@ -723,6 +813,11 @@ export default function MosqueHero() {
           <div className={`hidden md:block absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-yellow-500/20 blur-[150px] ${anim.isSimplified ? '' : 'animate-float'}`} style={{ animationDelay: '2s' }} />
           <div className={`hidden md:block absolute top-[30%] left-[50%] w-[40%] h-[40%] rounded-full bg-amber-400/15 blur-[100px] ${anim.isSimplified ? '' : 'animate-float'}`} style={{ animationDelay: '4s' }} />
           <div className="absolute inset-0 opacity-[0.04] mix-blend-overlay" style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }} />
+          {/* Islamic geometric decorators */}
+          <GeometricPattern size={700} opacity={0.035}
+            className={`absolute -top-40 -right-40 hidden lg:block ${anim.isSimplified ? '' : 'animate-geo-rotate-slow'}`} />
+          <GeometricPattern size={450} opacity={0.025}
+            className={`absolute -bottom-24 -left-24 hidden md:block ${anim.isSimplified ? '' : 'animate-geo-rotate-med'}`} />
         </div>
 
         <motion.div style={{ opacity: heroOpacity, y: heroY, willChange: anim.useParallax ? 'transform, opacity' : 'auto' }}
@@ -731,21 +826,27 @@ export default function MosqueHero() {
             initial={{ opacity: 0, y: anim.isSimplified ? 0 : 30, filter: anim.blur(10) }}
             animate={{ opacity: 1, y: 0, filter: anim.blur(0) }}
             transition={{ duration: anim.isSimplified ? 0.2 : 1, delay: anim.isSimplified ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="font-display text-5xl sm:text-6xl md:text-8xl lg:text-9xl text-white w-full leading-[1.1] tracking-tight mb-12 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+            className="font-display text-6xl sm:text-7xl md:text-[7rem] lg:text-[9rem] xl:text-[10rem] text-white w-full leading-[1.0] tracking-tight mb-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
             <AnimatedText>{heroLine1}</AnimatedText>
-            {/* Gradient word — className applied directly to AnimatedText so bg-clip-text works on the motion.span */}
             <AnimatedText className="text-transparent bg-clip-text bg-gradient-to-r from-amber-100 via-amber-400 to-yellow-200 animate-gradient-xy drop-shadow-sm">
               {heroLine2}
             </AnimatedText>
           </motion.h1>
 
+          {/* Subtitle */}
+          <motion.p
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: anim.isSimplified ? 0.1 : 0.4 }}
+            className={`text-base md:text-xl mb-8 max-w-md text-center ${secLM('hero') ? 'text-amber-800/50' : 'text-amber-200/45'}`}>
+            {content.hero_subtitle || t.footerTagline}
+          </motion.p>
+
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 1, delay: anim.isSimplified ? 0.1 : 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="pointer-events-auto">
             <button onClick={() => document.getElementById('times')?.scrollIntoView({ behavior: 'smooth' })}
               className="px-8 py-4 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 text-[#0a0804] font-medium text-base hover:from-amber-300 hover:to-amber-500 transition-all duration-300 flex items-center justify-center gap-2 group animate-breathe hover:animate-none hover:shadow-theme-strong hover:-translate-y-1">
               <AnimatedText>{t.viewPrayers}</AnimatedText>
-              {/* Arrow always animates downward (rotate 90°) on hover in both LTR and RTL */}
               <ArrowRight className={`w-4 h-4 transition-transform duration-300 ${
                 isRTL
                   ? 'rotate-180 group-hover:translate-y-1 group-hover:rotate-90'
@@ -753,6 +854,51 @@ export default function MosqueHero() {
               }`} />
             </button>
           </motion.div>
+
+          {/* Hero Prayer Ring */}
+          {!prayerLoading && countdown && nextPrayer && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.9, delay: anim.isSimplified ? 0.2 : 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="mt-10 relative pointer-events-auto"
+            >
+              <div className={`relative w-52 h-52 md:w-60 md:h-60 flex items-center justify-center ${anim.isSimplified ? '' : 'animate-ring-pulse'}`}>
+                {/* Spinning outer decorative rings */}
+                <motion.div {...anim.spinCW}
+                  className="absolute inset-0 rounded-full border border-amber-500/20" />
+                <motion.div {...anim.spinCCW}
+                  className="absolute inset-2 rounded-full border border-amber-400/15" />
+                {/* SVG progress arc — tracks seconds in current minute */}
+                <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
+                  <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(245,158,11,0.08)" strokeWidth="2" />
+                  <circle cx="50" cy="50" r="46" fill="none"
+                    stroke="rgba(245,158,11,0.55)" strokeWidth="2" strokeLinecap="round"
+                    strokeDasharray={`${minuteProgress * 289.0} 289.0`}
+                    style={{ transition: 'stroke-dasharray 1s linear' }} />
+                </svg>
+                {/* Center content */}
+                <div className="relative z-10 flex flex-col items-center justify-center text-center px-3">
+                  <p className={`text-[10px] uppercase tracking-widest mb-0.5 ${secLM('hero') ? 'text-amber-700/50' : 'text-amber-400/60'}`}>
+                    {t.nextPrayerCard}
+                  </p>
+                  <p className={`font-display text-lg font-semibold mb-0.5 ${secLM('hero') ? 'text-amber-900' : 'text-amber-100'}`}>
+                    {t.prayers[nextPrayer as keyof typeof t.prayers]}
+                  </p>
+                  <p dir="ltr" className={`font-display text-xl md:text-2xl tabular-nums font-bold ${secLM('hero') ? 'text-amber-800' : 'text-amber-300'}`}
+                    style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    {countdown}
+                  </p>
+                </div>
+              </div>
+              {/* Friday badge */}
+              {isFriday && content.friday_highlight_enabled !== 'false' && (
+                <div className="absolute -top-1 -right-1 bg-gradient-to-br from-amber-400 to-amber-600 text-[#0a0804] text-[9px] font-bold uppercase tracking-wider rounded-full px-2.5 py-1 shadow-theme-glow">
+                  {t.jumuahSpecial}
+                </div>
+              )}
+            </motion.div>
+          )}
         </motion.div>
       </div>
 
@@ -761,11 +907,82 @@ export default function MosqueHero() {
       {/* ── Content Sections ──────────────────────────────────────── */}
       <div className="relative z-20 rounded-t-[3rem] md:rounded-t-[5rem] shadow-theme-top overflow-hidden pb-32 md:pb-0">
 
+        {/* Quick Access Cards */}
+        {!prayerLoading && (
+          <div style={secStyle('hero')} className="section-themed px-4 py-5 border-b border-amber-500/10">
+            <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3">
+              {([
+                {
+                  label: t.nextPrayerCard,
+                  value: prayerData ? t.prayers[nextPrayer as keyof typeof t.prayers] : '—',
+                  sub: prayerData?.prayers.find(p => p.id === nextPrayer)?.azan ?? '',
+                  icon: <Clock className="w-4 h-4" />,
+                  href: '#times',
+                  show: true,
+                },
+                {
+                  label: t.todayEventsCard,
+                  value: String(events.length),
+                  sub: events.length > 0 ? getEventTitle(events[0]) : '—',
+                  icon: <Calendar className="w-4 h-4" />,
+                  href: '#events',
+                  show: showEvents,
+                },
+                {
+                  label: t.weeklyCoursesCard,
+                  value: String(courses.length),
+                  sub: courses.length > 0 ? getCourseTitle(courses[0]) : '—',
+                  icon: <BookOpen className="w-4 h-4" />,
+                  href: '/courses',
+                  show: showCourses,
+                },
+                {
+                  label: t.findUsCard,
+                  value: t.birmingham,
+                  sub: 'B18 7PW',
+                  icon: <MapPin className="w-4 h-4" />,
+                  href: '#about',
+                  show: true,
+                },
+              ] as { label: string; value: string; sub: string; icon: React.ReactNode; href: string; show: boolean }[])
+                .filter(c => c.show)
+                .map((card, i) => (
+                  <motion.a
+                    key={card.label}
+                    href={card.href}
+                    {...anim.cardEntry(i)}
+                    {...anim.cardHover}
+                    className={`glass rounded-2xl p-4 flex flex-col gap-1 transition-all duration-300 hover:shadow-theme-soft no-underline ${secLM('hero') ? 'hover:bg-amber-100/30' : 'hover:bg-amber-500/10'}`}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className={`text-[10px] uppercase tracking-widest font-medium ${secLM('hero') ? 'text-amber-700/55' : 'text-amber-400/55'}`}>
+                        {card.label}
+                      </span>
+                      <span className={`${secLM('hero') ? 'text-amber-600/40' : 'text-amber-400/40'}`}>{card.icon}</span>
+                    </div>
+                    <p className={`font-display text-xl font-bold tracking-tight leading-none ${secLM('hero') ? 'text-amber-900' : 'text-amber-50'}`}>
+                      {card.value}
+                    </p>
+                    <p dir="ltr" className={`text-xs truncate mt-0.5 ${secLM('hero') ? 'text-amber-700/45' : 'text-amber-300/45'}`}>
+                      {card.sub}
+                    </p>
+                  </motion.a>
+                ))}
+            </div>
+          </div>
+        )}
+
         {/* Prayer Times Section */}
-        <section id="times" style={secStyle('prayer')} className="section-themed min-h-screen bg-gradient-to-b from-amber-900/40 via-amber-950/40 to-transparent backdrop-blur-3xl border-t border-amber-500/30 flex flex-col items-center justify-center px-6 py-24">
+        <section id="times" style={secStyle('prayer')} className="section-themed min-h-screen bg-gradient-to-b from-amber-900/40 via-amber-950/40 to-transparent backdrop-blur-3xl border-t border-amber-500/30 flex flex-col items-center justify-center px-6 py-24 relative overflow-hidden">
+          {/* Decorative geometric pattern */}
+          <GeometricPattern size={200} opacity={0.04}
+            className="absolute top-8 right-8 hidden md:block pointer-events-none" />
           <div className="max-w-6xl w-full mx-auto">
             <motion.div {...anim.sectionEntry} className="text-center mb-16">
-              <h2 className={`font-display text-4xl md:text-5xl lg:text-6xl ${secLM('prayer') ? 'text-amber-900' : 'text-amber-50'} mb-6 tracking-tight`}>
+              <p className={`text-xs uppercase tracking-widest font-semibold mb-3 ${secLM('prayer') ? 'text-amber-600/60' : 'text-amber-500/50'}`}>
+                {t.birmingham}
+              </p>
+              <h2 className={`font-display text-4xl md:text-6xl lg:text-7xl ${secLM('prayer') ? 'text-amber-900' : 'text-amber-50'} mb-6 tracking-tight`}>
                 <AnimatedText>{t.todaysPrayers}</AnimatedText>
               </h2>
               <div className={`flex items-center justify-center gap-4 text-sm md:text-base ${secLM('prayer') ? 'text-amber-700/70' : 'text-amber-200/70'}`}>
@@ -807,10 +1024,12 @@ export default function MosqueHero() {
               </motion.div>
             )}
 
-            {/* Prayer rows — compact horizontal pill list */}
+            {/* Prayer rows — glass morphism card list */}
             {prayerLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <span className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-400 rounded-full animate-spin" />
+              <div className="flex flex-col gap-3 max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto w-full">
+                {[1,2,3,4,5].map(i => (
+                  <div key={i} className="shimmer rounded-2xl h-[72px]" />
+                ))}
               </div>
             ) : (
               <div className="flex flex-col gap-2 md:gap-3 max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto w-full">
@@ -824,8 +1043,10 @@ export default function MosqueHero() {
                       transition={{ duration: anim.isSimplified ? 0.15 : 0.5, delay: anim.isSimplified ? index * 0.03 : index * 0.07, ease: 'easeOut' }}
                       className={`relative flex items-center gap-4 rounded-2xl px-5 py-4 md:py-5 md:px-8 transition-all duration-500 ${
                         isActive
-                          ? 'bg-gradient-to-r from-amber-500/25 to-amber-700/15 border border-amber-400/60 shadow-theme-glow'
-                          : secLM('prayer') ? 'bg-amber-50/80 border border-amber-300/40 hover:border-amber-400/60 hover:bg-amber-100/60' : 'bg-amber-950/30 border border-amber-800/30 hover:border-amber-500/40 hover:bg-amber-900/30'
+                          ? 'glass-md border border-amber-400/60 shadow-theme-glow bg-gradient-to-r from-amber-500/20 to-transparent'
+                          : secLM('prayer')
+                            ? 'bg-amber-50/70 border border-amber-300/40 hover:border-amber-400/60 hover:bg-amber-100/60'
+                            : 'glass border border-amber-500/10 hover:border-amber-500/30 hover:shadow-theme-soft'
                       }`}
                     >
                       {/* Prayer name */}
@@ -871,7 +1092,18 @@ export default function MosqueHero() {
             {prayerData?.jumuah && (
               <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.55, ease: 'easeOut' }}
                 className="mt-6 flex justify-center">
-                <div className={`px-6 py-3 rounded-2xl text-sm font-medium flex items-center gap-3 ${secLM('prayer') ? 'bg-amber-100 border border-amber-300/60 text-amber-800' : 'bg-amber-500/10 border border-amber-500/20 text-amber-300'}`}>
+                <div className={`px-6 py-4 rounded-2xl text-sm font-medium flex items-center gap-3 transition-all ${
+                  isFriday && content.friday_highlight_enabled !== 'false'
+                    ? 'bg-gradient-to-r from-amber-500/30 to-amber-700/20 border-2 border-amber-400/50 shadow-theme-glow animate-breathe'
+                    : secLM('prayer')
+                      ? 'bg-amber-100 border border-amber-300/60 text-amber-800'
+                      : 'bg-amber-500/10 border border-amber-500/20 text-amber-300'
+                }`}>
+                  {isFriday && content.friday_highlight_enabled !== 'false' && (
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-amber-300 bg-amber-500/25 border border-amber-400/30 rounded-full px-2 py-0.5 shrink-0">
+                      {t.jumuahSpecial}
+                    </span>
+                  )}
                   <Calendar className={`w-4 h-4 ${secLM('prayer') ? 'text-amber-600' : 'text-amber-400'}`} />
                   <span><AnimatedText>{t.jumuah}</AnimatedText></span>
                   <span dir="ltr" className={`font-display text-base ${secLM('prayer') ? 'text-amber-700' : 'text-amber-400'}`}>{prayerData.jumuah}</span>
@@ -909,6 +1141,8 @@ export default function MosqueHero() {
               <div className="absolute inset-0 pointer-events-none">
                 <div className="hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-amber-500/5 blur-[100px]" />
               </div>
+              <GeometricPattern size={180} opacity={0.04}
+                className="absolute top-6 right-6 hidden md:block pointer-events-none" />
 
               <div className="max-w-2xl mx-auto w-full relative z-10">
                 {/* Section heading */}
@@ -1117,8 +1351,9 @@ export default function MosqueHero() {
           <motion.div {...anim.sectionEntry} className="max-w-6xl w-full mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-5 md:mb-12 gap-3 md:gap-6">
               <div>
-                <h2 className={`font-display text-3xl md:text-5xl ${secLM('events') ? 'text-amber-900' : 'text-amber-50'} mb-1 md:mb-4`}><AnimatedText>{t.eventsTitle}</AnimatedText></h2>
-                <p className={`text-base md:text-lg ${secLM('events') ? 'text-amber-700/75' : 'text-amber-200/75'}`}><AnimatedText>{t.eventsSubtitle}</AnimatedText></p>
+                <p className={`text-xs uppercase tracking-widest font-semibold mb-2 ${secLM('events') ? 'text-amber-600/60' : 'text-amber-500/50'}`}>Community</p>
+                <h2 className={`font-display text-4xl md:text-6xl ${secLM('events') ? 'text-amber-900' : 'text-amber-50'} mb-1 md:mb-3 tracking-tight`}><AnimatedText>{t.eventsTitle}</AnimatedText></h2>
+                <p className={`text-base md:text-lg ${secLM('events') ? 'text-amber-700/75' : 'text-amber-200/60'}`}><AnimatedText>{t.eventsSubtitle}</AnimatedText></p>
               </div>
               <button onClick={() => router.push('/events')}
                 className="text-amber-400 hover:text-amber-300 flex items-center gap-2 font-medium transition-colors shrink-0">
@@ -1130,17 +1365,19 @@ export default function MosqueHero() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
               {events.length === 0 ? (
                 [1, 2, 3].map(i => (
-                  <div key={i} className="bg-amber-950/20 border border-amber-500/10 rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-8 animate-pulse">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl sm:rounded-2xl bg-amber-500/10 mb-3 md:mb-6" />
-                    <div className="h-4 bg-amber-500/10 rounded-lg mb-2 w-2/3" />
-                    <div className="h-3 bg-amber-500/10 rounded mb-3 w-1/2" />
-                    <div className="h-3 bg-amber-500/5 rounded w-full" />
+                  <div key={i} className="rounded-3xl overflow-hidden">
+                    <div className="shimmer aspect-video" />
+                    <div className="p-4 space-y-2">
+                      <div className="shimmer rounded-lg h-4 w-2/3" />
+                      <div className="shimmer rounded-lg h-3 w-1/2" />
+                      <div className="shimmer rounded h-3 w-full" />
+                    </div>
                   </div>
                 ))
               ) : events.map(event => (
                 <motion.div key={event.id} {...anim.cardHover}
                   onClick={() => router.push('/events')}
-                  className={`${secLM('events') ? 'bg-amber-50 border border-amber-300/40 hover:bg-amber-100/80 hover:border-amber-400/60' : 'bg-amber-950/20 border border-amber-500/20 hover:bg-amber-900/30 hover:border-amber-500/40'} rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-300 group cursor-pointer`}>
+                  className={`glass rounded-3xl overflow-hidden transition-all duration-300 group cursor-pointer hover:shadow-elevation-2 hover:shadow-theme-soft ${secLM('events') ? 'bg-amber-50/60 border-amber-300/30' : ''}`}>
                   {event.image_url ? (
                     <div className="aspect-video w-full overflow-hidden relative">
                       <Image src={event.image_url} alt={getEventTitle(event)} fill
@@ -1148,14 +1385,14 @@ export default function MosqueHero() {
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
                     </div>
                   ) : (
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl sm:rounded-2xl bg-amber-500/10 flex items-center justify-center mt-3 mx-3 sm:mt-4 sm:mx-4 md:mt-8 md:mx-8 group-hover:bg-amber-500/20 transition-colors">
-                      <Calendar className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-amber-400" />
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center mt-4 mx-4 md:mt-6 md:mx-6 group-hover:bg-amber-500/20 transition-colors">
+                      <Calendar className="w-5 h-5 md:w-6 md:h-6 text-amber-400" />
                     </div>
                   )}
-                  <div className="p-3 sm:p-4 md:p-6">
-                    <h3 dir="auto" className={`text-base sm:text-lg md:text-xl font-medium ${secLM('events') ? 'text-amber-900' : 'text-amber-50'} mb-1.5`}>{getEventTitle(event)}</h3>
-                    <p className="text-amber-500/80 text-xs sm:text-sm mb-2">{event.date_label}</p>
-                    {event.description && <p dir="auto" className={`leading-relaxed text-xs sm:text-sm line-clamp-2 ${secLM('events') ? 'text-amber-800/75' : 'text-amber-100/75'}`}>{getEventDesc(event)}</p>}
+                  <div className="p-4 md:p-6">
+                    <h3 dir="auto" className={`text-base sm:text-lg font-semibold ${secLM('events') ? 'text-amber-900' : 'text-amber-50'} mb-1.5 leading-snug`}>{getEventTitle(event)}</h3>
+                    <p className="text-amber-500/70 text-xs sm:text-sm mb-2">{event.date_label}</p>
+                    {event.description && <p dir="auto" className={`leading-relaxed text-xs sm:text-sm line-clamp-2 ${secLM('events') ? 'text-amber-800/65' : 'text-amber-100/60'}`}>{getEventDesc(event)}</p>}
                   </div>
                 </motion.div>
               ))}
@@ -1168,8 +1405,9 @@ export default function MosqueHero() {
           <motion.div {...anim.sectionEntry} className="max-w-6xl w-full mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-5 md:mb-12 gap-3 md:gap-6">
               <div>
-                <h2 className={`font-display text-3xl md:text-5xl ${secLM('courses') ? 'text-amber-900' : 'text-amber-50'} mb-1 md:mb-4`}><AnimatedText>{t.coursesTitle}</AnimatedText></h2>
-                <p className={`text-base md:text-lg ${secLM('courses') ? 'text-amber-700/75' : 'text-amber-200/75'}`}><AnimatedText>{t.coursesSubtitle}</AnimatedText></p>
+                <p className={`text-xs uppercase tracking-widest font-semibold mb-2 ${secLM('courses') ? 'text-amber-600/60' : 'text-amber-500/50'}`}>Education</p>
+                <h2 className={`font-display text-4xl md:text-6xl ${secLM('courses') ? 'text-amber-900' : 'text-amber-50'} mb-1 md:mb-3 tracking-tight`}><AnimatedText>{t.coursesTitle}</AnimatedText></h2>
+                <p className={`text-base md:text-lg ${secLM('courses') ? 'text-amber-700/75' : 'text-amber-200/60'}`}><AnimatedText>{t.coursesSubtitle}</AnimatedText></p>
               </div>
               <button onClick={() => router.push('/courses')}
                 className="text-amber-400 hover:text-amber-300 flex items-center gap-2 font-medium transition-colors shrink-0">
@@ -1180,20 +1418,30 @@ export default function MosqueHero() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
               {courses.length === 0 ? (
                 [1, 2, 3].map(i => (
-                  <div key={i} className="bg-amber-950/20 border border-amber-500/10 rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-8 animate-pulse">
-                    <div className="flex justify-between mb-3 md:mb-6">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl sm:rounded-2xl bg-amber-500/10" />
-                      <div className="h-5 w-16 sm:h-6 sm:w-20 rounded-full bg-amber-500/10" />
+                  <div key={i} className="rounded-3xl overflow-hidden">
+                    <div className="shimmer aspect-video" />
+                    <div className="p-4 space-y-3">
+                      <div className="flex justify-between">
+                        <div className="shimmer rounded-2xl w-10 h-10" />
+                        <div className="shimmer rounded-full h-6 w-20" />
+                      </div>
+                      <div className="shimmer rounded-lg h-4 w-2/3" />
+                      <div className="shimmer rounded h-3 w-1/3" />
                     </div>
-                    <div className="h-4 bg-amber-500/10 rounded-lg mb-2 w-2/3" />
-                    <div className="h-3 bg-amber-500/5 rounded w-1/3" />
                   </div>
                 ))
-              ) : courses.map(course => (
-                <motion.div key={course.id} {...anim.courseCardHover}
-                  onClick={() => router.push('/courses')}
-                  className="bg-amber-950/20 border border-amber-500/20 rounded-2xl sm:rounded-3xl overflow-hidden hover:border-amber-500/40 transition-all duration-300 relative group cursor-pointer">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-amber-500/10 transition-colors pointer-events-none" />
+              ) : courses.map(course => {
+                const levelColor = course.level === 'Beginner'
+                  ? 'bg-emerald-500/15 text-emerald-300 border-emerald-400/25'
+                  : course.level === 'Advanced'
+                    ? 'bg-red-500/15 text-red-300 border-red-400/25'
+                    : course.level === 'Intermediate'
+                      ? 'bg-amber-500/15 text-amber-300 border-amber-400/25'
+                      : 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+                return (
+                  <motion.div key={course.id} {...anim.courseCardHover}
+                    onClick={() => router.push('/courses')}
+                    className={`glass rounded-3xl overflow-hidden transition-all duration-300 group cursor-pointer hover:shadow-elevation-2 hover:shadow-theme-soft ${secLM('courses') ? 'bg-amber-50/60 border-amber-300/30' : ''}`}>
                   {course.image_url ? (
                     <div className="aspect-video w-full overflow-hidden relative">
                       <Image src={course.image_url} alt={getCourseTitle(course)} fill
@@ -1201,22 +1449,23 @@ export default function MosqueHero() {
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
                     </div>
                   ) : null}
-                  <div className="p-3 sm:p-4 md:p-6 relative z-10">
+                  <div className="p-4 md:p-6 relative z-10">
                     <div className="flex justify-between items-start mb-3">
                       {!course.image_url && (
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-amber-500/10 flex items-center justify-center">
-                          <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
+                        <div className="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center">
+                          <BookOpen className="w-5 h-5 text-amber-400" />
                         </div>
                       )}
-                      <span className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded-full bg-amber-500/10 text-amber-400 text-[10px] sm:text-xs font-medium border border-amber-500/20 ${!course.image_url ? '' : 'ml-auto'}`}>{course.level}</span>
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${levelColor} ${!course.image_url ? '' : 'ml-auto'}`}>{course.level}</span>
                     </div>
-                    <h3 dir="auto" className={`text-base sm:text-lg md:text-xl font-medium ${secLM('courses') ? 'text-amber-900' : 'text-amber-50'} mb-1.5`}>{getCourseTitle(course)}</h3>
-                    <p className={`text-xs sm:text-sm flex items-center gap-2 ${secLM('courses') ? 'text-amber-800/75' : 'text-amber-100/75'}`}>
+                    <h3 dir="auto" className={`text-base sm:text-lg font-semibold ${secLM('courses') ? 'text-amber-900' : 'text-amber-50'} mb-1.5 leading-snug`}>{getCourseTitle(course)}</h3>
+                    <p className={`text-xs sm:text-sm flex items-center gap-2 ${secLM('courses') ? 'text-amber-800/65' : 'text-amber-100/60'}`}>
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-500/50 shrink-0" />{course.duration}
                     </p>
                   </div>
                 </motion.div>
-              ))}
+                );
+              })}
             </div>
           </motion.div>
         </section>}
@@ -1226,8 +1475,9 @@ export default function MosqueHero() {
           <motion.div {...anim.sectionEntry} className="max-w-6xl w-full mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-5 md:mb-12 gap-3 md:gap-6">
               <div>
-                <h2 className={`font-display text-3xl md:text-5xl ${secLM('books') ? 'text-amber-900' : 'text-amber-50'} mb-1 md:mb-4`}><AnimatedText>{t.booksTitle}</AnimatedText></h2>
-                <p className={`text-base md:text-lg ${secLM('books') ? 'text-amber-700/75' : 'text-amber-200/75'}`}><AnimatedText>{t.booksSubtitle}</AnimatedText></p>
+                <p className={`text-xs uppercase tracking-widest font-semibold mb-2 ${secLM('books') ? 'text-amber-600/60' : 'text-amber-500/50'}`}>Library</p>
+                <h2 className={`font-display text-4xl md:text-6xl ${secLM('books') ? 'text-amber-900' : 'text-amber-50'} mb-1 md:mb-3 tracking-tight`}><AnimatedText>{t.booksTitle}</AnimatedText></h2>
+                <p className={`text-base md:text-lg ${secLM('books') ? 'text-amber-700/75' : 'text-amber-200/60'}`}><AnimatedText>{t.booksSubtitle}</AnimatedText></p>
               </div>
               <button onClick={() => router.push('/books')}
                 className="text-amber-400 hover:text-amber-300 flex items-center gap-2 font-medium transition-colors shrink-0">
@@ -1239,12 +1489,14 @@ export default function MosqueHero() {
               {books.map((book, i) => (
                 <motion.div key={book.id} {...anim.cardEntry(i)} {...anim.cardHover}
                   onClick={() => router.push('/books')}
-                  className={`rounded-2xl overflow-hidden border ${secLM('books') ? 'bg-amber-50 border-amber-300/30 hover:border-amber-400/50' : 'bg-amber-950/20 border-amber-500/15 hover:border-amber-500/35'} cursor-pointer group transition-all duration-300`}>
+                  className={`rounded-2xl overflow-hidden border ${secLM('books') ? 'bg-amber-50 border-amber-300/30 hover:border-amber-400/50' : 'glass border-amber-500/15 hover:border-amber-500/35 hover:shadow-theme-soft'} cursor-pointer group transition-all duration-300`}>
                   {book.image_url ? (
                     <div className="aspect-[2/3] w-full overflow-hidden relative">
                       <Image src={book.image_url} alt={lang === 'ar' ? (book.title_ar || book.title) : lang === 'ku' ? (book.title_ku || book.title) : book.title}
                         fill className="object-cover group-hover:scale-105 transition-transform duration-500"
                         sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 14vw" />
+                      {/* Gradient overlay on hover */}
+                      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>
                   ) : (
                     <div className={`aspect-[2/3] w-full ${secLM('books') ? 'bg-amber-100' : 'bg-amber-950/40'} flex items-center justify-center`}>
@@ -1265,16 +1517,17 @@ export default function MosqueHero() {
         {/* Donate Section */}
         {showDonate && <section id="donate" style={secStyle('donate')} className="section-themed py-32 px-6 flex items-center justify-center relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-amber-900/20 pointer-events-none" />
+          <GeometricPattern size={300} opacity={0.035}
+            className={`absolute top-8 right-8 hidden md:block pointer-events-none ${anim.isSimplified ? '' : 'animate-geo-rotate-slow'}`} />
           <motion.div {...anim.sectionEntry}
-            className={`max-w-4xl w-full mx-auto text-center relative z-10 ${secLM('donate') ? 'bg-amber-100/80 border border-amber-300/50' : 'bg-amber-950/30 border border-amber-500/30'} rounded-[3rem] p-8 md:p-12 lg:p-20 backdrop-blur-md shadow-theme-top`}>
-            <div className="w-20 h-20 mx-auto bg-amber-500/20 rounded-full flex items-center justify-center mb-8 border border-amber-400/30">
-              <Heart className="w-10 h-10 text-amber-400" />
+            className={`max-w-4xl w-full mx-auto text-center relative z-10 glass-md rounded-[3rem] p-8 md:p-12 lg:p-20 shadow-elevation-3 ${secLM('donate') ? 'bg-amber-100/70 border-amber-300/40' : ''}`}>
+            <div className="w-24 h-24 mx-auto bg-gradient-to-br from-amber-500/30 to-amber-700/20 rounded-full flex items-center justify-center mb-8 border-2 border-amber-400/40 shadow-theme-glow">
+              <Heart className="w-12 h-12 text-amber-300" />
             </div>
-            <h2 className={`font-display text-4xl md:text-6xl ${secLM('donate') ? 'text-amber-900' : 'text-amber-50'} mb-6 break-words`}>
+            <h2 className={`font-display text-5xl md:text-7xl mb-6 break-words tracking-tight ${secLM('donate') ? 'text-amber-900' : 'text-gradient-theme'}`}>
               <AnimatedText>{t.donateTitle}</AnimatedText>
             </h2>
-            {/* nowrap={false} allows the description to wrap naturally, fixing overflow */}
-            <p className={`text-base md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed ${secLM('donate') ? 'text-amber-800/70' : 'text-amber-100/70'}`}>
+            <p className={`text-base md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed ${secLM('donate') ? 'text-amber-800/70' : 'text-amber-100/65'}`}>
               <AnimatedText nowrap={false}>{t.donateDesc}</AnimatedText>
             </p>
             <button className={`px-10 py-5 rounded-full bg-gradient-to-r font-bold text-lg transition-all duration-300 shadow-theme-glow hover:shadow-theme-strong hover:-translate-y-1 ${secLM('donate') ? 'from-amber-600 to-amber-800 text-amber-50 hover:from-amber-700 hover:to-amber-900' : 'from-amber-400 to-amber-600 text-[#0a0804] hover:from-amber-300 hover:to-amber-500'}`}>
@@ -1528,7 +1781,7 @@ export default function MosqueHero() {
           )}
         </AnimatePresence>
 
-        <div className="bg-[#111310]/95 backdrop-blur-xl border border-amber-500/20 rounded-full p-2 flex items-center justify-between shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)]">
+        <div className="bg-[#111310]/95 backdrop-blur-xl border border-amber-500/15 rounded-[1.75rem] px-1 py-1 flex items-stretch shadow-elevation-3">
           {([
             { id: 'home',    icon: Home,        label: t.mobileNav.home,      href: '#' },
             { id: 'times',   icon: LayoutGrid,  label: t.mobileNav.timetable, href: '#times' },
@@ -1541,20 +1794,20 @@ export default function MosqueHero() {
             return (
               <a key={item.id} href={item.href}
                 onClick={() => { setActiveMobileTab(item.id); setShowMobileMenu(false); }}
-                className={`flex flex-col items-center justify-center flex-1 h-14 rounded-full transition-all duration-300 ${
-                  isActive ? 'bg-amber-500/10 text-amber-400' : 'text-zinc-400 hover:text-amber-200'
+                className={`flex flex-col items-center justify-center flex-1 min-h-[3.5rem] rounded-[1.25rem] transition-all duration-300 py-2 ${
+                  isActive ? 'bg-amber-500/15 shadow-theme-soft text-amber-400' : 'text-zinc-400 hover:text-amber-200'
                 }`}>
-                <Icon className={`w-5 h-5 mb-1 ${isActive ? 'text-amber-400' : ''}`} />
-                <span className="text-[10px] font-medium tracking-wide"><AnimatedText>{item.label}</AnimatedText></span>
+                <Icon className={`w-5 h-5 mb-0.5 ${isActive ? 'text-amber-400' : ''}`} />
+                <span className={`text-[10px] font-medium tracking-wide ${isActive ? 'text-amber-300' : ''}`}><AnimatedText>{item.label}</AnimatedText></span>
               </a>
             );
           })}
           <button onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className={`flex flex-col items-center justify-center flex-1 h-14 rounded-full transition-all duration-300 ${
-              showMobileMenu ? 'bg-amber-500/10 text-amber-400' : 'text-zinc-400 hover:text-amber-200'
+            className={`flex flex-col items-center justify-center flex-1 min-h-[3.5rem] rounded-[1.25rem] transition-all duration-300 py-2 ${
+              showMobileMenu ? 'bg-amber-500/15 text-amber-400' : 'text-zinc-400 hover:text-amber-200'
             }`}>
-            <Menu className={`w-5 h-5 mb-1 ${showMobileMenu ? 'text-amber-400' : ''}`} />
-            <span className="text-[10px] font-medium tracking-wide"><AnimatedText>{t.mobileNav.more}</AnimatedText></span>
+            <Menu className={`w-5 h-5 mb-0.5 ${showMobileMenu ? 'text-amber-400' : ''}`} />
+            <span className={`text-[10px] font-medium tracking-wide ${showMobileMenu ? 'text-amber-300' : ''}`}><AnimatedText>{t.mobileNav.more}</AnimatedText></span>
           </button>
         </div>
       </div>

@@ -7,6 +7,7 @@ import { BookOpen, ArrowLeft, ArrowUp, X, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAnimationConfig } from '../animation-provider';
 import { useTheme, isLightTheme } from '../theme-provider';
+import { GeometricPattern } from '../components/GeometricPattern';
 
 type Lang = 'en' | 'ku' | 'ar';
 
@@ -148,22 +149,24 @@ export default function CoursesPage() {
           initial={{ opacity: 0, y: anim.isSimplified ? 0 : 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: anim.isSimplified ? 0.2 : 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-16"
+          className="mb-16 relative"
         >
-          <h1 className="font-display text-4xl md:text-7xl text-amber-50 mb-3 tracking-tight">{tr.title}</h1>
-          <p className="text-amber-200/75 text-base md:text-xl">{lang === 'en' ? tr.subtitle.replace('Masjid Al-Ekhuah', mosqueName) : tr.subtitle}</p>
+          {!anim.isSimplified && <GeometricPattern size={200} opacity={0.04} className="absolute top-0 right-0 hidden md:block" />}
+          <p className="text-xs uppercase tracking-widest text-amber-500/50 mb-3">{mosqueName}</p>
+          <h1 className="font-display text-5xl md:text-8xl text-amber-50 mb-4 tracking-tight">{tr.title}</h1>
+          <p className="text-amber-200/60 text-lg">{lang === 'en' ? tr.subtitle.replace('Masjid Al-Ekhuah', mosqueName) : tr.subtitle}</p>
         </motion.div>
 
         {/* Courses grid */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {[1, 2, 3].map(i => (
-              <div key={i} className="bg-amber-950/20 border border-amber-500/10 rounded-3xl overflow-hidden animate-pulse">
-                <div className="aspect-video w-full bg-amber-500/10" />
+              <div key={i} className="glass rounded-3xl overflow-hidden">
+                <div className="aspect-video w-full shimmer" />
                 <div className="p-5">
-                  <div className="h-4 bg-amber-500/10 rounded mb-2 w-2/3" />
-                  <div className="h-3 bg-amber-500/10 rounded mb-3 w-1/2" />
-                  <div className="h-3 bg-amber-500/5 rounded w-full" />
+                  <div className="h-4 shimmer rounded mb-2 w-2/3" />
+                  <div className="h-3 shimmer rounded mb-3 w-1/2" />
+                  <div className="h-3 shimmer rounded w-full" />
                 </div>
               </div>
             ))}
@@ -182,10 +185,8 @@ export default function CoursesPage() {
                 {...anim.cardEntry(i)}
                 {...anim.cardHover}
                 onClick={() => setSelected(course)}
-                className="rounded-3xl overflow-hidden border border-amber-500/15 bg-amber-950/20 hover:bg-amber-900/25 hover:border-amber-500/35 cursor-pointer group transition-all duration-300 relative"
+                className="glass rounded-3xl overflow-hidden cursor-pointer group transition-all duration-300 hover:shadow-elevation-2 hover:shadow-theme-soft relative"
               >
-                {/* Glow accent */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-amber-500/10 transition-colors pointer-events-none" />
 
                 {/* Image / placeholder */}
                 {course.image_url ? (
@@ -207,7 +208,15 @@ export default function CoursesPage() {
                 {/* Card content */}
                 <div className="p-5 md:p-6 relative z-10">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-[10px] font-medium border border-amber-500/20 uppercase tracking-wide">
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${
+                      /beginner|basic|intro/i.test(course.level)
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                        : /advanced|expert/i.test(course.level)
+                        ? 'bg-red-500/20 text-red-300 border border-red-500/30'
+                        : /inter|mid/i.test(course.level)
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                        : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                    }`}>
                       {course.level}
                     </span>
                     <span className="text-amber-500/50 text-xs flex items-center gap-1">
@@ -233,7 +242,7 @@ export default function CoursesPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center"
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center"
             onClick={() => setSelected(null)}
           >
             <motion.div
@@ -243,7 +252,7 @@ export default function CoursesPage() {
               aria-modal="true"
               aria-labelledby="modal-title"
               {...anim.modalEntry}
-              className={`w-full sm:max-w-2xl ${lightMode ? 'bg-[#f0ede4]' : 'bg-[#111310]'} border border-amber-500/20 rounded-t-3xl sm:rounded-3xl overflow-hidden max-h-[90vh] overflow-y-auto outline-none`}
+              className={`w-full sm:max-w-2xl ${lightMode ? 'bg-[#f0ede4]/95' : 'bg-[#111310]/95'} backdrop-blur-xl border border-amber-500/20 shadow-elevation-3 rounded-t-[2rem] sm:rounded-[2rem] overflow-hidden max-h-[90vh] overflow-y-auto outline-none`}
               onClick={e => e.stopPropagation()}
             >
               {selected.image_url && (
@@ -261,7 +270,15 @@ export default function CoursesPage() {
                   <X className="w-4 h-4" />
                 </button>
                 <div className="flex items-center gap-3 mb-3 flex-wrap">
-                  <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-xs font-medium border border-amber-500/20">
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                    /beginner|basic|intro/i.test(selected.level)
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                      : /advanced|expert/i.test(selected.level)
+                      ? 'bg-red-500/20 text-red-300 border border-red-500/30'
+                      : /inter|mid/i.test(selected.level)
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                      : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                  }`}>
                     {selected.level}
                   </span>
                   <span className="text-amber-500/60 text-xs flex items-center gap-1">

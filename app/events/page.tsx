@@ -7,6 +7,7 @@ import { Calendar, ArrowLeft, ArrowUp, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAnimationConfig } from '../animation-provider';
 import { useTheme, isLightTheme } from '../theme-provider';
+import { GeometricPattern } from '../components/GeometricPattern';
 
 type Lang = 'en' | 'ku' | 'ar';
 
@@ -148,22 +149,24 @@ export default function EventsPage() {
           initial={{ opacity: 0, y: anim.isSimplified ? 0 : 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: anim.isSimplified ? 0.2 : 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-16"
+          className="mb-16 relative"
         >
-          <h1 className="font-display text-4xl md:text-7xl text-amber-50 mb-3 tracking-tight">{tr.title}</h1>
-          <p className="text-amber-200/75 text-base md:text-xl">{lang === 'en' ? tr.subtitle.replace('Masjid Al-Ekhuah', mosqueName) : tr.subtitle}</p>
+          {!anim.isSimplified && <GeometricPattern size={200} opacity={0.04} className="absolute top-0 right-0 hidden md:block" />}
+          <p className="text-xs uppercase tracking-widest text-amber-500/50 mb-3">{mosqueName}</p>
+          <h1 className="font-display text-5xl md:text-8xl text-amber-50 mb-4 tracking-tight">{tr.title}</h1>
+          <p className="text-amber-200/60 text-lg">{lang === 'en' ? tr.subtitle.replace('Masjid Al-Ekhuah', mosqueName) : tr.subtitle}</p>
         </motion.div>
 
         {/* Events grid */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="bg-amber-950/20 border border-amber-500/10 rounded-3xl overflow-hidden animate-pulse">
-                <div className="aspect-video w-full bg-amber-500/10" />
+              <div key={i} className="glass rounded-3xl overflow-hidden">
+                <div className="aspect-video w-full shimmer" />
                 <div className="p-5">
-                  <div className="h-4 bg-amber-500/10 rounded mb-2 w-2/3" />
-                  <div className="h-3 bg-amber-500/10 rounded mb-3 w-1/2" />
-                  <div className="h-3 bg-amber-500/5 rounded w-full" />
+                  <div className="h-4 shimmer rounded mb-2 w-2/3" />
+                  <div className="h-3 shimmer rounded mb-3 w-1/2" />
+                  <div className="h-3 shimmer rounded w-full" />
                 </div>
               </div>
             ))}
@@ -182,10 +185,10 @@ export default function EventsPage() {
                 {...anim.cardEntry(i)}
                 {...anim.cardHover}
                 onClick={() => setSelected(event)}
-                className={`rounded-3xl overflow-hidden border cursor-pointer group transition-all duration-300 ${
+                className={`rounded-3xl overflow-hidden cursor-pointer group transition-all duration-300 hover:shadow-elevation-2 hover:shadow-theme-soft ${
                   event.is_featured
-                    ? 'border-amber-400/40 shadow-theme-glow bg-gradient-to-b from-amber-500/15 to-amber-800/5'
-                    : 'border-amber-500/15 bg-amber-950/20 hover:bg-amber-900/25 hover:border-amber-500/35'
+                    ? 'glass-md border border-amber-400/40 shadow-theme-glow'
+                    : 'glass'
                 }`}
               >
                 {/* Image / placeholder */}
@@ -208,7 +211,7 @@ export default function EventsPage() {
                 {/* Card content */}
                 <div className="p-5 md:p-6">
                   {event.is_featured && (
-                    <span className="inline-block px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-[10px] font-medium uppercase tracking-wider mb-2">
+                    <span className="inline-block px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 text-[#0a0804] text-[10px] font-semibold uppercase tracking-wider mb-2">
                       {tr.featured}
                     </span>
                   )}
@@ -232,7 +235,7 @@ export default function EventsPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center"
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center"
             onClick={() => setSelected(null)}
           >
             <motion.div
@@ -242,7 +245,7 @@ export default function EventsPage() {
               aria-modal="true"
               aria-labelledby="modal-title"
               {...anim.modalEntry}
-              className={`w-full sm:max-w-2xl ${lightMode ? 'bg-[#f0ede4]' : 'bg-[#111310]'} sm:${lightMode ? 'bg-[#f8f5ee]' : 'bg-[#0a0804]'} border border-amber-500/20 rounded-t-3xl sm:rounded-3xl overflow-hidden max-h-[90vh] overflow-y-auto outline-none`}
+              className={`w-full sm:max-w-2xl ${lightMode ? 'bg-[#f0ede4]/95' : 'bg-[#111310]/95'} backdrop-blur-xl border border-amber-500/20 shadow-elevation-3 rounded-t-[2rem] sm:rounded-[2rem] overflow-hidden max-h-[90vh] overflow-y-auto outline-none`}
               onClick={e => e.stopPropagation()}
             >
               {selected.image_url && (
@@ -260,7 +263,7 @@ export default function EventsPage() {
                   <X className="w-4 h-4" />
                 </button>
                 {selected.is_featured && (
-                  <span className="inline-block px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-[10px] font-medium uppercase tracking-wider mb-3">
+                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 text-[#0a0804] text-[10px] font-semibold uppercase tracking-wider mb-3">
                     {tr.featured}
                   </span>
                 )}

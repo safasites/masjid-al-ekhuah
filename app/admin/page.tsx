@@ -20,7 +20,7 @@ interface Content { [key: string]: string; }
 interface Timetable { id: string; label: string; image_url: string; is_active: boolean; created_at: string; }
 interface DhikrItem { id: string; arabic_text: string; transliteration: string; meaning_en: string; meaning_ar?: string; meaning_ku?: string; target_count: number; sort_order: number; is_active: boolean; }
 
-type Tab = 'prayer' | 'events' | 'courses' | 'timetable' | 'settings' | 'dhikr' | 'books';
+type Tab = 'overview' | 'prayer' | 'events' | 'courses' | 'timetable' | 'settings' | 'dhikr' | 'books';
 
 const PRAYERS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha', 'jumuah'] as const;
 const PRAYER_LABELS: Record<string, string> = { fajr: 'Fajr', dhuhr: 'Dhuhr', asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha', jumuah: "Jumu'ah" };
@@ -131,7 +131,7 @@ function Btn({ children, variant = 'primary', size = 'md', ...props }: {
 // ─── Main Admin Dashboard ─────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>('prayer');
+  const [tab, setTab] = useState<Tab>('overview');
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [mosqueName, setMosqueName] = useState('Masjid Al-Ekhuah');
   const [isLight, setIsLight] = useState(false);
@@ -161,6 +161,7 @@ export default function AdminDashboard() {
   }
 
   const tabs: { id: Tab; label: string; shortLabel: string; icon: React.ReactNode }[] = [
+    { id: 'overview',  label: 'Overview',     shortLabel: 'Home',      icon: <Home className="w-4 h-4" /> },
     { id: 'prayer',    label: 'Prayer Times', shortLabel: 'Prayer',    icon: <Clock className="w-4 h-4" /> },
     { id: 'events',    label: 'Events',       shortLabel: 'Events',    icon: <Calendar className="w-4 h-4" /> },
     { id: 'courses',   label: 'Courses',      shortLabel: 'Courses',   icon: <BookOpen className="w-4 h-4" /> },
@@ -238,6 +239,7 @@ export default function AdminDashboard() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
           >
+            {tab === 'overview'  && <OverviewTab onNavigate={setTab} />}
             {tab === 'prayer'    && <PrayerTab showToast={showToast} />}
             {tab === 'events'    && <EventsTab showToast={showToast} />}
             {tab === 'courses'   && <CoursesTab showToast={showToast} />}
@@ -273,6 +275,107 @@ export default function AdminDashboard() {
       <AnimatePresence>
         {toast && <Toast msg={toast.msg} type={toast.type} />}
       </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Overview Tab ─────────────────────────────────────────────────────────────
+function OverviewTab({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
+  const [stats, setStats] = useState({ events: 0, courses: 0, books: 0, announcement: false, mosqueName: 'Masjid Al-Ekhuah' });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/admin/events').then(r => r.json()).catch(() => []),
+      fetch('/api/admin/courses').then(r => r.json()).catch(() => []),
+      fetch('/api/admin/books').then(r => r.json()).catch(() => []),
+      fetch('/api/admin/content').then(r => r.json()).catch(() => ({})),
+    ]).then(([ev, co, bk, ct]) => {
+      setStats({
+        events:  Array.isArray(ev) ? ev.length : 0,
+        courses: Array.isArray(co) ? co.length : 0,
+        books:   Array.isArray(bk) ? bk.filter((b: { is_active?: boolean }) => b.is_active !== false).length : 0,
+        announcement: ct.announcement_enabled === 'true',
+        mosqueName: ct.mosque_name || 'Masjid Al-Ekhuah',
+      });
+      setLoading(false);
+    });
+  }, []);
+
+  const quickNav: { label: string; desc: string; tab: Tab; icon: React.ReactNode }[] = [
+    { label: 'Prayer Times', desc: 'Manage congregation times', tab: 'prayer', icon: <Clock className="w-5 h-5" /> },
+    { label: 'Events', desc: 'Add & edit events', tab: 'events', icon: <Calendar className="w-5 h-5" /> },
+    { label: 'Courses', desc: 'Manage Islamic courses', tab: 'courses', icon: <BookOpen className="w-5 h-5" /> },
+    { label: 'Timetable', desc: 'Upload monthly timetable', tab: 'timetable', icon: <Image className="w-5 h-5" /> },
+    { label: 'Dhikr', desc: 'Remembrance phrases', tab: 'dhikr', icon: <Sparkles className="w-5 h-5" /> },
+    { label: 'Books', desc: 'Recommended reading list', tab: 'books', icon: <BookMarked className="w-5 h-5" /> },
+    { label: 'Settings', desc: 'Site content & appearance', tab: 'settings', icon: <Settings className="w-5 h-5" /> },
+  ];
+
+  return (
+    <div className="space-y-8 max-w-4xl mx-auto">
+      {/* Welcome */}
+      <div>
+        <p className="text-amber-500/50 text-xs uppercase tracking-widest mb-1">Admin Dashboard</p>
+        <h2 className="text-3xl font-display font-medium text-amber-50">{stats.mosqueName}</h2>
+      </div>
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: 'Events',  value: stats.events,  icon: <Calendar className="w-5 h-5" />,  tab: 'events'  as Tab },
+          { label: 'Courses', value: stats.courses, icon: <BookOpen className="w-5 h-5" />,  tab: 'courses' as Tab },
+          { label: 'Books',   value: stats.books,   icon: <BookMarked className="w-5 h-5" />, tab: 'books'   as Tab },
+        ].map(card => (
+          <button key={card.label} onClick={() => onNavigate(card.tab)}
+            className="bg-amber-950/20 border border-amber-500/10 rounded-3xl p-5 md:p-6 text-left hover:border-amber-500/25 hover:bg-amber-950/30 transition-all duration-200 group">
+            <div className="text-amber-500/40 mb-3 group-hover:text-amber-500/60 transition-colors">{card.icon}</div>
+            <p className="font-display text-3xl md:text-4xl font-bold text-amber-100 mb-1">
+              {loading ? '—' : card.value}
+            </p>
+            <p className="text-xs text-amber-500/45 uppercase tracking-wider">{card.label}</p>
+          </button>
+        ))}
+      </div>
+
+      {/* Announcement status */}
+      <div className="bg-amber-950/20 border border-amber-500/10 rounded-3xl p-5 md:p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-amber-100 mb-0.5">Announcement Banner</h3>
+            <p className="text-xs text-amber-500/45">
+              {loading ? '—' : stats.announcement ? 'Active — visitors see this banner' : 'No active announcement'}
+            </p>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <div className={`w-2 h-2 rounded-full ${stats.announcement ? 'bg-emerald-400' : 'bg-amber-500/25'}`} />
+            <button onClick={() => onNavigate('settings')}
+              className="text-xs text-amber-400/60 hover:text-amber-300 transition-colors">
+              Manage →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick nav */}
+      <div>
+        <p className="text-xs uppercase tracking-widest font-semibold text-amber-500/45 mb-3">Manage</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {quickNav.map(item => (
+            <button key={item.tab} onClick={() => onNavigate(item.tab)}
+              className="flex items-center gap-4 p-4 rounded-2xl bg-amber-950/20 border border-amber-500/10 text-left hover:border-amber-500/25 hover:bg-amber-950/30 transition-all duration-200 group">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400/60 group-hover:text-amber-400 group-hover:bg-amber-500/15 transition-all shrink-0">
+                {item.icon}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-amber-200 group-hover:text-amber-100 transition-colors">{item.label}</p>
+                <p className="text-xs text-amber-500/40 truncate">{item.desc}</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-amber-500/20 group-hover:text-amber-400/50 group-hover:translate-x-0.5 transition-all shrink-0" />
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -768,6 +871,7 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
     mosque_name: '',
     hero_line1: '',
     hero_line2: '',
+    hero_subtitle: '',
     about_desc: '',
     contact_address: '',
     contact_phone: '',
@@ -777,6 +881,10 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
     feature_donate: 'true',
     feature_books: 'true',
     animation_mode: 'full',
+    announcement_enabled: 'false',
+    announcement_text: '',
+    announcement_dismissible: 'true',
+    friday_highlight_enabled: 'true',
   });
   const [sectionColors, setSectionColors] = useState<Record<SectionKey, { bg: string; accent: string }>>(
     () => Object.fromEntries(SECTION_KEYS.map(k => [k, { bg: DEFAULT_BG, accent: DEFAULT_ACCENT }])) as Record<SectionKey, { bg: string; accent: string }>
@@ -815,18 +923,23 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
   useEffect(() => {
     fetch('/api/admin/content').then(r => r.json()).then((c: Content) => {
       setForm(prev => ({
-        mosque_name:      c.mosque_name      ?? prev.mosque_name,
-        hero_line1:       c.hero_line1       ?? prev.hero_line1,
-        hero_line2:       c.hero_line2       ?? prev.hero_line2,
-        about_desc:       c.about_desc       ?? prev.about_desc,
-        contact_address:  c.contact_address  ?? prev.contact_address,
-        contact_phone:    c.contact_phone    ?? prev.contact_phone,
-        contact_email:    c.contact_email    ?? prev.contact_email,
-        feature_events:   c.feature_events   ?? prev.feature_events,
-        feature_courses:  c.feature_courses  ?? prev.feature_courses,
-        feature_donate:   c.feature_donate   ?? prev.feature_donate,
-        feature_books:    c.feature_books    ?? prev.feature_books,
-        animation_mode:   c.animation_mode   ?? prev.animation_mode,
+        mosque_name:              c.mosque_name              ?? prev.mosque_name,
+        hero_line1:               c.hero_line1               ?? prev.hero_line1,
+        hero_line2:               c.hero_line2               ?? prev.hero_line2,
+        hero_subtitle:            c.hero_subtitle            ?? prev.hero_subtitle,
+        about_desc:               c.about_desc               ?? prev.about_desc,
+        contact_address:          c.contact_address          ?? prev.contact_address,
+        contact_phone:            c.contact_phone            ?? prev.contact_phone,
+        contact_email:            c.contact_email            ?? prev.contact_email,
+        feature_events:           c.feature_events           ?? prev.feature_events,
+        feature_courses:          c.feature_courses          ?? prev.feature_courses,
+        feature_donate:           c.feature_donate           ?? prev.feature_donate,
+        feature_books:            c.feature_books            ?? prev.feature_books,
+        animation_mode:           c.animation_mode           ?? prev.animation_mode,
+        announcement_enabled:     c.announcement_enabled     ?? prev.announcement_enabled,
+        announcement_text:        c.announcement_text        ?? prev.announcement_text,
+        announcement_dismissible: c.announcement_dismissible ?? prev.announcement_dismissible,
+        friday_highlight_enabled: c.friday_highlight_enabled ?? prev.friday_highlight_enabled,
       }));
       setSectionColors(prev => {
         const next = { ...prev };
@@ -1131,6 +1244,53 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
         <div className="space-y-4">
           <Input label="Headline Line 1" value={form.hero_line1} onChange={e => setForm(p => ({ ...p, hero_line1: e.target.value }))} placeholder="Awaken Your" />
           <Input label="Headline Line 2 (gold text)" value={form.hero_line2} onChange={e => setForm(p => ({ ...p, hero_line2: e.target.value }))} placeholder="Faith" />
+          <Input label="Subtitle (below headline)" value={form.hero_subtitle} onChange={e => setForm(p => ({ ...p, hero_subtitle: e.target.value }))} placeholder="A welcoming community in the heart of Birmingham" />
+        </div>
+      </Section>
+
+      <Section title="Announcement Banner">
+        <p className="text-amber-500/50 text-sm -mt-2 mb-4">Show a dismissible notice to all visitors at the top of the homepage.</p>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-amber-950/20 border border-amber-500/10">
+            <div>
+              <p className="text-sm font-medium text-amber-100">Show Announcement</p>
+              <p className="text-xs text-amber-500/50 mt-0.5">Enables the banner on the home page</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setForm(p => ({ ...p, announcement_enabled: p.announcement_enabled === 'true' ? 'false' : 'true' }))}
+              className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 ${form.announcement_enabled === 'true' ? 'bg-amber-500' : 'bg-amber-500/20 border border-amber-500/20'}`}
+            >
+              <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ${form.announcement_enabled === 'true' ? 'left-6' : 'left-1'}`} />
+            </button>
+          </div>
+          <Textarea label="Announcement Text" value={form.announcement_text} onChange={e => setForm(p => ({ ...p, announcement_text: e.target.value }))} placeholder="Jumu'ah begins at 1:15 PM this week..." />
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-amber-950/20 border border-amber-500/10">
+            <div>
+              <p className="text-sm font-medium text-amber-100">Allow Visitors to Dismiss</p>
+              <p className="text-xs text-amber-500/50 mt-0.5">Adds an X button to hide the banner</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setForm(p => ({ ...p, announcement_dismissible: p.announcement_dismissible === 'false' ? 'true' : 'false' }))}
+              className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 ${form.announcement_dismissible !== 'false' ? 'bg-amber-500' : 'bg-amber-500/20 border border-amber-500/20'}`}
+            >
+              <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ${form.announcement_dismissible !== 'false' ? 'left-6' : 'left-1'}`} />
+            </button>
+          </div>
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-amber-950/20 border border-amber-500/10">
+            <div>
+              <p className="text-sm font-medium text-amber-100">Jumu&apos;ah Friday Highlight</p>
+              <p className="text-xs text-amber-500/50 mt-0.5">Highlights Jumu&apos;ah on Fridays in the prayer section</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setForm(p => ({ ...p, friday_highlight_enabled: p.friday_highlight_enabled === 'false' ? 'true' : 'false' }))}
+              className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 ${form.friday_highlight_enabled !== 'false' ? 'bg-amber-500' : 'bg-amber-500/20 border border-amber-500/20'}`}
+            >
+              <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ${form.friday_highlight_enabled !== 'false' ? 'left-6' : 'left-1'}`} />
+            </button>
+          </div>
         </div>
       </Section>
 

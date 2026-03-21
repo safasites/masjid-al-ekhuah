@@ -36,6 +36,12 @@
   --theme-glow-soft:   rgba(245, 158, 11, 0.2);
   --theme-glow-strong: rgba(245, 158, 11, 0.6);
   --theme-rgb: 245 158 11;
+
+  /* Glass morphism tokens */
+  --glass-bg:     rgba(255, 255, 255, 0.04);
+  --glass-bg-md:  rgba(255, 255, 255, 0.07);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-blur:   16px;
 }
 
 @keyframes breathe {
@@ -55,6 +61,76 @@
 .animate-pin-breathe {
   animation: pin-breathe 2.5s ease-in-out infinite;
 }
+
+@keyframes shimmer {
+  from { background-position: -200% center; }
+  to   { background-position:  200% center; }
+}
+
+@keyframes ring-pulse {
+  0%,100% { opacity: 0.7; transform: scale(1); }
+  50%     { opacity: 1;   transform: scale(1.03); }
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes count-tick {
+  0%   { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+@keyframes geo-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.animate-ring-pulse      { animation: ring-pulse 2.5s ease-in-out infinite; }
+.animate-slide-down      { animation: slide-down 0.35s ease forwards; }
+.animate-count-tick      { animation: count-tick 0.18s ease-out forwards; }
+.animate-geo-rotate-slow { animation: geo-rotate 60s linear infinite; }
+.animate-geo-rotate-med  { animation: geo-rotate 40s linear infinite; }
+
+/* ── Glass morphism utilities ──────────────────────────────────────────────── */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+}
+.glass-md {
+  background: var(--glass-bg-md);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+}
+
+/* ── Shimmer skeleton ─────────────────────────────────────────────────────── */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(245,158,11,0.04) 25%,
+    rgba(245,158,11,0.11) 50%,
+    rgba(245,158,11,0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* ── Gradient text ────────────────────────────────────────────────────────── */
+.text-gradient-theme {
+  background: linear-gradient(135deg, var(--color-amber-200, #fde68a), var(--color-amber-500, #f59e0b), var(--color-amber-300, #fcd34d));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Elevation shadows ────────────────────────────────────────────────────── */
+.shadow-elevation-1 { box-shadow: 0 2px 8px   rgba(0,0,0,0.25); }
+.shadow-elevation-2 { box-shadow: 0 8px 32px  rgba(0,0,0,0.35); }
+.shadow-elevation-3 { box-shadow: 0 24px 80px rgba(0,0,0,0.50); }
 
 /* ── Theme-aware shadow utilities ────────────────────────────────────────────
    Use these instead of hardcoded amber shadow Tailwind classes so glows
@@ -103,7 +179,13 @@
   .animate-float,
   .animate-breathe,
   .animate-gradient-xy,
-  .animate-pin-breathe {
+  .animate-pin-breathe,
+  .animate-ring-pulse,
+  .animate-slide-down,
+  .animate-count-tick,
+  .animate-geo-rotate-slow,
+  .animate-geo-rotate-med,
+  .shimmer {
     animation: none;
   }
 }
