@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
-import { createServerSupabase } from '@/lib/supabase-server';
+import { createServerSupabase, requireDb } from '@/lib/supabase-server';
 import { translateBatch } from '@/lib/translate';
 
 function getSecret() {
@@ -16,7 +16,7 @@ async function auth(req: NextRequest) {
 }
 
 /** Auto-translate course title into Arabic and Kurdish, then update the row. */
-async function autoTranslate(db: ReturnType<typeof createServerSupabase>, id: string, title: string) {
+async function autoTranslate(db: NonNullable<ReturnType<typeof createServerSupabase>>, id: string, title: string) {
   try {
     const [titleAr] = await translateBatch([title], 'ar');
     const [titleKu] = await translateBatch([title], 'ckb');
@@ -30,7 +30,8 @@ async function autoTranslate(db: ReturnType<typeof createServerSupabase>, id: st
 }
 
 export async function GET() {
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
   const { data, error } = await db.from('courses').select('*').order('sort_order');
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
@@ -39,7 +40,8 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   if (!await auth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await req.json();
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
   const { data, error } = await db.from('courses').insert([body]).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   autoTranslate(db, data.id, data.title);
@@ -49,7 +51,8 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   if (!await auth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id, ...body } = await req.json();
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
   const { data, error } = await db.from('courses').update(body).eq('id', id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
@@ -58,7 +61,8 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   if (!await auth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id } = await req.json();
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
   const { error } = await db.from('courses').delete().eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });

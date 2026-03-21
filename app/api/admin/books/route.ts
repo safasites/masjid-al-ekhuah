@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
-import { createServerSupabase } from '@/lib/supabase-server';
+import { createServerSupabase, requireDb } from '@/lib/supabase-server';
 import { translateBatch } from '@/lib/translate';
 
 function getSecret() {
@@ -15,7 +15,7 @@ async function auth(req: NextRequest) {
   try { await jwtVerify(token, getSecret()); return true; } catch { return false; }
 }
 
-async function autoTranslate(db: ReturnType<typeof createServerSupabase>, id: string, title: string, description: string) {
+async function autoTranslate(db: NonNullable<ReturnType<typeof createServerSupabase>>, id: string, title: string, description: string) {
   try {
     const texts = [title, description].filter(Boolean);
     const [textsAr, textsKu] = await Promise.all([
@@ -35,7 +35,8 @@ async function autoTranslate(db: ReturnType<typeof createServerSupabase>, id: st
 }
 
 export async function GET() {
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
   const { data, error } = await db
     .from('books')
     .select('*, category:book_categories(id,name,name_ar,name_ku)')
@@ -47,7 +48,8 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   if (!await auth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await req.json();
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
   const { data, error } = await db.from('books').insert([body]).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   autoTranslate(db, data.id, data.title, data.description ?? '');
@@ -57,7 +59,8 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   if (!await auth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id, ...body } = await req.json();
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
   const { data, error } = await db.from('books').update(body).eq('id', id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
@@ -66,7 +69,8 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   if (!await auth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id } = await req.json();
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
   const { error } = await db.from('books').delete().eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });

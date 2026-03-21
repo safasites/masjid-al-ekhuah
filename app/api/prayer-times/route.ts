@@ -7,6 +7,7 @@ export async function GET() {
   try {
     // Get calculation method from Supabase content table (admin-configurable)
     const db = createServerSupabase();
+    if (!db) throw new Error('Supabase not configured');
     const { data: methodRows } = await db
       .from('content')
       .select('key, value')

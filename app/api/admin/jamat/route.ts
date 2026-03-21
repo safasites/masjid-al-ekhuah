@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
-import { createServerSupabase } from '@/lib/supabase-server';
+import { requireDb } from '@/lib/supabase-server';
 
 function getSecret() {
   return new TextEncoder().encode(
@@ -15,7 +15,8 @@ async function auth(req: NextRequest) {
 }
 
 export async function GET() {
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
   const { data, error } = await db.from('jamat_times').select('*');
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
@@ -25,7 +26,8 @@ export async function PUT(req: NextRequest) {
   if (!await auth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   // Body is an array: [{ prayer: 'fajr', time: '06:00 AM' }, ...]
   const updates: { prayer: string; time: string }[] = await req.json();
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
 
   // Upsert all jamat times at once
   const { error } = await db.from('jamat_times').upsert(

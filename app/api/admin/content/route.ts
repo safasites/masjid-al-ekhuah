@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
-import { createServerSupabase } from '@/lib/supabase-server';
+import { requireDb } from '@/lib/supabase-server';
 import { translateText } from '@/lib/translate';
 
 function getSecret() {
@@ -16,7 +16,8 @@ async function auth(req: NextRequest) {
 }
 
 export async function GET() {
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
   const { data, error } = await db.from('content').select('key, value');
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   const obj: Record<string, string> = {};
@@ -27,7 +28,8 @@ export async function GET() {
 export async function PUT(req: NextRequest) {
   if (!await auth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await req.json();
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
 
   const updates = Array.isArray(body) ? body : [body];
   const { error } = await db.from('content').upsert(

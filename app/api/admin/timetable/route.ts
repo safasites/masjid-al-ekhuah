@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
-import { createServerSupabase } from '@/lib/supabase-server';
+import { requireDb } from '@/lib/supabase-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +18,8 @@ async function auth(req: NextRequest) {
 
 // GET — returns the currently active timetable
 export async function GET() {
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
   const { data, error } = await db
     .from('timetable')
     .select('*')
@@ -50,7 +51,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Only JPEG, PNG, WebP, or PDF files are allowed' }, { status: 400 });
   }
 
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
   const fileName = `timetable-${Date.now()}.${file.name.split('.').pop()}`;
   const bytes = await file.arrayBuffer();
 
@@ -84,7 +86,8 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   if (!await auth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id, fileName } = await req.json();
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
 
   if (fileName) {
     await db.storage.from('timetable-images').remove([fileName]);

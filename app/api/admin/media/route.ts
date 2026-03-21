@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
-import { createServerSupabase } from '@/lib/supabase-server';
+import { requireDb } from '@/lib/supabase-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,7 +41,8 @@ export async function POST(req: NextRequest) {
   const fileName = `${entity}-${entityId}-${Date.now()}.${ext}`;
   const bytes    = await file.arrayBuffer();
 
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
 
   const { error: uploadError } = await db.storage
     .from(BUCKET)
@@ -75,7 +76,8 @@ export async function DELETE(req: NextRequest) {
   if (!await auth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { fileName, entity, entityId } = await req.json();
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
 
   if (fileName) {
     await db.storage.from(BUCKET).remove([fileName]);

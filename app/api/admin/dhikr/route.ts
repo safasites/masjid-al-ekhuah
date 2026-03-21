@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
-import { createServerSupabase } from '@/lib/supabase-server';
+import { createServerSupabase, requireDb } from '@/lib/supabase-server';
 import { translateBatch } from '@/lib/translate';
 
 function getSecret() {
@@ -16,7 +16,7 @@ async function auth(req: NextRequest) {
 }
 
 /** Auto-translate meaning_en into Arabic and Kurdish, then update the row. */
-async function autoTranslate(db: ReturnType<typeof createServerSupabase>, id: string, meaning: string) {
+async function autoTranslate(db: NonNullable<ReturnType<typeof createServerSupabase>>, id: string, meaning: string) {
   try {
     const [ar, ku] = await Promise.all([
       translateBatch([meaning], 'ar'),
@@ -32,7 +32,8 @@ async function autoTranslate(db: ReturnType<typeof createServerSupabase>, id: st
 }
 
 export async function GET(req: NextRequest) {
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
   const { searchParams } = new URL(req.url);
   const all = searchParams.get('all') === 'true';
   let query = db.from('dhikr_items').select('*').order('sort_order');
@@ -45,7 +46,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   if (!await auth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await req.json();
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
   const { data, error } = await db.from('dhikr_items').insert([body]).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   autoTranslate(db, data.id, data.meaning_en);
@@ -55,7 +57,8 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   if (!await auth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id, ...body } = await req.json();
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
   const { data, error } = await db.from('dhikr_items').update(body).eq('id', id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (body.meaning_en) autoTranslate(db, id, body.meaning_en);
@@ -67,7 +70,8 @@ export async function DELETE(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
   const { error } = await db.from('dhikr_items').delete().eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });

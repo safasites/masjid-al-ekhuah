@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
-import { createServerSupabase } from '@/lib/supabase-server';
+import { requireDb } from '@/lib/supabase-server';
 import { translateBatch, translateText } from '@/lib/translate';
 
 function getSecret() {
@@ -18,7 +18,8 @@ async function auth(req: NextRequest) {
 export async function POST(req: NextRequest) {
   if (!await auth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const db = createServerSupabase();
+  const [db, errRes] = requireDb();
+  if (errRes) return errRes;
   const results = { events: 0, courses: 0, dhikr: 0, about: false };
 
   // Retranslate events with missing translations
