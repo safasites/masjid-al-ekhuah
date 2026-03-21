@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   LayoutGrid, Calendar, BookOpen, Clock, Image, Settings,
-  LogOut, Plus, Trash2, Edit2, Check, X, Upload, ChevronDown, ChevronUp, Globe, Sparkles, BookMarked, ExternalLink
+  LogOut, Plus, Trash2, Edit2, Check, X, Upload, ChevronDown, ChevronUp, Globe, Sparkles, BookMarked, ExternalLink,
+  Home, Heart, Info, Palette, ChevronRight
 } from 'lucide-react';
 import { type Theme, DARK_THEMES, LIGHT_THEMES, isLightTheme } from '../theme-provider';
 
@@ -133,11 +134,20 @@ export default function AdminDashboard() {
   const [tab, setTab] = useState<Tab>('prayer');
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [mosqueName, setMosqueName] = useState('Masjid Al-Ekhuah');
+  const [isLight, setIsLight] = useState(false);
 
   useEffect(() => {
     fetch('/api/admin/content').then(r => r.json()).then((c: Content) => {
       if (c.mosque_name) setMosqueName(c.mosque_name);
     }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const html = document.documentElement;
+    setIsLight(html.hasAttribute('data-light'));
+    const obs = new MutationObserver(() => setIsLight(html.hasAttribute('data-light')));
+    obs.observe(html, { attributes: true, attributeFilter: ['data-light'] });
+    return () => obs.disconnect();
   }, []);
 
   function showToast(msg: string, type: 'success' | 'error' = 'success') {
@@ -161,21 +171,21 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0804] flex flex-col md:flex-row">
+    <div className={`min-h-screen flex flex-col md:flex-row ${isLight ? 'bg-[#f5f0e8]' : 'bg-[#0a0804]'}`}>
       {/* Background glows */}
       <div className="fixed top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-amber-500/5 blur-[120px] pointer-events-none" />
       <div className="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-yellow-500/5 blur-[150px] pointer-events-none" />
 
       {/* Mobile header */}
-      <div className="md:hidden flex items-center justify-between px-5 py-4 border-b border-amber-500/10 bg-[#0a0804]/80 backdrop-blur-xl sticky top-0 z-50">
-        <span className="text-amber-200 font-medium text-sm">{mosqueName}</span>
+      <div className={`md:hidden flex items-center justify-between px-5 py-4 border-b border-amber-500/10 backdrop-blur-xl sticky top-0 z-50 ${isLight ? 'bg-[#f5f0e8]/80' : 'bg-[#0a0804]/80'}`}>
+        <span className={`font-medium text-sm ${isLight ? 'text-amber-800' : 'text-amber-200'}`}>{mosqueName}</span>
         <button onClick={handleLogout} className="p-2 text-amber-500/60 hover:text-red-400 transition-colors">
           <LogOut className="w-4 h-4" />
         </button>
       </div>
 
       {/* Sidebar — desktop only */}
-      <aside className="hidden md:flex flex-col w-64 min-h-screen border-r border-amber-500/10 bg-[#0a0804]/90 backdrop-blur-xl sticky top-0 h-screen overflow-hidden">
+      <aside className={`hidden md:flex flex-col w-64 min-h-screen border-r border-amber-500/10 backdrop-blur-xl sticky top-0 h-screen overflow-hidden ${isLight ? 'bg-[#f5f0e8]/90' : 'bg-[#0a0804]/90'}`}>
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-6 border-b border-amber-500/10">
           <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
@@ -184,8 +194,8 @@ export default function AdminDashboard() {
             <LayoutGrid className="w-3.5 h-3.5 text-amber-400" />
           </div>
           <div>
-            <p className="text-amber-100 font-medium text-sm">Admin Panel</p>
-            <p className="text-amber-500/50 text-xs">{mosqueName}</p>
+            <p className={`font-medium text-sm ${isLight ? 'text-amber-900' : 'text-amber-100'}`}>Admin Panel</p>
+            <p className={`text-xs ${isLight ? 'text-amber-600' : 'text-amber-500/50'}`}>{mosqueName}</p>
           </div>
         </div>
 
@@ -197,8 +207,8 @@ export default function AdminDashboard() {
               onClick={() => setTab(t.id)}
               className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-200 ${
                 tab === t.id
-                  ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                  : 'text-amber-500/60 hover:text-amber-300 hover:bg-amber-500/5'
+                  ? `bg-amber-500/15 border border-amber-500/30 ${isLight ? 'text-amber-700' : 'text-amber-300'}`
+                  : `${isLight ? 'text-amber-600/80 hover:text-amber-700' : 'text-amber-500/60 hover:text-amber-300'} hover:bg-amber-500/5`
               }`}
             >
               {t.icon}
@@ -241,15 +251,17 @@ export default function AdminDashboard() {
 
       {/* Mobile Bottom Nav */}
       <div className="md:hidden fixed bottom-6 left-4 right-4 z-50">
-        <div className="bg-[#111310]/95 backdrop-blur-xl border border-amber-500/20 rounded-full p-2 flex items-center justify-between shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)]">
+        <div className={`backdrop-blur-xl border border-amber-500/20 rounded-full p-2 flex items-center justify-between shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] ${isLight ? 'bg-[#f5f0e8]/95' : 'bg-[#111310]/95'}`}>
           {tabs.map(t => {
             const isActive = tab === t.id;
             return (
               <button key={t.id} onClick={() => setTab(t.id)}
                 className={`flex flex-col items-center justify-center flex-1 h-14 rounded-full transition-all duration-300 ${
-                  isActive ? 'bg-amber-500/10 text-amber-400' : 'text-zinc-400 hover:text-amber-200'
+                  isActive
+                    ? `bg-amber-500/10 ${isLight ? 'text-amber-600' : 'text-amber-400'}`
+                    : `${isLight ? 'text-zinc-600 hover:text-amber-700' : 'text-zinc-400 hover:text-amber-200'}`
                 }`}>
-                <span className={`mb-1 ${isActive ? 'text-amber-400' : ''}`}>{t.icon}</span>
+                <span className={`mb-1 ${isActive ? (isLight ? 'text-amber-600' : 'text-amber-400') : ''}`}>{t.icon}</span>
                 <span className="text-[9px] font-medium tracking-wide">{t.shortLabel}</span>
               </button>
             );
@@ -740,6 +752,17 @@ const SECTION_KEYS = Object.keys(SECTION_LABELS) as SectionKey[];
 const DEFAULT_BG = '#0a0804';
 const DEFAULT_ACCENT = '#d97706';
 
+const THEME_CONFIG: Record<string, { accent: string; darkBg: string; lightBg: string; label: string }> = {
+  aurum:    { accent: '#d97706', darkBg: '#0a0804', lightBg: '#f8f5ee', label: 'Aurum' },
+  emerald:  { accent: '#10b981', darkBg: '#040a06', lightBg: '#f0faf4', label: 'Emerald' },
+  sapphire: { accent: '#3b82f6', darkBg: '#04080f', lightBg: '#f0f4fc', label: 'Sapphire' },
+  teal:     { accent: '#14b8a6', darkBg: '#040b0b', lightBg: '#f0fafa', label: 'Teal' },
+  copper:   { accent: '#ea580c', darkBg: '#0a0602', lightBg: '#faf2ee', label: 'Copper' },
+  rose:     { accent: '#f43f5e', darkBg: '#0f0405', lightBg: '#faf0f2', label: 'Rose' },
+  violet:   { accent: '#8b5cf6', darkBg: '#090510', lightBg: '#f5f0fc', label: 'Violet' },
+  lime:     { accent: '#84cc16', darkBg: '#060a04', lightBg: '#f4faf0', label: 'Lime' },
+};
+
 function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string, t?: 'success' | 'error') => void; onMosqueNameChange?: (name: string) => void }) {
   const [form, setForm] = useState({
     mosque_name: '',
@@ -763,6 +786,19 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
   const [newThemeName, setNewThemeName] = useState('');
   const [saving, setSaving] = useState(false);
   const [retranslating, setRetranslating] = useState(false);
+  const [expandedSection, setExpandedSection] = useState<SectionKey | null>(null);
+
+  const SECTION_ICONS: Record<SectionKey, React.ReactNode> = {
+    hero:    <Home className="w-4 h-4" />,
+    prayer:  <Clock className="w-4 h-4" />,
+    dhikr:   <Sparkles className="w-4 h-4" />,
+    events:  <Calendar className="w-4 h-4" />,
+    courses: <BookOpen className="w-4 h-4" />,
+    books:   <BookMarked className="w-4 h-4" />,
+    donate:  <Heart className="w-4 h-4" />,
+    about:   <Info className="w-4 h-4" />,
+    footer:  <LayoutGrid className="w-4 h-4" />,
+  };
 
   async function retranslateAll() {
     setRetranslating(true);
@@ -891,68 +927,133 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
       </Section>
 
       <Section title="Global Theme">
-        <p className="text-amber-500/50 text-sm -mt-2 mb-4">Applies to the admin panel, Quran reader, and all sub-pages. Home page sections have their own colour pickers below.</p>
+        {/* Visual Customizer CTA */}
+        <button
+          type="button"
+          onClick={() => window.open('/?customize=1', '_blank')}
+          className="w-full mb-5 flex items-center gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/15 active:scale-[0.99] transition-all duration-200 text-left group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0 group-hover:bg-amber-500/25 transition-colors">
+            <Palette className="w-5 h-5 text-amber-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-200">Open Visual Customizer</p>
+            <p className="text-xs text-amber-500/50 mt-0.5">Edit section colours directly on the live site preview</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-amber-500/40 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+        </button>
+
+        <p className="text-amber-500/50 text-sm mb-5">Applies to the admin panel, Quran reader, and all sub-pages. Home page sections have their own colour pickers below.</p>
+
+        {/* Dark themes */}
+        <p className="text-xs font-medium text-amber-500/40 uppercase tracking-wider mb-2">Dark</p>
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 mb-4">
+          {DARK_THEMES.map(t => {
+            const cfg = THEME_CONFIG[t];
+            const isSelected = globalTheme === t;
+            return (
+              <button
+                key={t}
+                type="button"
+                title={cfg.label}
+                onClick={() => applyGlobalTheme(t)}
+                className={`relative rounded-2xl overflow-hidden transition-all duration-200 ${
+                  isSelected ? 'ring-2 ring-amber-400 ring-offset-1 ring-offset-[#0a0804] scale-105 shadow-lg' : 'opacity-60 hover:opacity-90 hover:scale-105'
+                }`}
+                style={{ height: '72px', background: `linear-gradient(145deg, ${cfg.darkBg} 20%, ${cfg.accent}40 100%)` }}
+              >
+                <div className="absolute top-2 right-2 w-3 h-3 rounded-full" style={{ backgroundColor: cfg.accent }} />
+                <div className="absolute bottom-0 left-0 right-0 px-2 pb-2">
+                  <span className="text-[10px] font-semibold leading-none" style={{ color: cfg.accent }}>{cfg.label}</span>
+                </div>
+                {isSelected && (
+                  <div className="absolute top-1.5 left-1.5">
+                    <Check className="w-3 h-3 text-white drop-shadow" />
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Light themes */}
+        <p className="text-xs font-medium text-amber-500/40 uppercase tracking-wider mb-2">Light</p>
         <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-          {[...DARK_THEMES, ...LIGHT_THEMES].map(t => (
-            <button
-              key={t}
-              type="button"
-              title={t}
-              onClick={() => applyGlobalTheme(t)}
-              className={`relative h-10 rounded-xl border-2 transition-all duration-150 overflow-hidden ${
-                globalTheme === t ? 'border-amber-400 scale-105' : 'border-transparent opacity-60 hover:opacity-90 hover:scale-105'
-              }`}
-              style={{ background: isLightTheme(t) ? '#f8f5ee' : '#0a0804' }}
-            >
-              <span
-                className="absolute bottom-1 right-1 w-3 h-3 rounded-full"
-                style={{ background: {
-                  aurum: '#d97706', emerald: '#10b981', sapphire: '#3b82f6', teal: '#14b8a6',
-                  copper: '#ea580c', rose: '#f43f5e', violet: '#8b5cf6', lime: '#84cc16',
-                  'aurum-light': '#d97706', 'emerald-light': '#10b981', 'sapphire-light': '#3b82f6', 'teal-light': '#14b8a6',
-                  'copper-light': '#ea580c', 'rose-light': '#f43f5e', 'violet-light': '#8b5cf6', 'lime-light': '#84cc16',
-                }[t] }}
-              />
-              <span className="absolute top-1 left-1.5 text-[9px] font-medium leading-none" style={{ color: isLightTheme(t) ? '#78716c' : '#a8a29e' }}>
-                {t.replace('-light', '')}
-              </span>
-            </button>
-          ))}
+          {LIGHT_THEMES.map(t => {
+            const baseName = t.replace('-light', '');
+            const cfg = THEME_CONFIG[baseName];
+            if (!cfg) return null;
+            const isSelected = globalTheme === t;
+            return (
+              <button
+                key={t}
+                type="button"
+                title={`${cfg.label} Light`}
+                onClick={() => applyGlobalTheme(t)}
+                className={`relative rounded-2xl overflow-hidden transition-all duration-200 ${
+                  isSelected ? 'ring-2 ring-amber-400 ring-offset-1 ring-offset-[#0a0804] scale-105 shadow-lg' : 'opacity-60 hover:opacity-90 hover:scale-105'
+                }`}
+                style={{ height: '72px', background: `linear-gradient(145deg, ${cfg.lightBg} 20%, ${cfg.accent}35 100%)` }}
+              >
+                <div className="absolute top-2 right-2 w-3 h-3 rounded-full" style={{ backgroundColor: cfg.accent }} />
+                <div className="absolute bottom-0 left-0 right-0 px-2 pb-2">
+                  <span className="text-[10px] font-semibold leading-none" style={{ color: cfg.accent }}>{cfg.label}</span>
+                </div>
+                {isSelected && (
+                  <div className="absolute top-1.5 left-1.5">
+                    <Check className="w-3 h-3 drop-shadow" style={{ color: cfg.accent }} />
+                  </div>
+                )}
+              </button>
+            );
+          })}
         </div>
         <p className="text-amber-500/40 text-xs mt-3">Click a theme for live preview. Save All Settings to persist.</p>
       </Section>
 
       <Section title="Section Colours">
-        <p className="text-amber-500/50 text-sm -mt-2 mb-4">Set a background and accent colour for each section of the home page independently.</p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left">
-                <th className="text-xs font-medium text-amber-500/60 uppercase tracking-widest pb-3 pr-4 min-w-[120px]">Section</th>
-                <th className="text-xs font-medium text-amber-500/60 uppercase tracking-widest pb-3 pr-6 min-w-[180px]">Background</th>
-                <th className="text-xs font-medium text-amber-500/60 uppercase tracking-widest pb-3 min-w-[180px]">Accent / UI Colour</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-amber-500/10">
-              {SECTION_KEYS.map(key => (
-                <tr key={key}>
-                  <td className="py-3 pr-4 text-amber-100 font-medium whitespace-nowrap">{SECTION_LABELS[key]}</td>
-                  <td className="py-3 pr-6">
-                    <ColorInput
-                      value={sectionColors[key].bg}
-                      onChange={v => setSectionColors(p => ({ ...p, [key]: { ...p[key], bg: v } }))}
-                    />
-                  </td>
-                  <td className="py-3">
-                    <ColorInput
-                      value={sectionColors[key].accent}
-                      onChange={v => setSectionColors(p => ({ ...p, [key]: { ...p[key], accent: v } }))}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <p className="text-amber-500/50 text-sm -mt-2 mb-4">Set a background and accent colour for each section. The accent controls all headings, icons, and UI elements within that section.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {SECTION_KEYS.map(key => {
+            const isExpanded = expandedSection === key;
+            const bg = sectionColors[key].bg;
+            const accent = sectionColors[key].accent;
+            return (
+              <div key={key} className="rounded-2xl bg-amber-950/20 border border-amber-500/10 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setExpandedSection(isExpanded ? null : key)}
+                  className="w-full flex items-center gap-3 p-3.5 text-left hover:bg-amber-500/5 transition-colors"
+                >
+                  <span className="text-amber-400/60">{SECTION_ICONS[key]}</span>
+                  <span className="flex-1 text-sm font-medium text-amber-100">{SECTION_LABELS[key]}</span>
+                  <div className="flex items-center gap-1.5 mr-2">
+                    <div className="w-5 h-5 rounded-md border border-white/10 shadow-sm" style={{ backgroundColor: bg }} title="Background" />
+                    <div className="w-5 h-5 rounded-md border border-white/10 shadow-sm" style={{ backgroundColor: accent }} title="Accent" />
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-amber-500/40 transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
+                </button>
+                {isExpanded && (
+                  <div className="px-4 pb-4 pt-3 space-y-3 border-t border-amber-500/10">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-medium text-amber-500/60 uppercase tracking-wider">Background</label>
+                      <ColorInput
+                        value={bg}
+                        onChange={v => setSectionColors(p => ({ ...p, [key]: { ...p[key], bg: v } }))}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-medium text-amber-500/60 uppercase tracking-wider">Accent / UI Colour</label>
+                      <ColorInput
+                        value={accent}
+                        onChange={v => setSectionColors(p => ({ ...p, [key]: { ...p[key], accent: v } }))}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
         <p className="text-amber-500/40 text-xs mt-3">Changes are applied to the home page after saving.</p>
       </Section>
@@ -981,28 +1082,46 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
           <p className="text-amber-500/30 text-sm text-center py-4">No saved themes yet.</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {savedThemes.map(t => (
-              <div key={t.id} className="p-3 rounded-2xl bg-amber-950/20 border border-amber-500/10 flex flex-col gap-2">
-                <p className="text-amber-100 text-sm font-medium truncate">{t.name}</p>
-                <p className="text-amber-500/40 text-xs">{SECTION_KEYS.length} sections · {t.globalTheme}</p>
-                <div className="flex gap-1.5 mt-auto">
-                  <button
-                    type="button"
-                    onClick={() => loadSavedTheme(t)}
-                    className="flex-1 py-1.5 rounded-lg bg-amber-500/15 border border-amber-500/20 text-amber-300 text-xs font-medium hover:bg-amber-500/25 transition-all"
-                  >
-                    Load
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => deleteSavedTheme(t.id)}
-                    className="py-1.5 px-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs hover:bg-red-500/20 transition-all"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
+            {savedThemes.map(t => {
+              const baseName = t.globalTheme.replace('-light', '');
+              const cfg = THEME_CONFIG[baseName];
+              return (
+                <div key={t.id} className="p-3 rounded-2xl bg-amber-950/20 border border-amber-500/10 flex flex-col gap-2">
+                  <p className="text-amber-100 text-sm font-medium truncate">{t.name}</p>
+                  <p className="text-amber-500/40 text-xs capitalize">{t.globalTheme.replace('-', ' ')}</p>
+                  {/* Section accent swatches */}
+                  <div className="flex gap-1 flex-wrap">
+                    {SECTION_KEYS.map(k => (
+                      <div
+                        key={k}
+                        className="w-4 h-4 rounded-full border border-white/10"
+                        style={{ backgroundColor: t.sections[k]?.accent ?? DEFAULT_ACCENT }}
+                        title={SECTION_LABELS[k]}
+                      />
+                    ))}
+                    {cfg && (
+                      <div className="w-4 h-4 rounded-full ml-0.5 border-2 border-amber-500/30" style={{ backgroundColor: cfg.accent }} title={`Theme: ${cfg.label}`} />
+                    )}
+                  </div>
+                  <div className="flex gap-1.5 mt-auto">
+                    <button
+                      type="button"
+                      onClick={() => loadSavedTheme(t)}
+                      className="flex-1 py-1.5 rounded-lg bg-amber-500/15 border border-amber-500/20 text-amber-300 text-xs font-medium hover:bg-amber-500/25 transition-all"
+                    >
+                      Load
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteSavedTheme(t.id)}
+                      className="py-1.5 px-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs hover:bg-red-500/20 transition-all"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
         <p className="text-amber-500/40 text-xs mt-3">Load populates all pickers. Click Save All Settings to apply site-wide.</p>
