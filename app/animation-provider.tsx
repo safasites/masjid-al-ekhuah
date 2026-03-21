@@ -26,6 +26,11 @@ export function AnimationProvider({ children }: { children: React.ReactNode }) {
       setModeState(raw);
       return;
     }
+    // Respect OS reduced-motion preference before hitting the network
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setModeState('simplified');
+      return; // don't persist — OS preference, not a user choice
+    }
     fetch('/api/admin/content')
       .then(r => r.json())
       .then((c: Record<string, string>) => {

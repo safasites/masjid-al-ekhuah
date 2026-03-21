@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
 import { BookMarked, ArrowLeft, ArrowUp, X, ExternalLink } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -79,6 +80,7 @@ export default function BooksPage() {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [mosqueName, setMosqueName] = useState('Masjid Al-Ekhuah');
   const [selected, setSelected] = useState<Book | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const isRTL = lang === 'ar' || lang === 'ku';
   const tr = booksTranslations[lang];
@@ -94,6 +96,27 @@ export default function BooksPage() {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  // Focus trap + Escape key for modal
+  useEffect(() => {
+    if (!selected) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    modalRef.current?.focus();
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') { setSelected(null); return; }
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (!focusable.length) { e.preventDefault(); return; }
+        const first = focusable[0]; const last = focusable[focusable.length - 1];
+        if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last.focus(); } }
+        else { if (document.activeElement === last) { e.preventDefault(); first.focus(); } }
+      }
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => { document.removeEventListener('keydown', onKeyDown); previouslyFocused?.focus(); };
+  }, [selected]);
 
   useEffect(() => {
     Promise.all([
@@ -208,13 +231,21 @@ export default function BooksPage() {
             onClick={() => setSelected(null)}
           >
             <motion.div
+              ref={modalRef}
+              tabIndex={-1}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="modal-title"
               {...anim.modalEntry}
-              className={`w-full sm:max-w-2xl ${lightMode ? 'bg-[#f0ede4]' : 'bg-[#111310]'} border border-amber-500/20 rounded-t-3xl sm:rounded-3xl overflow-hidden max-h-[90vh] overflow-y-auto`}
+              className={`w-full sm:max-w-2xl ${lightMode ? 'bg-[#f0ede4]' : 'bg-[#111310]'} border border-amber-500/20 rounded-t-3xl sm:rounded-3xl overflow-hidden max-h-[90vh] overflow-y-auto outline-none`}
               onClick={e => e.stopPropagation()}
             >
               {selected.image_url && (
                 <div className="w-full flex justify-center p-8 pb-0">
-                  <img src={selected.image_url} alt={getTitle(selected)} className="max-h-64 rounded-2xl object-contain shadow-xl" />
+                  <div className="relative h-64 w-full max-w-xs mx-auto">
+                    <Image src={selected.image_url} alt={getTitle(selected)} fill priority
+                      className="object-contain rounded-2xl shadow-xl" sizes="320px" />
+                  </div>
                 </div>
               )}
               <div className={`p-6 md:p-8 relative ${!selected.image_url ? 'pt-12' : 'pt-6'}`}>
@@ -225,7 +256,7 @@ export default function BooksPage() {
                 >
                   <X className="w-4 h-4" />
                 </button>
-                <h2 dir="auto" className="text-2xl md:text-3xl font-display text-amber-50 mb-2 pr-8">{getTitle(selected)}</h2>
+                <h2 id="modal-title" dir="auto" className="text-2xl md:text-3xl font-display text-amber-50 mb-2 pr-8">{getTitle(selected)}</h2>
                 {selected.author && (
                   <p className="text-amber-400/70 text-sm mb-4">{selected.author}</p>
                 )}
@@ -295,11 +326,13 @@ function BookGrid({
           className="rounded-2xl overflow-hidden border border-amber-500/15 bg-amber-950/20 hover:bg-amber-900/25 hover:border-amber-500/35 cursor-pointer group transition-all duration-300"
         >
           {book.image_url ? (
-            <div className="aspect-[2/3] w-full overflow-hidden">
-              <img
+            <div className="aspect-[2/3] w-full overflow-hidden relative">
+              <Image
                 src={book.image_url}
                 alt={getTitle(book)}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 14vw"
               />
             </div>
           ) : (

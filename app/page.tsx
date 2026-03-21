@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform, useAnimationControls, AnimatePresence,
 import { MapPin, ArrowRight, ArrowUp, Globe, Home, BookOpen, BookMarked, Calendar, LayoutGrid, Heart, Info, Menu, X, Settings, Phone, Mail, Check, Palette } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useAnimationConfig } from './animation-provider';
 
 function isDarkBg(hex: string): boolean {
@@ -106,6 +107,13 @@ const translations = {
     dhikrReset: 'Reset',
     dhikrCompleted: 'Completed',
     dhikrOf: 'of',
+    nextPrayer: 'Next prayer',
+    prayerIn: 'in',
+    footerTagline: 'A welcoming community in the heart of Birmingham',
+    footerQuickLinks: 'Quick Links',
+    footerContact: 'Contact',
+    footerPrayerTimes: 'Prayer Times',
+    footerCopyright: (name: string, year: number) => `© ${year} ${name}`,
   },
   ku: {
     nav: { times: 'کاتەکان', dhikr: 'زیکر', events: 'بۆنەکان', courses: 'خولەکان', quran: 'قورئان', donate: 'بەخشین', about: 'دەربارە' },
@@ -143,6 +151,13 @@ const translations = {
     dhikrReset: 'ڕیسێت',
     dhikrCompleted: 'تەواو بوو',
     dhikrOf: 'لە',
+    nextPrayer: 'نوێژی داهاتوو',
+    prayerIn: 'لە ماوەی',
+    footerTagline: 'کۆمەڵگەیەکی بەخێرهاتوو لە دڵی بیرمینگام',
+    footerQuickLinks: 'بەستەرە خێراکان',
+    footerContact: 'پەیوەندی',
+    footerPrayerTimes: 'کاتی نوێژ',
+    footerCopyright: (name: string, year: number) => `© ${year} ${name}`,
   },
   ar: {
     nav: { times: 'الأوقات', dhikr: 'ذكر', events: 'الفعاليات', courses: 'الدورات', quran: 'القرآن', donate: 'تبرع', about: 'حول' },
@@ -180,6 +195,13 @@ const translations = {
     dhikrReset: 'إعادة',
     dhikrCompleted: 'اكتمل',
     dhikrOf: 'من',
+    nextPrayer: 'الصلاة القادمة',
+    prayerIn: 'خلال',
+    footerTagline: 'مجتمع مرحب في قلب برمنغهام',
+    footerQuickLinks: 'روابط سريعة',
+    footerContact: 'تواصل معنا',
+    footerPrayerTimes: 'أوقات الصلاة',
+    footerCopyright: (name: string, year: number) => `© ${year} ${name}`,
   },
 };
 
@@ -290,6 +312,7 @@ export default function MosqueHero() {
   const [prayerLoading, setPrayerLoading] = useState(true);
   const [activePrayer, setActivePrayer] = useState<string>('');
   const [nextPrayer, setNextPrayer] = useState<string>('');
+  const [countdown, setCountdown] = useState<string>('');
   const [events, setEvents] = useState<Event[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [books, setBooks] = useState<Book[]>([]);
@@ -474,6 +497,30 @@ export default function MosqueHero() {
       setNextPrayer(getNextPrayer(prayerData.prayers));
     }, 60000);
     return () => clearInterval(timer);
+  }, [prayerData]);
+
+  // Live countdown to next prayer (ticks every second)
+  useEffect(() => {
+    if (!prayerData) return;
+    function tick() {
+      const now = new Date();
+      const totalSecs = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+      const nextId = getNextPrayer(prayerData!.prayers);
+      const next = prayerData!.prayers.find(p => p.id === nextId);
+      if (!next) { setCountdown(''); return; }
+      const m = next.azan.match(/^(\d{1,2}):(\d{2})/);
+      if (!m) { setCountdown(''); return; }
+      let diff = (parseInt(m[1]) * 3600 + parseInt(m[2]) * 60) - totalSecs;
+      if (diff < 0) diff += 86400;
+      const h = Math.floor(diff / 3600);
+      const mm = Math.floor((diff % 3600) / 60);
+      const s = diff % 60;
+      const pad = (n: number) => String(n).padStart(2, '0');
+      setCountdown(h > 0 ? `${h}h ${pad(mm)}m ${pad(s)}s` : `${pad(mm)}m ${pad(s)}s`);
+    }
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
   }, [prayerData]);
 
   const changeLang = (newLang: Lang) => {
@@ -731,6 +778,34 @@ export default function MosqueHero() {
                 <span dir="ltr">{prayerData ? translateHijri(prayerData.hijri, lang) : '—'}</span>
               </div>
             </motion.div>
+
+            {/* Countdown pill — next prayer live timer */}
+            {!prayerLoading && countdown && nextPrayer && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }} className="flex justify-center mb-6">
+                <div className={`flex items-center gap-3 px-5 py-2.5 rounded-full border backdrop-blur-sm ${
+                  secLM('prayer')
+                    ? 'bg-amber-100/80 border-amber-300/60 text-amber-800'
+                    : 'bg-amber-500/10 border-amber-500/25 text-amber-200'
+                }`}>
+                  <span className="relative flex h-2 w-2 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400" />
+                  </span>
+                  <span className="text-sm font-medium">
+                    {t.nextPrayer}:&nbsp;
+                    <span className={`font-semibold ${secLM('prayer') ? 'text-amber-700' : 'text-amber-300'}`}>
+                      {t.prayers[nextPrayer as keyof typeof t.prayers]}
+                    </span>
+                    &nbsp;{t.prayerIn}&nbsp;
+                  </span>
+                  <span dir="ltr" className={`font-display text-base ${secLM('prayer') ? 'text-amber-900' : 'text-amber-50'}`}
+                    style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    {countdown}
+                  </span>
+                </div>
+              </motion.div>
+            )}
 
             {/* Prayer rows — compact horizontal pill list */}
             {prayerLoading ? (
@@ -1067,8 +1142,10 @@ export default function MosqueHero() {
                   onClick={() => router.push('/events')}
                   className={`${secLM('events') ? 'bg-amber-50 border border-amber-300/40 hover:bg-amber-100/80 hover:border-amber-400/60' : 'bg-amber-950/20 border border-amber-500/20 hover:bg-amber-900/30 hover:border-amber-500/40'} rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-300 group cursor-pointer`}>
                   {event.image_url ? (
-                    <div className="aspect-video w-full overflow-hidden">
-                      <img src={event.image_url} alt={getEventTitle(event)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <div className="aspect-video w-full overflow-hidden relative">
+                      <Image src={event.image_url} alt={getEventTitle(event)} fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
                     </div>
                   ) : (
                     <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl sm:rounded-2xl bg-amber-500/10 flex items-center justify-center mt-3 mx-3 sm:mt-4 sm:mx-4 md:mt-8 md:mx-8 group-hover:bg-amber-500/20 transition-colors">
@@ -1118,8 +1195,10 @@ export default function MosqueHero() {
                   className="bg-amber-950/20 border border-amber-500/20 rounded-2xl sm:rounded-3xl overflow-hidden hover:border-amber-500/40 transition-all duration-300 relative group cursor-pointer">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-amber-500/10 transition-colors pointer-events-none" />
                   {course.image_url ? (
-                    <div className="aspect-video w-full overflow-hidden">
-                      <img src={course.image_url} alt={getCourseTitle(course)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <div className="aspect-video w-full overflow-hidden relative">
+                      <Image src={course.image_url} alt={getCourseTitle(course)} fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
                     </div>
                   ) : null}
                   <div className="p-3 sm:p-4 md:p-6 relative z-10">
@@ -1162,9 +1241,10 @@ export default function MosqueHero() {
                   onClick={() => router.push('/books')}
                   className={`rounded-2xl overflow-hidden border ${secLM('books') ? 'bg-amber-50 border-amber-300/30 hover:border-amber-400/50' : 'bg-amber-950/20 border-amber-500/15 hover:border-amber-500/35'} cursor-pointer group transition-all duration-300`}>
                   {book.image_url ? (
-                    <div className="aspect-[2/3] w-full overflow-hidden">
-                      <img src={book.image_url} alt={lang === 'ar' ? (book.title_ar || book.title) : lang === 'ku' ? (book.title_ku || book.title) : book.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <div className="aspect-[2/3] w-full overflow-hidden relative">
+                      <Image src={book.image_url} alt={lang === 'ar' ? (book.title_ar || book.title) : lang === 'ku' ? (book.title_ku || book.title) : book.title}
+                        fill className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 14vw" />
                     </div>
                   ) : (
                     <div className={`aspect-[2/3] w-full ${secLM('books') ? 'bg-amber-100' : 'bg-amber-950/40'} flex items-center justify-center`}>
@@ -1197,7 +1277,7 @@ export default function MosqueHero() {
             <p className={`text-base md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed ${secLM('donate') ? 'text-amber-800/70' : 'text-amber-100/70'}`}>
               <AnimatedText nowrap={false}>{t.donateDesc}</AnimatedText>
             </p>
-            <button className="px-10 py-5 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 text-[#0a0804] font-bold text-lg hover:from-amber-300 hover:to-amber-500 transition-all duration-300 shadow-theme-glow hover:shadow-theme-strong hover:-translate-y-1">
+            <button className={`px-10 py-5 rounded-full bg-gradient-to-r font-bold text-lg transition-all duration-300 shadow-theme-glow hover:shadow-theme-strong hover:-translate-y-1 ${secLM('donate') ? 'from-amber-600 to-amber-800 text-amber-50 hover:from-amber-700 hover:to-amber-900' : 'from-amber-400 to-amber-600 text-[#0a0804] hover:from-amber-300 hover:to-amber-500'}`}>
               <AnimatedText>{t.donateBtn}</AnimatedText>
             </button>
           </motion.div>
@@ -1251,6 +1331,120 @@ export default function MosqueHero() {
           </motion.div>
         </section>
 
+        {/* ── Footer ─────────────────────────────────────────────────── */}
+        <footer id="footer" style={secStyle('footer')} className="section-themed border-t border-amber-500/20 px-6 py-16">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
+
+              {/* Branding */}
+              <div className="md:col-span-1">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 border border-amber-500/40 rounded-full flex items-center justify-center shrink-0">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-amber-400">
+                      <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9L12 2Z" />
+                    </svg>
+                  </div>
+                  <span className={`font-display font-medium text-lg ${secLM('footer') ? 'text-amber-900' : 'text-amber-50'}`}>
+                    {content.mosque_name || 'Masjid Al-Ekhuah'}
+                  </span>
+                </div>
+                <p className={`text-sm leading-relaxed ${secLM('footer') ? 'text-amber-800/70' : 'text-amber-200/60'}`}>
+                  {t.footerTagline}
+                </p>
+              </div>
+
+              {/* Quick Links */}
+              <div>
+                <h3 className={`text-xs font-semibold uppercase tracking-widest mb-4 ${secLM('footer') ? 'text-amber-700' : 'text-amber-400'}`}>
+                  {t.footerQuickLinks}
+                </h3>
+                <ul className="space-y-2.5">
+                  {[
+                    { label: 'Home', href: '#hero', onClick: () => window.scrollTo({ top: 0, behavior: 'smooth' }) },
+                    { label: t.nav.times, href: '#times' },
+                    { label: t.nav.events, href: '#events' },
+                    { label: t.nav.courses, href: '#courses' },
+                    { label: t.nav.quran, href: '/quran' },
+                  ].map(link => (
+                    <li key={link.label}>
+                      <a href={link.href} onClick={link.onClick}
+                        className={`text-sm transition-colors ${secLM('footer') ? 'text-amber-700/70 hover:text-amber-700' : 'text-amber-200/60 hover:text-amber-300'}`}>
+                        {link.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Prayer Times */}
+              <div>
+                <h3 className={`text-xs font-semibold uppercase tracking-widest mb-4 ${secLM('footer') ? 'text-amber-700' : 'text-amber-400'}`}>
+                  {t.footerPrayerTimes}
+                </h3>
+                {prayerData ? (
+                  <ul className="space-y-1.5">
+                    {prayerData.prayers.map(p => (
+                      <li key={p.id} className="flex justify-between gap-4">
+                        <span className={`text-xs ${secLM('footer') ? 'text-amber-700/70' : 'text-amber-300/70'}`}>
+                          {t.prayers[p.id as keyof typeof t.prayers]}
+                        </span>
+                        <span dir="ltr" className={`text-xs font-medium ${secLM('footer') ? 'text-amber-800' : 'text-amber-200'}`}
+                          style={{ fontVariantNumeric: 'tabular-nums' }}>
+                          {p.azan || '—'}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className={`text-xs ${secLM('footer') ? 'text-amber-700/50' : 'text-amber-400/50'}`}>{t.loading}</p>
+                )}
+              </div>
+
+              {/* Contact */}
+              <div>
+                <h3 className={`text-xs font-semibold uppercase tracking-widest mb-4 ${secLM('footer') ? 'text-amber-700' : 'text-amber-400'}`}>
+                  {t.footerContact}
+                </h3>
+                <ul className="space-y-3">
+                  <li>
+                    <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(contactAddress)}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className={`flex items-start gap-2 text-xs transition-colors ${secLM('footer') ? 'text-amber-700/70 hover:text-amber-700' : 'text-amber-200/60 hover:text-amber-300'}`}>
+                      <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-400" />
+                      <span dir="ltr">{contactAddress}</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href={`tel:${contactPhone.replace(/\s/g, '')}`}
+                      className={`flex items-center gap-2 text-xs transition-colors ${secLM('footer') ? 'text-amber-700/70 hover:text-amber-700' : 'text-amber-200/60 hover:text-amber-300'}`}>
+                      <Phone className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+                      <span dir="ltr">{contactPhone}</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href={`mailto:${contactEmail}`}
+                      className={`flex items-center gap-2 text-xs transition-colors ${secLM('footer') ? 'text-amber-700/70 hover:text-amber-700' : 'text-amber-200/60 hover:text-amber-300'}`}>
+                      <Mail className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+                      <span dir="ltr" className="break-all">{contactEmail}</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Bottom bar */}
+            <div className={`pt-8 border-t ${secLM('footer') ? 'border-amber-200/40' : 'border-amber-500/15'} flex flex-col sm:flex-row items-center justify-between gap-4`}>
+              <p className={`text-xs ${secLM('footer') ? 'text-amber-700/50' : 'text-amber-400/40'}`}>
+                {t.footerCopyright(content.mosque_name || 'Masjid Al-Ekhuah', new Date().getFullYear())}
+              </p>
+              <button onClick={() => router.push('/admin')}
+                className={`text-xs transition-colors ${secLM('footer') ? 'text-amber-700/30 hover:text-amber-700/60' : 'text-amber-500/20 hover:text-amber-400/50'}`}>
+                {t.admin}
+              </button>
+            </div>
+          </div>
+        </footer>
+
       </div>
 
       {/* ── Timetable Modal ────────────────────────────────────────── */}
@@ -1268,7 +1462,11 @@ export default function MosqueHero() {
               className="w-full max-w-5xl max-h-[90vh] overflow-auto rounded-3xl border border-amber-500/30 shadow-2xl">
               {timetableUrl ? (
                 timetableUrl.match(/\.(jpg|jpeg|png|webp)$/i) ? (
-                  <img src={timetableUrl} alt="Prayer Timetable" className="w-full h-auto rounded-3xl" style={{ touchAction: 'pinch-zoom' }} />
+                  <div className="relative w-full" style={{ minHeight: 400 }}>
+                    <Image src={timetableUrl} alt="Prayer Timetable" fill priority
+                      className="object-contain rounded-3xl" sizes="(max-width: 1280px) 100vw, 1280px"
+                      style={{ touchAction: 'pinch-zoom' }} />
+                  </div>
                 ) : (
                   <div className="p-8 flex flex-col items-center gap-4">
                     <p className="text-amber-200">{t.noTimetable}</p>

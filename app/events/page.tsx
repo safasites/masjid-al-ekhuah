@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
 import { Calendar, ArrowLeft, ArrowUp, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -70,6 +71,7 @@ export default function EventsPage() {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [mosqueName, setMosqueName] = useState('Masjid Al-Ekhuah');
   const [selected, setSelected] = useState<Event | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const isRTL = lang === 'ar' || lang === 'ku';
   const tr = eventsTranslations[lang];
@@ -85,6 +87,27 @@ export default function EventsPage() {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  // Focus trap + Escape key for modal
+  useEffect(() => {
+    if (!selected) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    modalRef.current?.focus();
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') { setSelected(null); return; }
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (!focusable.length) { e.preventDefault(); return; }
+        const first = focusable[0]; const last = focusable[focusable.length - 1];
+        if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last.focus(); } }
+        else { if (document.activeElement === last) { e.preventDefault(); first.focus(); } }
+      }
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => { document.removeEventListener('keydown', onKeyDown); previouslyFocused?.focus(); };
+  }, [selected]);
 
   useEffect(() => {
     fetch('/api/admin/events')
@@ -167,11 +190,13 @@ export default function EventsPage() {
               >
                 {/* Image / placeholder */}
                 {event.image_url ? (
-                  <div className="aspect-video w-full overflow-hidden">
-                    <img
+                  <div className="aspect-video w-full overflow-hidden relative">
+                    <Image
                       src={event.image_url}
                       alt={getTitle(event)}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     />
                   </div>
                 ) : (
@@ -211,13 +236,19 @@ export default function EventsPage() {
             onClick={() => setSelected(null)}
           >
             <motion.div
+              ref={modalRef}
+              tabIndex={-1}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="modal-title"
               {...anim.modalEntry}
-              className={`w-full sm:max-w-2xl ${lightMode ? 'bg-[#f0ede4]' : 'bg-[#111310]'} sm:${lightMode ? 'bg-[#f8f5ee]' : 'bg-[#0a0804]'} border border-amber-500/20 rounded-t-3xl sm:rounded-3xl overflow-hidden max-h-[90vh] overflow-y-auto`}
+              className={`w-full sm:max-w-2xl ${lightMode ? 'bg-[#f0ede4]' : 'bg-[#111310]'} sm:${lightMode ? 'bg-[#f8f5ee]' : 'bg-[#0a0804]'} border border-amber-500/20 rounded-t-3xl sm:rounded-3xl overflow-hidden max-h-[90vh] overflow-y-auto outline-none`}
               onClick={e => e.stopPropagation()}
             >
               {selected.image_url && (
-                <div className="aspect-video w-full">
-                  <img src={selected.image_url} alt={getTitle(selected)} className="w-full h-full object-cover" />
+                <div className="aspect-video w-full relative">
+                  <Image src={selected.image_url} alt={getTitle(selected)} fill
+                    className="object-cover" sizes="(max-width: 640px) 100vw, 672px" priority />
                 </div>
               )}
               <div className={`p-6 md:p-8 relative ${!selected.image_url ? 'pt-12' : ''}`}>
@@ -233,7 +264,7 @@ export default function EventsPage() {
                     {tr.featured}
                   </span>
                 )}
-                <h2 dir="auto" className="text-2xl md:text-3xl font-display text-amber-50 mb-2 pr-8">{getTitle(selected)}</h2>
+                <h2 id="modal-title" dir="auto" className="text-2xl md:text-3xl font-display text-amber-50 mb-2 pr-8">{getTitle(selected)}</h2>
                 <p className="text-amber-400 text-sm mb-5 flex items-center gap-2">
                   <Calendar className="w-4 h-4 shrink-0" />
                   {selected.date_label}
