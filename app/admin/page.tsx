@@ -1056,71 +1056,108 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
           <ChevronRight className="w-4 h-4 text-amber-500/40 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all shrink-0" />
         </button>
 
-        <p className="text-amber-500/50 text-sm mb-5">Applies to the admin panel, Quran reader, and all sub-pages. Home page sections have their own colour pickers below.</p>
+        <p className="text-amber-500/50 text-sm mb-4">Applies to the admin panel, Quran reader, and all sub-pages. Home page sections have their own colour pickers below.</p>
 
-        {/* Dark themes */}
-        <p className="text-xs font-medium text-amber-500/40 uppercase tracking-wider mb-2">Dark</p>
-        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 mb-4">
-          {DARK_THEMES.map(t => {
-            const cfg = THEME_CONFIG[t];
-            const isSelected = globalTheme === t;
-            return (
-              <button
-                key={t}
-                type="button"
-                title={cfg.label}
-                onClick={() => applyGlobalTheme(t)}
-                className={`relative rounded-2xl overflow-hidden transition-all duration-200 ${
-                  isSelected ? 'ring-2 ring-amber-400 ring-offset-1 ring-offset-[#0a0804] scale-105 shadow-lg' : 'opacity-60 hover:opacity-90 hover:scale-105'
-                }`}
-                style={{ height: '72px', background: `linear-gradient(145deg, ${cfg.darkBg} 20%, ${cfg.accent}40 100%)` }}
+        {/* Active theme badge */}
+        {(() => {
+          const activeCfg = THEME_CONFIG[globalTheme.replace('-light', '')];
+          const modeLabel = isLightTheme(globalTheme) ? 'Light' : 'Dark';
+          return activeCfg ? (
+            <div className="flex items-center gap-2 mb-5">
+              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: activeCfg.accent }} />
+              <span className="text-xs font-medium text-amber-200/70">Active theme:</span>
+              <span
+                className="text-xs font-semibold px-2 py-0.5 rounded-full border"
+                style={{ color: activeCfg.accent, borderColor: `${activeCfg.accent}40`, backgroundColor: `${activeCfg.accent}12` }}
               >
-                <div className="absolute top-2 right-2 w-3 h-3 rounded-full" style={{ backgroundColor: cfg.accent }} />
-                <div className="absolute bottom-0 left-0 right-0 px-2 pb-2">
-                  <span className="text-[10px] font-semibold leading-none" style={{ color: cfg.accent }}>{cfg.label}</span>
-                </div>
-                {isSelected && (
-                  <div className="absolute top-1.5 left-1.5">
-                    <Check className="w-3 h-3 text-white drop-shadow" />
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
+                {activeCfg.label} · {modeLabel}
+              </span>
+            </div>
+          ) : null;
+        })()}
 
-        {/* Light themes */}
-        <p className="text-xs font-medium text-amber-500/40 uppercase tracking-wider mb-2">Light</p>
-        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-          {LIGHT_THEMES.map(t => {
-            const baseName = t.replace('-light', '');
+        {/* Unified theme grid — 8 cards, each with dark + light half */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {DARK_THEMES.map(baseName => {
             const cfg = THEME_CONFIG[baseName];
             if (!cfg) return null;
-            const isSelected = globalTheme === t;
+            const darkVariant = baseName as Theme;
+            const lightVariant = `${baseName}-light` as Theme;
+            const isDarkActive  = globalTheme === darkVariant;
+            const isLightActive = globalTheme === lightVariant;
+            const isCardActive  = isDarkActive || isLightActive;
             return (
-              <button
-                key={t}
-                type="button"
-                title={`${cfg.label} Light`}
-                onClick={() => applyGlobalTheme(t)}
-                className={`relative rounded-2xl overflow-hidden transition-all duration-200 ${
-                  isSelected ? 'ring-2 ring-amber-400 ring-offset-1 ring-offset-[#0a0804] scale-105 shadow-lg' : 'opacity-60 hover:opacity-90 hover:scale-105'
-                }`}
-                style={{ height: '72px', background: `linear-gradient(145deg, ${cfg.lightBg} 20%, ${cfg.accent}35 100%)` }}
+              <div
+                key={baseName}
+                className="rounded-2xl overflow-hidden transition-all duration-200"
+                style={{
+                  border: isCardActive ? `2px solid ${cfg.accent}90` : '2px solid rgba(180,120,40,0.10)',
+                  boxShadow: isCardActive ? `0 0 0 1px ${cfg.accent}30, 0 4px 20px ${cfg.accent}18` : 'none',
+                }}
               >
-                <div className="absolute top-2 right-2 w-3 h-3 rounded-full" style={{ backgroundColor: cfg.accent }} />
-                <div className="absolute bottom-0 left-0 right-0 px-2 pb-2">
-                  <span className="text-[10px] font-semibold leading-none" style={{ color: cfg.accent }}>{cfg.label}</span>
+                {/* Split preview */}
+                <div className="relative flex" style={{ height: '80px' }}>
+                  <button
+                    type="button"
+                    title={`${cfg.label} Dark`}
+                    onClick={() => applyGlobalTheme(darkVariant)}
+                    className="relative flex-1 transition-opacity duration-150 hover:opacity-90 focus:outline-none"
+                    style={{ background: `linear-gradient(160deg, ${cfg.darkBg} 20%, ${cfg.accent}50 160%)` }}
+                  >
+                    {isDarkActive && (
+                      <div className="absolute top-2 left-2 w-4 h-4 rounded-full flex items-center justify-center" style={{ backgroundColor: cfg.accent }}>
+                        <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                      </div>
+                    )}
+                    <span className="absolute bottom-1.5 left-0 right-0 text-center" style={{ fontSize: '9px', color: `${cfg.accent}99`, letterSpacing: '0.05em' }}>DARK</span>
+                  </button>
+                  <div className="absolute inset-y-0 z-10" style={{ left: '50%', width: '1px', background: `linear-gradient(to bottom, transparent, ${cfg.accent}60, transparent)` }} />
+                  <button
+                    type="button"
+                    title={`${cfg.label} Light`}
+                    onClick={() => applyGlobalTheme(lightVariant)}
+                    className="relative flex-1 transition-opacity duration-150 hover:opacity-90 focus:outline-none"
+                    style={{ background: `linear-gradient(200deg, ${cfg.lightBg} 20%, ${cfg.accent}35 160%)` }}
+                  >
+                    {isLightActive && (
+                      <div className="absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center" style={{ backgroundColor: cfg.accent }}>
+                        <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                      </div>
+                    )}
+                    <span className="absolute bottom-1.5 left-0 right-0 text-center" style={{ fontSize: '9px', color: `${cfg.accent}bb`, letterSpacing: '0.05em' }}>LIGHT</span>
+                  </button>
                 </div>
-                {isSelected && (
-                  <div className="absolute top-1.5 left-1.5">
-                    <Check className="w-3 h-3 drop-shadow" style={{ color: cfg.accent }} />
+
+                {/* Accent bar */}
+                <div style={{ height: '3px', backgroundColor: cfg.accent }} />
+
+                {/* Footer: name + buttons */}
+                <div className="px-3 py-2.5" style={{ backgroundColor: '#0f0b07' }}>
+                  <p className="text-xs font-semibold text-amber-100/80 mb-2 leading-none">{cfg.label}</p>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => applyGlobalTheme(darkVariant)}
+                      className="flex-1 text-[10px] font-semibold py-1 rounded-md transition-all duration-150 focus:outline-none"
+                      style={isDarkActive
+                        ? { backgroundColor: cfg.accent, color: '#fff', boxShadow: `0 0 8px ${cfg.accent}60` }
+                        : { backgroundColor: `${cfg.accent}15`, color: `${cfg.accent}99`, border: `1px solid ${cfg.accent}25` }}
+                    >Dark</button>
+                    <button
+                      type="button"
+                      onClick={() => applyGlobalTheme(lightVariant)}
+                      className="flex-1 text-[10px] font-semibold py-1 rounded-md transition-all duration-150 focus:outline-none"
+                      style={isLightActive
+                        ? { backgroundColor: cfg.accent, color: '#fff', boxShadow: `0 0 8px ${cfg.accent}60` }
+                        : { backgroundColor: `${cfg.accent}15`, color: `${cfg.accent}99`, border: `1px solid ${cfg.accent}25` }}
+                    >Light</button>
                   </div>
-                )}
-              </button>
+                </div>
+              </div>
             );
           })}
         </div>
+
         <p className="text-amber-500/40 text-xs mt-3">Click a theme for live preview. Save All Settings to persist.</p>
       </Section>
 
