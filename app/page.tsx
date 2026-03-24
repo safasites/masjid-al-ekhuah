@@ -139,11 +139,22 @@ export default function MosqueHero() {
       },
       { rootMargin: '-40% 0px -50% 0px', threshold: 0 }
     );
-    sectionIds.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
-    return () => observer.disconnect();
+
+    const observed = new Set<string>();
+    function tryObserve() {
+      sectionIds.forEach(id => {
+        if (observed.has(id)) return;
+        const el = document.getElementById(id);
+        if (el) { observer.observe(el); observed.add(id); }
+      });
+    }
+    tryObserve();
+
+    // Watch for lazy-loaded sections appearing in the DOM
+    const mo = new MutationObserver(tryObserve);
+    mo.observe(document.body, { childList: true, subtree: true });
+
+    return () => { observer.disconnect(); mo.disconnect(); };
   }, [showDhikr, hasDhikrCached, showEvents, showCourses, showDonate]);
 
   // ── Mobile tab sync ────────────────────────────────────────────

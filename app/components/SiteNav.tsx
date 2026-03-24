@@ -113,10 +113,8 @@ export function SiteNav({
                   <motion.a key={key} href={href} layout
                     initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.1 * i }}
-                    className={`flex items-center gap-1 text-sm font-medium tracking-wide px-3 py-1 rounded-full border transition-all duration-300 ${
-                      secLM
-                        ? 'text-amber-700/80 border-amber-600/20 hover:border-amber-600/50 hover:text-amber-700 hover:bg-amber-500/10'
-                        : 'text-amber-200/60 border-amber-500/20 hover:border-amber-400/50 hover:text-amber-300 hover:bg-amber-500/10'
+                    className={`flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 backdrop-blur-sm transition-all duration-300 hover:shadow-theme-soft ${
+                      secLM ? 'text-amber-700' : 'text-amber-300'
                     }`}>
                     <AnimatedText>{item}</AnimatedText>
                     <ExternalLink className="w-3 h-3 opacity-50" />
