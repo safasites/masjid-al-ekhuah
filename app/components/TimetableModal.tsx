@@ -31,8 +31,8 @@ export function TimetableModal({ show, timetableUrl, secBg, lang, onClose }: Tim
             {timetableUrl ? (
               timetableUrl.match(/\.(jpg|jpeg|png|webp)$/i) ? (
                 <div className="relative w-full" style={{ minHeight: 400 }}>
-                  <Image src={timetableUrl} alt="Prayer Timetable" fill priority
-                    className="object-contain rounded-3xl" sizes="(max-width: 1280px) 100vw, 1280px"
+                  <Image src={timetableUrl} alt="Prayer Timetable" fill
+                    className="object-contain rounded-3xl" sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1280px"
                     style={{ touchAction: 'pinch-zoom' }} />
                 </div>
               ) : (

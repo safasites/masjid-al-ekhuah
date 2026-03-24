@@ -3,7 +3,7 @@
 import { memo, useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { useAnimationConfig } from '@/app/animation-provider';
-import { Prayer, Lang, translations, getNextPrayer } from './types';
+import { Prayer, Lang, translations, getNextPrayer, getActivePrayer } from './types';
 
 interface PrayerCountdownRingProps {
   prayers: Prayer[];
@@ -39,7 +39,22 @@ function PrayerCountdownRingInner({ prayers, lang, secLM, isFriday, fridayHighli
       const s = diff % 60;
       const pad = (n: number) => String(n).padStart(2, '0');
       setCountdown(h > 0 ? `${h}h ${pad(mm)}m ${pad(s)}s` : `${pad(mm)}m ${pad(s)}s`);
-      setMinuteProgress(1 - (diff % 60) / 60);
+
+      // Arc tracks the full interval from current prayer to next prayer
+      const currentId = getActivePrayer(prayers);
+      const current = prayers.find(p => p.id === currentId);
+      let intervalProgress = 1 - (diff % 60) / 60; // fallback: per-minute
+      if (current) {
+        const cm = current.azan.match(/^(\d{1,2}):(\d{2})/);
+        if (cm) {
+          const startSecs = parseInt(cm[1]) * 3600 + parseInt(cm[2]) * 60;
+          const endSecs   = parseInt(m[1])  * 3600 + parseInt(m[2])  * 60;
+          let totalInterval = endSecs - startSecs;
+          if (totalInterval <= 0) totalInterval += 86400;
+          intervalProgress = 1 - diff / totalInterval;
+        }
+      }
+      setMinuteProgress(Math.max(0, Math.min(1, intervalProgress)));
     }
 
     tick();
@@ -56,7 +71,7 @@ function PrayerCountdownRingInner({ prayers, lang, secLM, isFriday, fridayHighli
       transition={{ duration: 0.9, delay: anim.isSimplified ? 0.2 : 0.8, ease: [0.22, 1, 0.36, 1] }}
       className="mt-10 relative pointer-events-auto"
     >
-      <div className={`relative w-52 h-52 md:w-60 md:h-60 flex items-center justify-center ${anim.isSimplified ? '' : 'animate-ring-pulse'}`}>
+      <div className={`relative w-64 h-64 md:w-80 md:h-80 flex items-center justify-center ${anim.isSimplified ? '' : 'animate-ring-pulse'}`}>
         {/* Spinning outer decorative rings */}
         <motion.div {...anim.spinCW}
           className="absolute inset-0 rounded-full border border-amber-500/20" />
@@ -72,13 +87,13 @@ function PrayerCountdownRingInner({ prayers, lang, secLM, isFriday, fridayHighli
         </svg>
         {/* Center content */}
         <div className="relative z-10 flex flex-col items-center justify-center text-center px-3">
-          <p className={`text-[10px] uppercase tracking-widest mb-0.5 ${secLM ? 'text-amber-700/50' : 'text-amber-400/60'}`}>
+          <p className={`text-xs uppercase tracking-widest mb-1 ${secLM ? 'text-amber-700/50' : 'text-amber-400/60'}`}>
             {t.nextPrayerCard}
           </p>
-          <p className={`font-display text-lg font-semibold mb-0.5 ${secLM ? 'text-amber-900' : 'text-amber-100'}`}>
+          <p className={`font-display text-xl font-semibold mb-1 ${secLM ? 'text-amber-900' : 'text-amber-100'}`}>
             {t.prayers[nextPrayer as keyof typeof t.prayers]}
           </p>
-          <p dir="ltr" className={`font-display text-xl md:text-2xl tabular-nums font-bold ${secLM ? 'text-amber-800' : 'text-amber-300'}`}
+          <p dir="ltr" className={`font-display text-2xl md:text-3xl tabular-nums font-bold ${secLM ? 'text-amber-800' : 'text-amber-300'}`}
             style={{ fontVariantNumeric: 'tabular-nums' }}>
             {countdown}
           </p>

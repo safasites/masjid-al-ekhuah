@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { requireDb } from '@/lib/supabase-server';
+import sharp from 'sharp';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,13 +54,33 @@ export async function POST(req: NextRequest) {
 
   const [db, errRes] = requireDb();
   if (errRes) return errRes;
-  const fileName = `timetable-${Date.now()}.${file.name.split('.').pop()}`;
-  const bytes = await file.arrayBuffer();
+
+  const rawBytes = await file.arrayBuffer();
+  let uploadBytes: ArrayBuffer | Buffer = rawBytes;
+  let uploadContentType = file.type;
+  let fileExt = file.name.split('.').pop() ?? 'jpg';
+
+  // Compress images before upload to keep timetable files small on mobile
+  if (file.type !== 'application/pdf') {
+    try {
+      const compressed = await sharp(Buffer.from(rawBytes))
+        .resize({ width: 2000, height: 2800, fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 82, mozjpeg: true })
+        .toBuffer();
+      uploadBytes = compressed;
+      uploadContentType = 'image/jpeg';
+      fileExt = 'jpg';
+    } catch {
+      // If sharp fails, fall back to the original bytes
+    }
+  }
+
+  const fileName = `timetable-${Date.now()}.${fileExt}`;
 
   // Upload to Supabase Storage
   const { error: uploadError } = await db.storage
     .from('timetable-images')
-    .upload(fileName, bytes, { contentType: file.type, upsert: false });
+    .upload(fileName, uploadBytes, { contentType: uploadContentType, upsert: false });
 
   if (uploadError) {
     return NextResponse.json({ error: uploadError.message }, { status: 500 });

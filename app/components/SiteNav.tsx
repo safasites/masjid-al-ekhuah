@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence, LayoutGroup, useAnimationControls } from 'motion/react';
 import {
   MapPin, Globe, Home, BookOpen, BookMarked, Calendar, LayoutGrid,
-  Info, Menu, Settings, ArrowRight,
+  Info, Menu, Settings, ArrowRight, ExternalLink,
 } from 'lucide-react';
 import { useAnimationConfig } from '@/app/animation-provider';
 import { AnimatedText } from './AnimatedText';
@@ -103,8 +103,26 @@ export function SiteNav({
               if (key === 'donate')  return showDonate;
               return true;
             }).map(([key, item], i) => {
-              const isActive = activeSection === key;
+              // Page-link items open a separate route and can never be highlighted
+              // by the home-page intersection observer — render them as pill buttons.
+              const isPageLink = key === 'quran' || key === 'courses';
+              const isActive = !isPageLink && activeSection === key;
               const href = key === 'courses' ? '/courses' : key === 'quran' ? '/quran' : key === 'events' ? '#events' : `#${key}`;
+              if (isPageLink) {
+                return (
+                  <motion.a key={key} href={href} layout
+                    initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.1 * i }}
+                    className={`flex items-center gap-1 text-sm font-medium tracking-wide px-3 py-1 rounded-full border transition-all duration-300 ${
+                      secLM
+                        ? 'text-amber-700/80 border-amber-600/20 hover:border-amber-600/50 hover:text-amber-700 hover:bg-amber-500/10'
+                        : 'text-amber-200/60 border-amber-500/20 hover:border-amber-400/50 hover:text-amber-300 hover:bg-amber-500/10'
+                    }`}>
+                    <AnimatedText>{item}</AnimatedText>
+                    <ExternalLink className="w-3 h-3 opacity-50" />
+                  </motion.a>
+                );
+              }
               return (
                 <motion.a key={key} href={href} layout
                   initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}

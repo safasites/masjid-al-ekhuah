@@ -890,6 +890,7 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
     () => Object.fromEntries(SECTION_KEYS.map(k => [k, { bg: DEFAULT_BG, accent: DEFAULT_ACCENT }])) as Record<SectionKey, { bg: string; accent: string }>
   );
   const [globalTheme, setGlobalTheme] = useState<Theme>('aurum');
+  const [customAccent, setCustomAccent] = useState('');
   const [savedThemes, setSavedThemes] = useState<SavedTheme[]>([]);
   const [newThemeName, setNewThemeName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -956,6 +957,7 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
       document.documentElement.setAttribute('data-theme', gt);
       if (isLightTheme(gt)) document.documentElement.setAttribute('data-light', '');
       else document.documentElement.removeAttribute('data-light');
+      if (c.global_theme_custom_accent) setCustomAccent(c.global_theme_custom_accent);
       try { setSavedThemes(JSON.parse(c.saved_themes ?? '[]')); } catch { setSavedThemes([]); }
     }).catch(() => {});
   }, []);
@@ -966,6 +968,7 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
       const updates = [
         ...Object.entries(form).map(([key, value]) => ({ key, value })),
         { key: 'global_theme', value: globalTheme },
+        { key: 'global_theme_custom_accent', value: customAccent },
         ...SECTION_KEYS.flatMap(k => [
           { key: `section_${k}_bg`,     value: sectionColors[k].bg },
           { key: `section_${k}_accent`, value: sectionColors[k].accent },
@@ -1159,6 +1162,38 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
         </div>
 
         <p className="text-amber-500/40 text-xs mt-3">Click a theme for live preview. Save All Settings to persist.</p>
+
+        {/* Manual custom accent colour */}
+        <div className="mt-5 p-4 rounded-2xl bg-amber-950/20 border border-amber-500/10">
+          <p className="text-sm font-semibold text-amber-200 mb-1">Custom Global Accent</p>
+          <p className="text-xs text-amber-500/50 mb-3">Override the preset accent colour across the entire site with any colour you choose. Leave blank to use the selected preset above.</p>
+          <div className="flex items-center gap-3">
+            <ColorInput
+              value={customAccent || '#d97706'}
+              onChange={v => {
+                setCustomAccent(v);
+                // Live preview: inject override style tag
+                const isValidHex = /^#[0-9a-fA-F]{6}$/.test(v);
+                let el = document.getElementById('admin-custom-accent-preview');
+                if (!el) { el = document.createElement('style'); el.id = 'admin-custom-accent-preview'; document.head.appendChild(el); }
+                el.textContent = isValidHex && v ? `[data-theme]{--color-amber-500:${v};}` : '';
+              }}
+            />
+            {customAccent && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomAccent('');
+                  const el = document.getElementById('admin-custom-accent-preview');
+                  if (el) el.textContent = '';
+                }}
+                className="text-xs text-amber-500/50 hover:text-amber-400 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
       </Section>
 
       <Section title="Section Colours">

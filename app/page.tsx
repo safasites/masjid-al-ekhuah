@@ -57,7 +57,11 @@ export default function MosqueHero() {
   const [books, setBooks] = useState<Book[]>([]);
   const [content, setContent] = useState<Record<string, string>>({});
   const [timetableUrl, setTimetableUrl] = useState<string | null>(null);
-  const [hasDhikrCached, setHasDhikrCached] = useState(false);
+  // Default true (optimistic) so the intersection observer includes dhikr from the start.
+  // DhikrSection calls onLoad(false) if there are no dhikr items, hiding the nav link.
+  const [hasDhikrCached, setHasDhikrCached] = useState(
+    typeof window === 'undefined' || localStorage.getItem('mosque-hasDhikr') !== '0'
+  );
 
   // ── Visual Customizer state ────────────────────────────────────
   const [isCustomizing, setIsCustomizing] = useState(false);
@@ -204,6 +208,15 @@ export default function MosqueHero() {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  // Immediately measure banner height when the announcement appears
+  // (ResizeObserver fires async; this prevents the one-frame overlap flash)
+  useEffect(() => {
+    const visible = content.announcement_enabled === 'true' && !!content.announcement_text && !announcementDismissed;
+    if (visible && bannerRef.current) {
+      setBannerHeight(bannerRef.current.offsetHeight);
+    }
+  }, [content.announcement_enabled, content.announcement_text, announcementDismissed]);
 
   // ── 60s timer: re-check active/next prayer (not every second) ──
   useEffect(() => {

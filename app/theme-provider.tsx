@@ -42,6 +42,24 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         } else {
           document.documentElement.removeAttribute('data-light');
         }
+        // Sync to localStorage so the inline script in layout.tsx picks up the
+        // correct theme on the next page load, eliminating the flicker.
+        localStorage.setItem('mosque-theme', t);
+
+        // Apply custom accent override if set
+        const customAccent = c.global_theme_custom_accent;
+        const isValidHex = (s: string) => /^#[0-9a-fA-F]{6}$/i.test(s);
+        let overrideEl = document.getElementById('custom-theme-override') as HTMLStyleElement | null;
+        if (customAccent && isValidHex(customAccent)) {
+          if (!overrideEl) {
+            overrideEl = document.createElement('style');
+            overrideEl.id = 'custom-theme-override';
+            document.head.appendChild(overrideEl);
+          }
+          overrideEl.textContent = `[data-theme]{--color-amber-500:${customAccent};}`;
+        } else if (overrideEl) {
+          overrideEl.textContent = '';
+        }
       })
       .catch(() => {
         document.documentElement.setAttribute('data-theme', 'aurum');
