@@ -87,13 +87,13 @@ function PrayerCountdownRingInner({ prayers, lang, secLM, isFriday, fridayHighli
         </svg>
         {/* Center content */}
         <div className="relative z-10 flex flex-col items-center justify-center text-center px-3">
-          <p className={`text-xs uppercase tracking-widest mb-1 ${secLM ? 'text-amber-700/50' : 'text-amber-400/60'}`}>
+          <p className={`text-xs uppercase tracking-widest mb-1 ${secLM ? 'text-stone-500' : 'text-amber-400/60'}`}>
             {t.nextPrayerCard}
           </p>
-          <p className={`font-display text-xl font-semibold mb-1 ${secLM ? 'text-amber-900' : 'text-amber-100'}`}>
+          <p className={`font-display text-xl font-semibold mb-1 ${secLM ? 'text-stone-900' : 'text-amber-100'}`}>
             {t.prayers[nextPrayer as keyof typeof t.prayers]}
           </p>
-          <p dir="ltr" className={`font-display text-2xl md:text-3xl tabular-nums font-bold ${secLM ? 'text-amber-800' : 'text-amber-300'}`}
+          <p dir="ltr" className={`font-display text-2xl md:text-3xl tabular-nums font-bold ${secLM ? 'text-stone-800' : 'text-amber-300'}`}
             style={{ fontVariantNumeric: 'tabular-nums' }}>
             {countdown}
           </p>

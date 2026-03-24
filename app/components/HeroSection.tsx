@@ -51,17 +51,17 @@ export function HeroSection({ lang, isRTL, secLM, secStyle, content, prayers, pr
           initial={{ opacity: 0, y: anim.isSimplified ? 0 : 30, filter: anim.blur(10) }}
           animate={{ opacity: 1, y: 0, filter: anim.blur(0) }}
           transition={{ duration: anim.isSimplified ? 0.2 : 1, delay: anim.isSimplified ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className={`font-display text-6xl sm:text-7xl md:text-[7rem] lg:text-[9rem] xl:text-[10rem] w-full leading-[1.0] tracking-tight mb-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 ${secLM ? 'text-amber-900' : 'text-white'}`}>
-          <AnimatedText>{heroLine1}</AnimatedText>
-          <AnimatedText className={`text-transparent bg-clip-text bg-gradient-to-r drop-shadow-sm ${secLM ? 'from-amber-700 via-amber-900 to-amber-800 animate-gradient-xy' : 'from-amber-100 via-amber-400 to-yellow-200 animate-gradient-xy'}`}>
+          className={`font-display text-6xl sm:text-7xl md:text-[7rem] lg:text-[9rem] xl:text-[10rem] w-full leading-[1.0] tracking-tight mb-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 ${secLM ? 'text-stone-800' : 'text-white'}`}>
+          <span className="inline-block whitespace-nowrap">{heroLine1}</span>
+          <span className={`inline-block whitespace-nowrap text-transparent bg-clip-text bg-gradient-to-r drop-shadow-sm ${secLM ? 'from-[#b45309] via-[#78350f] to-[#92400e] animate-gradient-xy' : 'from-amber-100 via-amber-400 to-yellow-200 animate-gradient-xy'}`}>
             {heroLine2}
-          </AnimatedText>
+          </span>
         </motion.h1>
 
         <motion.p
           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: anim.isSimplified ? 0.1 : 0.4 }}
-          className={`text-base md:text-xl mb-8 max-w-md text-center ${secLM ? 'text-amber-800/50' : 'text-amber-200/45'}`}>
+          className={`text-base md:text-xl mb-8 max-w-md text-center ${secLM ? 'text-stone-600' : 'text-amber-200/45'}`}>
           {content.hero_subtitle || t.footerTagline}
         </motion.p>
 

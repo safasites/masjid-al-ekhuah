@@ -117,59 +117,38 @@ export default function MosqueHero() {
     if (dismissedText) setAnnouncementDismissed(true);
   }, []);
 
-  // ── Scroll listener ────────────────────────────────────────────
+  // ── Scroll listener + active nav section detection ────────────
+  // Scroll-position approach: checks which section contains the 35% viewport mark.
+  // More reliable than IntersectionObserver for lazy-loaded sections.
+  const ALL_SECTION_IDS = ['times', 'dhikr', 'events', 'courses', 'donate', 'about'];
   useEffect(() => {
     const onScroll = () => {
       setScrolled(window.scrollY > 50);
       setShowBackToTop(window.scrollY > 300);
       if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 200) {
         setActiveSection('about');
-      } else if (window.scrollY < 100) {
+        return;
+      }
+      if (window.scrollY < 100) {
         setActiveSection('');
+        return;
+      }
+      const targetY = window.scrollY + window.innerHeight * 0.35;
+      for (const id of ALL_SECTION_IDS) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        const top = el.offsetTop;
+        if (targetY >= top && targetY <= top + el.offsetHeight) {
+          setActiveSection(id);
+          return;
+        }
       }
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // ── IntersectionObserver — active nav section ──────────────────
-  // Uses hasDhikrCached (boolean, flips once) instead of dhikrItems.length
-  // to avoid re-registering the observer repeatedly during data loading
-  useEffect(() => {
-    const sectionIds = [
-      'times',
-      ...(showDhikr && hasDhikrCached ? ['dhikr'] : []),
-      ...(showEvents  ? ['events']  : []),
-      ...(showCourses ? ['courses'] : []),
-      ...(showDonate  ? ['donate']  : []),
-      'about',
-    ];
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) setActiveSection(entry.target.id);
-        });
-      },
-      { rootMargin: '-20% 0px -60% 0px', threshold: 0 }
-    );
-
-    const observed = new Set<string>();
-    function tryObserve() {
-      sectionIds.forEach(id => {
-        if (observed.has(id)) return;
-        const el = document.getElementById(id);
-        if (el) { observer.observe(el); observed.add(id); }
-      });
-    }
-    tryObserve();
-
-    // Watch for lazy-loaded sections appearing in the DOM
-    const mo = new MutationObserver(tryObserve);
-    mo.observe(document.body, { childList: true, subtree: true });
-
-    return () => { observer.disconnect(); mo.disconnect(); };
-  }, [showDhikr, hasDhikrCached, showEvents, showCourses, showDonate]);
 
   // ── Mobile tab sync ────────────────────────────────────────────
   useEffect(() => {

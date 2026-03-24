@@ -6,7 +6,6 @@ import { ArrowLeft, Search, ChevronDown, BookOpen, ArrowUp, Home } from 'lucide-
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAnimationConfig } from '../animation-provider';
-import { useTheme, isLightTheme } from '../theme-provider';
 import type { Chapter } from './page';
 
 type Lang = 'en' | 'ku' | 'ar';
@@ -33,15 +32,12 @@ const tajweedRules = [
 export default function SurahGrid({ chapters }: { chapters: Chapter[] }) {
   const router = useRouter();
   const anim = useAnimationConfig();
-  const { theme } = useTheme();
-  const lightMode = isLightTheme(theme);
-
   const [search, setSearch] = useState('');
   const [showGuide, setShowGuide] = useState(false);
   const [lang, setLang] = useState<Lang>('en');
   const [showBackToTop, setShowBackToTop] = useState(false);
 
-  const bg = lightMode ? 'bg-[#f8f5ee]' : 'bg-[#0a0804]';
+  const bg = 'bg-[var(--page-bg)]';
   const isRTL = lang === 'ar' || lang === 'ku';
 
   useEffect(() => {
@@ -93,9 +89,9 @@ export default function SurahGrid({ chapters }: { chapters: Chapter[] }) {
         >
           <div className="flex items-center gap-3 mb-3">
             <BookOpen className="w-8 h-8 text-amber-400" />
-            <h1 className={`font-display text-4xl md:text-6xl ${lightMode ? 'text-amber-900' : 'text-amber-50'} tracking-tight`}>The Noble Quran</h1>
+            <h1 className="font-display text-4xl md:text-6xl text-amber-50 tracking-tight">The Noble Quran</h1>
           </div>
-          <p className={`text-base md:text-lg ${lightMode ? 'text-amber-700/60' : 'text-amber-200/60'}`}>Browse all 114 surahs — tap any to read with tajweed, translation, and audio</p>
+          <p className="text-base md:text-lg text-amber-200/60">Browse all 114 surahs — tap any to read with tajweed, translation, and audio</p>
         </motion.div>
 
         {/* Search + Tajweed Guide toggle */}
@@ -107,11 +103,7 @@ export default function SurahGrid({ chapters }: { chapters: Chapter[] }) {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search surah name, number, or meaning…"
-              className={`w-full pl-9 pr-4 py-2.5 rounded-2xl border text-sm ${
-                lightMode
-                  ? 'bg-amber-50 border-amber-300/40 text-amber-900 placeholder:text-amber-400'
-                  : 'bg-amber-950/30 border-amber-500/20 text-amber-100 placeholder:text-amber-500/40'
-              } outline-none focus:border-amber-500/50 transition-colors`}
+              className="w-full pl-9 pr-4 py-2.5 rounded-2xl border text-sm bg-amber-950/30 border-amber-500/20 text-amber-100 placeholder:text-amber-500/40 outline-none focus:border-amber-500/50 transition-colors"
             />
           </div>
           <button
@@ -133,13 +125,13 @@ export default function SurahGrid({ chapters }: { chapters: Chapter[] }) {
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
               className="overflow-hidden"
             >
-              <div className={`mb-8 p-5 rounded-3xl border ${lightMode ? 'border-amber-300/30 bg-amber-100/60' : 'border-amber-500/15 bg-amber-950/20'}`}>
-                <p className={`text-xs font-medium uppercase tracking-wider mb-4 ${lightMode ? 'text-amber-600/70' : 'text-amber-400/60'}`}>Tajweed Rules — Colour Key</p>
+              <div className="mb-8 p-5 rounded-3xl border border-amber-500/15 bg-amber-950/20">
+                <p className="text-xs font-medium uppercase tracking-wider mb-4 text-amber-400/70">Tajweed Rules — Colour Key</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                   {tajweedRules.map(rule => (
                     <div key={rule.cls} className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: rule.color }} />
-                      <span className={`text-xs ${lightMode ? 'text-amber-700/60' : 'text-amber-200/60'}`}>{rule.name}</span>
+                      <span className="text-xs text-amber-200/60">{rule.name}</span>
                     </div>
                   ))}
                 </div>
@@ -178,11 +170,7 @@ export default function SurahGrid({ chapters }: { chapters: Chapter[] }) {
               >
                 <Link
                   href={`/quran/${ch.id}`}
-                  className={`block rounded-2xl border p-4 group hover:border-amber-500/35 hover:-translate-y-0.5 transition-all duration-200 ${
-                    lightMode
-                      ? 'border-amber-300/30 bg-amber-50 hover:bg-amber-100/60'
-                      : 'border-amber-500/15 bg-amber-950/20 hover:bg-amber-900/25'
-                  }`}
+                  className="block rounded-2xl border p-4 group hover:border-amber-500/35 hover:-translate-y-0.5 transition-all duration-200 border-amber-500/15 bg-amber-950/20 hover:bg-amber-900/25"
                 >
                   {/* Number + revelation badge */}
                   <div className="flex items-start justify-between mb-3">

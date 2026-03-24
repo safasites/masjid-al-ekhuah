@@ -10,7 +10,7 @@ import {
 import DOMPurify from 'isomorphic-dompurify';
 import Link from 'next/link';
 import { useAnimationConfig } from '../../animation-provider';
-import { useTheme, isLightTheme } from '../../theme-provider';
+import { useTheme } from '../../theme-provider';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Chapter {
@@ -83,8 +83,7 @@ export default function SurahReaderPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const anim = useAnimationConfig();
-  const { theme } = useTheme();
-  const lightMode = isLightTheme(theme);
+  useTheme(); // keep ThemeProvider in sync for CSS data-theme updates
 
   const surahId = Number(params.surahId);
   const isValidSurah = surahId >= 1 && surahId <= 114;
@@ -121,7 +120,7 @@ export default function SurahReaderPage() {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [verseAudioKey, setVerseAudioKey] = useState<string | null>(null);
 
-  const bg = lightMode ? 'bg-[#f8f5ee]' : 'bg-[#0a0804]';
+  const bg = 'bg-[var(--page-bg)]';
 
   // ─── Create audio elements on mount ──────────────────────────────────────
   useEffect(() => {
@@ -340,7 +339,7 @@ export default function SurahReaderPage() {
       <div className="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-yellow-500/10 blur-[150px] pointer-events-none" />
 
       {/* ── Sticky Controls Bar ──────────────────────────────────────────── */}
-      <div className={`sticky top-0 z-30 py-3 px-4 backdrop-blur-xl border-b border-amber-500/15 ${lightMode ? 'bg-[#f8f5ee]/90' : 'bg-[#0a0804]/90'}`}>
+      <div className="sticky top-0 z-30 py-3 px-4 backdrop-blur-xl border-b border-amber-500/15 bg-[var(--page-bg)]/90">
         <div className="max-w-4xl mx-auto flex flex-wrap items-center gap-2">
           {/* Back */}
           <Link
@@ -357,7 +356,7 @@ export default function SurahReaderPage() {
           <select
             value={translationId}
             onChange={e => handleTranslationChange(Number(e.target.value))}
-            className={`rounded-xl px-3 py-1.5 text-xs border ${lightMode ? 'bg-amber-50 border-amber-300/40 text-amber-900' : 'bg-amber-950/40 border-amber-500/20 text-amber-200'} outline-none`}
+            className="rounded-xl px-3 py-1.5 text-xs border bg-amber-950/40 border-amber-500/20 text-amber-200 outline-none"
           >
             {TRANSLATIONS.map(t => (
               <option key={t.id} value={t.id}>{t.name}</option>
@@ -369,7 +368,7 @@ export default function SurahReaderPage() {
             <select
               value={reciterId}
               onChange={e => handleReciterChange(Number(e.target.value))}
-              className={`rounded-xl px-3 py-1.5 text-xs border flex-1 min-w-0 ${lightMode ? 'bg-amber-50 border-amber-300/40 text-amber-900' : 'bg-amber-950/40 border-amber-500/20 text-amber-200'} outline-none`}
+              className="rounded-xl px-3 py-1.5 text-xs border flex-1 min-w-0 bg-amber-950/40 border-amber-500/20 text-amber-200 outline-none"
             >
               {reciters.map(r => (
                 <option key={r.id} value={r.id}>
@@ -389,7 +388,7 @@ export default function SurahReaderPage() {
               onChange={e => setJumpToAyah(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleJumpToAyah()}
               placeholder="Ayah"
-              className={`w-14 rounded-xl px-2 py-1.5 text-xs border ${lightMode ? 'bg-amber-50 border-amber-300/40 text-amber-900 placeholder:text-amber-400' : 'bg-amber-950/40 border-amber-500/20 text-amber-200 placeholder:text-amber-500/40'} outline-none`}
+              className="w-14 rounded-xl px-2 py-1.5 text-xs border bg-amber-950/40 border-amber-500/20 text-amber-200 placeholder:text-amber-500/40 outline-none"
             />
             <button
               onClick={handleJumpToAyah}
@@ -405,7 +404,7 @@ export default function SurahReaderPage() {
             className={`px-2.5 py-1.5 rounded-xl text-xs border transition-colors shrink-0 ${
               showTajweed
                 ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                : `border-amber-500/15 ${lightMode ? 'text-amber-700/50' : 'text-amber-500/40'}`
+                : 'border-amber-500/15 text-amber-500/40'
             }`}
           >
             Tajweed
@@ -526,11 +525,7 @@ export default function SurahReaderPage() {
                 initial={anim.isSimplified ? { opacity: 0 } : { opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: anim.isSimplified ? 0.15 : 0.35, delay: anim.isSimplified ? 0 : Math.min(i * 0.03, 0.6) }}
-                className={`rounded-3xl border p-5 md:p-6 ${
-                  lightMode
-                    ? 'border-amber-300/25 bg-amber-50'
-                    : 'border-amber-500/15 bg-amber-950/20'
-                }`}
+                className="rounded-3xl border p-5 md:p-6 border-amber-500/15 bg-amber-950/20"
               >
                 {/* Verse header row */}
                 <div className="flex items-center justify-between mb-5">
@@ -559,12 +554,12 @@ export default function SurahReaderPage() {
                 {/* Arabic text */}
                 {safeHtml ? (
                   <div
-                    className={`tajweed-text mb-5 ${lightMode ? 'text-amber-950' : 'text-amber-50'}`}
+                    className="tajweed-text mb-5 text-amber-50"
                     dangerouslySetInnerHTML={{ __html: safeHtml }}
                   />
                 ) : (
                   <p
-                    className={`mb-5 text-right leading-loose ${lightMode ? 'text-amber-950' : 'text-amber-50'}`}
+                    className="mb-5 text-right leading-loose text-amber-50"
                     style={{ fontFamily: 'var(--font-arabic), Amiri, serif', fontSize: '1.6rem', direction: 'rtl' }}
                   >
                     {verse.text_uthmani}
@@ -574,9 +569,7 @@ export default function SurahReaderPage() {
                 {/* Translation */}
                 {verse.translations[0]?.text && (
                   <div
-                    className={`text-sm leading-relaxed border-t pt-4 mb-4 ${
-                      lightMode ? 'border-amber-300/20 text-amber-800/70' : 'border-amber-500/10 text-amber-200/65'
-                    }`}
+                    className="text-sm leading-relaxed border-t pt-4 mb-4 border-amber-500/10 text-amber-200/70"
                     dangerouslySetInnerHTML={{
                       __html: DOMPurify.sanitize(verse.translations[0].text, { ALLOWED_TAGS: ['sup', 'sub', 'i', 'b'] })
                     }}
@@ -586,9 +579,7 @@ export default function SurahReaderPage() {
                 {/* Word-by-word toggle */}
                 <button
                   onClick={() => handleWordByWordToggle(verse.verse_key)}
-                  className={`flex items-center gap-1.5 text-xs transition-colors ${
-                    lightMode ? 'text-amber-600/50 hover:text-amber-600' : 'text-amber-500/40 hover:text-amber-400'
-                  }`}
+                  className="flex items-center gap-1.5 text-xs transition-colors text-amber-500/40 hover:text-amber-400"
                 >
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                   Word by word
@@ -613,11 +604,7 @@ export default function SurahReaderPage() {
                           <button
                             key={word.position}
                             onClick={() => playWordAudio(verse.verse_key, word.position)}
-                            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-2xl border transition-all min-w-[52px] min-h-[44px] ${
-                              lightMode
-                                ? 'bg-amber-50 border-amber-300/30 hover:bg-amber-100 hover:border-amber-400/50'
-                                : 'bg-amber-500/8 border-amber-500/15 hover:bg-amber-500/15 hover:border-amber-500/30'
-                            }`}
+                            className="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl border transition-all min-w-[52px] min-h-[44px] bg-amber-500/8 border-amber-500/15 hover:bg-amber-500/15 hover:border-amber-500/30"
                             aria-label={`Play word: ${word.transliteration?.text}`}
                           >
                             <span className="font-arabic text-lg text-amber-100 leading-tight">{word.text_uthmani}</span>

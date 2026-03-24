@@ -85,7 +85,7 @@ export default function BooksPage() {
 
   const isRTL = lang === 'ar' || lang === 'ku';
   const tr = booksTranslations[lang];
-  const bg = lightMode ? 'bg-[#f8f5ee]' : 'bg-[#0a0804]';
+  const bg = 'bg-[var(--page-bg)]';
 
   useEffect(() => {
     const stored = localStorage.getItem('mosque-lang') as Lang | null;

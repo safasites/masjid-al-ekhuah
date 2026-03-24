@@ -181,9 +181,14 @@ export default function AdminDashboard() {
       {/* Mobile header */}
       <div className={`md:hidden flex items-center justify-between px-5 py-4 border-b border-amber-500/10 backdrop-blur-xl sticky top-0 z-50 ${isLight ? 'bg-[#f5f0e8]/80' : 'bg-[#0a0804]/80'}`}>
         <span className={`font-medium text-sm ${isLight ? 'text-amber-800' : 'text-amber-200'}`}>{mosqueName}</span>
-        <button onClick={handleLogout} className="p-2 text-amber-500/60 hover:text-red-400 transition-colors">
-          <LogOut className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          <a href="/" target="_blank" rel="noopener noreferrer" className="p-2 text-amber-500/60 hover:text-amber-300 transition-colors" aria-label="View Site">
+            <ExternalLink className="w-4 h-4" />
+          </a>
+          <button onClick={handleLogout} className="p-2 text-amber-500/60 hover:text-red-400 transition-colors">
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Sidebar — desktop only */}
@@ -219,8 +224,12 @@ export default function AdminDashboard() {
           ))}
         </nav>
 
-        {/* Logout */}
-        <div className="p-4 border-t border-amber-500/10">
+        {/* Logout / Back to Site */}
+        <div className="p-4 border-t border-amber-500/10 flex flex-col gap-1">
+          <a href="/" target="_blank" rel="noopener noreferrer"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-amber-500/60 hover:text-amber-300 hover:bg-amber-500/5 transition-all duration-200">
+            <ExternalLink className="w-4 h-4" /> View Site
+          </a>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-red-400/70 hover:text-red-400 hover:bg-red-500/5 transition-all duration-200"
@@ -901,6 +910,8 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
   const [saving, setSaving] = useState(false);
   const [retranslating, setRetranslating] = useState(false);
   const [expandedSection, setExpandedSection] = useState<SectionKey | null>(null);
+  const [logoUrl, setLogoUrl] = useState('');
+  const [logoUploading, setLogoUploading] = useState(false);
 
   const SECTION_ICONS: Record<SectionKey, React.ReactNode> = {
     hero:    <Home className="w-4 h-4" />,
@@ -964,6 +975,7 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
         }
         return next;
       });
+      if (c.logo_url) setLogoUrl(c.logo_url);
       const gt = (c.global_theme ?? 'aurum') as Theme;
       setGlobalTheme(gt);
       document.documentElement.setAttribute('data-theme', gt);
@@ -1051,6 +1063,63 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
       </div>
 
       <Section title="General">
+        {/* Mosque Logo */}
+        <div className="mb-6">
+          <label className="text-xs font-medium text-amber-400/70 uppercase tracking-wider block mb-3">Mosque Logo</label>
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl border border-amber-500/20 overflow-hidden flex items-center justify-center bg-amber-950/30 shrink-0">
+              {logoUrl ? (
+                <img src={logoUrl} alt="Mosque logo" className="w-full h-full object-cover" />
+              ) : (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-amber-500/30">
+                  <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9L12 2Z" fill="currentColor"/>
+                </svg>
+              )}
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className={`flex items-center gap-2 text-sm px-4 py-2 rounded-xl cursor-pointer transition-all duration-200 bg-amber-500/10 border border-amber-500/20 text-amber-300 hover:bg-amber-500/20 ${logoUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                <Upload className="w-4 h-4" />
+                {logoUploading ? 'Uploading…' : 'Upload Logo'}
+                <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setLogoUploading(true);
+                    try {
+                      const fd = new FormData();
+                      fd.append('file', file);
+                      const res = await fetch('/api/admin/logo', { method: 'POST', body: fd });
+                      const json = await res.json();
+                      if (!res.ok) throw new Error(json.error);
+                      setLogoUrl(json.url);
+                      showToast('Logo uploaded');
+                    } catch { showToast('Upload failed', 'error'); }
+                    finally { setLogoUploading(false); e.target.value = ''; }
+                  }}
+                />
+              </label>
+              {logoUrl && (
+                <button type="button"
+                  disabled={logoUploading}
+                  onClick={async () => {
+                    setLogoUploading(true);
+                    try {
+                      await fetch('/api/admin/logo', { method: 'DELETE' });
+                      setLogoUrl('');
+                      showToast('Logo removed');
+                    } catch { showToast('Remove failed', 'error'); }
+                    finally { setLogoUploading(false); }
+                  }}
+                  className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-all duration-200 disabled:opacity-40"
+                >
+                  <Trash2 className="w-4 h-4" /> Remove Logo
+                </button>
+              )}
+            </div>
+          </div>
+          <p className="text-amber-500/40 text-xs mt-2">PNG, JPG or WebP. Resized to 80×80 px automatically.</p>
+        </div>
+
         <Input label="Mosque Name" value={form.mosque_name} onChange={e => setForm(p => ({ ...p, mosque_name: e.target.value }))} placeholder="Masjid Al-Ekhuah" />
         <p className="text-amber-500/40 text-xs mt-2">This name appears in the site header, browser tab, and throughout the site.</p>
       </Section>

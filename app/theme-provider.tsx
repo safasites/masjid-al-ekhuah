@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useState } from 'react';
 
 export type Theme =
   // ── Dark themes ─────────────────────────────────────────────────────────────
@@ -37,6 +37,25 @@ export function ThemeProvider({
   initialTheme?: Theme;
 }) {
   const [theme, setThemeState] = useState<Theme>(initialTheme);
+
+  // Synchronously apply localStorage theme before first paint to prevent flash
+  // when the SSR Supabase fetch fails and falls back to the default 'aurum' theme.
+  // The inline script in layout.tsx keeps localStorage in sync with the SSR theme,
+  // so this will match SSR on normal loads and correct any mismatch on cold starts.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => {
+    const stored = localStorage.getItem('mosque-theme');
+    const t = normalizeTheme(stored);
+    if (t && t !== initialTheme) {
+      setThemeState(t);
+      document.documentElement.setAttribute('data-theme', t);
+      if (isLightTheme(t)) {
+        document.documentElement.setAttribute('data-light', '');
+      } else {
+        document.documentElement.removeAttribute('data-light');
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // Fetch global_theme from DB — applies to admin, quran, and all sub-pages

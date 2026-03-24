@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence, LayoutGroup, useAnimationControls } from 'motion/react';
+import Image from 'next/image';
 import {
   MapPin, Globe, Home, BookOpen, BookMarked, Calendar, LayoutGrid,
   Info, Menu, Settings, ArrowRight,
@@ -28,6 +29,15 @@ interface SiteNavProps {
   secLM: boolean;
   onLangChange: (lang: Lang) => void;
   onMobileTabChange: (tab: string) => void;
+}
+
+function scrollToSection(id: string | null) {
+  if (id) {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  } else {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  history.replaceState(null, '', window.location.pathname);
 }
 
 export function SiteNav({
@@ -77,16 +87,26 @@ export function SiteNav({
             initial={{ opacity: 0, x: isRTL ? 20 : -20 }} animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
             className="flex items-center gap-3 cursor-pointer group"
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            onClick={() => scrollToSection(null)}
           >
             <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
               <motion.div {...anim.spinCW}
                 className="absolute inset-0 border border-amber-500/40 rounded-full group-hover:border-amber-400/80 transition-colors duration-500" />
               <motion.div {...anim.spinCCW}
                 className="absolute inset-1 border border-amber-400/30 rounded-full group-hover:border-amber-300/60 transition-colors duration-500" />
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-amber-400 group-hover:scale-110 transition-transform duration-500">
-                <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9L12 2Z" fill="currentColor"/>
-              </svg>
+              {content.logo_url ? (
+                <Image
+                  src={content.logo_url}
+                  alt="Mosque logo"
+                  width={32}
+                  height={32}
+                  className="rounded-full object-cover relative z-10 group-hover:scale-110 transition-transform duration-500"
+                />
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-amber-400 group-hover:scale-110 transition-transform duration-500">
+                  <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9L12 2Z" fill="currentColor"/>
+                </svg>
+              )}
             </div>
             <span className={`font-display font-medium text-lg md:text-xl tracking-wide whitespace-nowrap ${secLM ? 'text-amber-900' : 'text-amber-50'}`}>
               {content.mosque_name || 'Masjid Al-Ekhuah'}
@@ -105,9 +125,9 @@ export function SiteNav({
               return true;
             }).map(([key, item], i) => {
               const isActive = activeSection === key;
-              const href = key === 'events' ? '#events' : `#${key}`;
               return (
-                <motion.a key={key} href={href} layout
+                <motion.button key={key} layout
+                  onClick={() => scrollToSection(key)}
                   initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.1 * i }}
                   className={`text-sm font-medium tracking-wide relative group transition-colors duration-300 ${
@@ -124,7 +144,7 @@ export function SiteNav({
                   ) : (
                     <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-amber-400 transition-all duration-300 group-hover:w-full" />
                   )}
-                </motion.a>
+                </motion.button>
               );
             })}
           </nav>
@@ -149,7 +169,7 @@ export function SiteNav({
               <Globe className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
               <AnimatedText>{t.langToggle}</AnimatedText>
             </button>
-            <button onMouseEnter={handlePinInteraction} onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
+            <button onMouseEnter={handlePinInteraction} onClick={() => scrollToSection('about')}
               className={`hidden md:flex items-center justify-center px-6 py-2.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-sm font-medium backdrop-blur-sm transition-all duration-300 hover:shadow-theme-soft gap-2 group ${secLM ? 'text-amber-700' : 'text-amber-300'}`}>
               <motion.div animate={pinControls} className="animate-pin-breathe group-hover:animate-none">
                 <MapPin className="w-4 h-4" />
@@ -166,14 +186,14 @@ export function SiteNav({
           {showMobileMenu && (
             <motion.div initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.95 }}
               className={`absolute bottom-full mb-4 ${isRTL ? 'left-0' : 'right-0'} bg-[#111310]/95 backdrop-blur-xl border border-amber-500/20 rounded-3xl p-3 flex flex-col gap-2 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] min-w-[200px]`}>
-              <a href="#about" onClick={() => { setShowMobileMenu(false); onMobileTabChange('more'); }}
+              <button onClick={() => { setShowMobileMenu(false); onMobileTabChange('more'); scrollToSection('about'); }}
                 className="text-amber-100 hover:text-amber-400 hover:bg-amber-500/10 p-3 rounded-2xl font-medium flex items-center gap-3 transition-colors">
                 <Info className="w-5 h-5 text-amber-500/70" /> <AnimatedText>{t.nav.about}</AnimatedText>
-              </a>
-              <a href="#about" onClick={() => { setShowMobileMenu(false); onMobileTabChange('more'); }}
+              </button>
+              <button onClick={() => { setShowMobileMenu(false); onMobileTabChange('more'); scrollToSection('about'); }}
                 className="text-amber-100 hover:text-amber-400 hover:bg-amber-500/10 p-3 rounded-2xl font-medium flex items-center gap-3 transition-colors">
                 <MapPin className="w-5 h-5 text-amber-500/70" /> <AnimatedText>{t.findUs}</AnimatedText>
-              </a>
+              </button>
               <div className="h-px bg-amber-500/10 mx-2" />
               <a href="/admin"
                 className="text-amber-100 hover:text-amber-400 hover:bg-amber-500/10 p-3 rounded-2xl font-medium flex items-center gap-3 transition-colors">
@@ -185,25 +205,41 @@ export function SiteNav({
 
         <div className="bg-[#111310]/95 backdrop-blur-xl border border-amber-500/15 rounded-[1.75rem] px-1 py-1 flex items-stretch shadow-elevation-3">
           {([
-            { id: 'home',    icon: Home,        label: t.mobileNav.home,      href: '#' },
-            { id: 'times',   icon: LayoutGrid,  label: t.mobileNav.timetable, href: '#times' },
-            ...(showEvents  ? [{ id: 'events',  icon: Calendar,   label: t.mobileNav.events,  href: '#events'  }] : []),
-            ...(showCourses ? [{ id: 'courses', icon: BookOpen,   label: t.mobileNav.courses, href: '/courses' }] : []),
-            { id: 'quran',   icon: BookMarked,  label: t.mobileNav.quran,     href: '/quran'  },
-          ] as { id: string; icon: typeof Home; label: string; href: string }[]).map(item => {
+            { id: 'home',    icon: Home,        label: t.mobileNav.home,      scrollId: null as string | null,    href: null as string | null },
+            { id: 'times',   icon: LayoutGrid,  label: t.mobileNav.timetable, scrollId: 'times',                 href: null },
+            ...(showEvents  ? [{ id: 'events',  icon: Calendar,   label: t.mobileNav.events,  scrollId: 'events', href: null }] : []),
+            ...(showCourses ? [{ id: 'courses', icon: BookOpen,   label: t.mobileNav.courses, scrollId: null,     href: '/courses' }] : []),
+            { id: 'quran',   icon: BookMarked,  label: t.mobileNav.quran,     scrollId: null,                    href: '/quran' },
+          ]).map(item => {
             const Icon = item.icon;
             const isActive = activeMobileTab === item.id && !showMobileMenu;
-            return (
-              <a key={item.id} href={item.href}
-                onClick={() => { onMobileTabChange(item.id); setShowMobileMenu(false); }}
-                className={`flex flex-col items-center justify-center flex-1 min-h-[3.5rem] rounded-[1.25rem] transition-all duration-300 py-2 ${
-                  isActive ? 'bg-amber-500/15 shadow-theme-soft text-amber-400' : 'text-zinc-400 hover:text-amber-200'
-                }`}>
+            const commonClass = `flex flex-col items-center justify-center flex-1 min-h-[3.5rem] rounded-[1.25rem] transition-all duration-300 py-2 ${
+              isActive ? 'bg-amber-500/15 shadow-theme-soft text-amber-400' : 'text-zinc-400 hover:text-amber-200'
+            }`;
+            const label = (
+              <>
                 <Icon className={`w-5 h-5 mb-0.5 ${isActive ? 'text-amber-400' : ''}`} />
                 <span className={`text-[10px] font-medium tracking-wide ${isActive ? 'text-amber-300' : ''}`}>
                   <AnimatedText>{item.label}</AnimatedText>
                 </span>
-              </a>
+              </>
+            );
+
+            if (item.href) {
+              return (
+                <a key={item.id} href={item.href}
+                  onClick={() => { onMobileTabChange(item.id); setShowMobileMenu(false); }}
+                  className={commonClass}>
+                  {label}
+                </a>
+              );
+            }
+            return (
+              <button key={item.id}
+                onClick={() => { onMobileTabChange(item.id); setShowMobileMenu(false); scrollToSection(item.scrollId); }}
+                className={commonClass}>
+                {label}
+              </button>
             );
           })}
           <button onClick={() => setShowMobileMenu(!showMobileMenu)}

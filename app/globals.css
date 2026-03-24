@@ -464,6 +464,27 @@ html {
   transition: background-color 0.4s ease, color 0.3s ease;
 }
 
+/* ── Page background variable — matches THEME_COLORS in lib/theme-colors.ts ── */
+/* Used by sub-pages via bg-[var(--page-bg)] so backgrounds are always CSS-driven */
+/* and consistent with the home page's section backgrounds.                       */
+:root                         { --page-bg: #0a0804; }
+[data-theme="aurum"]          { --page-bg: #0a0804; }
+[data-theme="emerald"]        { --page-bg: #040a06; }
+[data-theme="sapphire"]       { --page-bg: #04080f; }
+[data-theme="teal"]           { --page-bg: #040b0b; }
+[data-theme="copper"]         { --page-bg: #0a0602; }
+[data-theme="rose"]           { --page-bg: #0f0405; }
+[data-theme="violet"]         { --page-bg: #090510; }
+[data-theme="lime"]           { --page-bg: #060a04; }
+[data-theme="aurum-light"]    { --page-bg: #fdf9f0; }
+[data-theme="emerald-light"]  { --page-bg: #f0faf4; }
+[data-theme="sapphire-light"] { --page-bg: #eff6ff; }
+[data-theme="teal-light"]     { --page-bg: #f0fdfa; }
+[data-theme="copper-light"]   { --page-bg: #fff7ed; }
+[data-theme="rose-light"]     { --page-bg: #fff1f2; }
+[data-theme="violet-light"]   { --page-bg: #f5f3ff; }
+[data-theme="lime-light"]     { --page-bg: #f7fee7; }
+
 /* ── Light: aurum-light ───────────────────────────────────────────────────── */
 [data-theme="aurum-light"] {
   --theme-glow:      rgba(120, 80, 10, 0.25);
