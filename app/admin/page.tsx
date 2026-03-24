@@ -6,8 +6,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   LayoutGrid, Calendar, BookOpen, Clock, Image, Settings,
   LogOut, Plus, Trash2, Edit2, Check, X, Upload, ChevronDown, ChevronUp, Globe, Sparkles, BookMarked, ExternalLink,
-  Home, Heart, Info, Palette, ChevronRight
+  Home, Heart, Info, Palette, ChevronRight, Lock, Unlock,
 } from 'lucide-react';
+import { THEME_COLORS } from '@/lib/theme-colors';
 import { type Theme, DARK_THEMES, LIGHT_THEMES, isLightTheme } from '../theme-provider';
 
 
@@ -889,6 +890,10 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
   const [sectionColors, setSectionColors] = useState<Record<SectionKey, { bg: string; accent: string }>>(
     () => Object.fromEntries(SECTION_KEYS.map(k => [k, { bg: DEFAULT_BG, accent: DEFAULT_ACCENT }])) as Record<SectionKey, { bg: string; accent: string }>
   );
+  // Whether each section uses a custom colour (true) or follows the global theme (false).
+  const [sectionCustom, setSectionCustom] = useState<Record<SectionKey, boolean>>(
+    () => Object.fromEntries(SECTION_KEYS.map(k => [k, false])) as Record<SectionKey, boolean>
+  );
   const [globalTheme, setGlobalTheme] = useState<Theme>('aurum');
   const [customAccent, setCustomAccent] = useState('');
   const [savedThemes, setSavedThemes] = useState<SavedTheme[]>([]);
@@ -952,6 +957,13 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
         }
         return next;
       });
+      setSectionCustom(prev => {
+        const next = { ...prev };
+        for (const k of SECTION_KEYS) {
+          next[k] = c[`section_${k}_custom`] === 'true';
+        }
+        return next;
+      });
       const gt = (c.global_theme ?? 'aurum') as Theme;
       setGlobalTheme(gt);
       document.documentElement.setAttribute('data-theme', gt);
@@ -972,6 +984,7 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
         ...SECTION_KEYS.flatMap(k => [
           { key: `section_${k}_bg`,     value: sectionColors[k].bg },
           { key: `section_${k}_accent`, value: sectionColors[k].accent },
+          { key: `section_${k}_custom`, value: String(sectionCustom[k] ?? false) },
         ]),
       ];
       const res = await fetch('/api/admin/content', {
@@ -1197,40 +1210,70 @@ function SettingsTab({ showToast, onMosqueNameChange }: { showToast: (m: string,
       </Section>
 
       <Section title="Section Colours">
-        <p className="text-amber-500/50 text-sm -mt-2 mb-4">Set a background and accent colour for each section. The accent controls all headings, icons, and UI elements within that section.</p>
+        <p className="text-amber-500/50 text-sm -mt-2 mb-4">
+          By default each section follows the global theme. Click the <Lock className="inline w-3.5 h-3.5 mx-0.5" /> icon to unlock a section and set a custom colour.
+        </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {SECTION_KEYS.map(key => {
             const isExpanded = expandedSection === key;
-            const bg = sectionColors[key].bg;
-            const accent = sectionColors[key].accent;
+            const isCustom = sectionCustom[key] ?? false;
+            const themeBg     = THEME_COLORS[globalTheme]?.bg     ?? DEFAULT_BG;
+            const themeAccent = THEME_COLORS[globalTheme]?.accent ?? DEFAULT_ACCENT;
+            const bg     = isCustom ? sectionColors[key].bg     : themeBg;
+            const accent = isCustom ? sectionColors[key].accent : themeAccent;
             return (
               <div key={key} className="rounded-2xl bg-amber-950/20 border border-amber-500/10 overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => setExpandedSection(isExpanded ? null : key)}
-                  className="w-full flex items-center gap-3 p-3.5 text-left hover:bg-amber-500/5 transition-colors"
-                >
+                <div className="w-full flex items-center gap-3 p-3.5">
                   <span className="text-amber-400/60">{SECTION_ICONS[key]}</span>
                   <span className="flex-1 text-sm font-medium text-amber-100">{SECTION_LABELS[key]}</span>
-                  <div className="flex items-center gap-1.5 mr-2">
+                  {/* Lock / unlock toggle */}
+                  <button
+                    type="button"
+                    title={isCustom ? 'Revert to global theme' : 'Unlock custom colour'}
+                    onClick={() => {
+                      if (isCustom) {
+                        // Re-lock: clear custom flag and collapse
+                        setSectionCustom(p => ({ ...p, [key]: false }));
+                        if (expandedSection === key) setExpandedSection(null);
+                      } else {
+                        // Unlock: seed pickers with current theme values and expand
+                        setSectionColors(p => ({ ...p, [key]: { bg: themeBg, accent: themeAccent } }));
+                        setSectionCustom(p => ({ ...p, [key]: true }));
+                        setExpandedSection(key);
+                      }
+                    }}
+                    className={`p-1.5 rounded-lg transition-colors ${isCustom ? 'text-amber-400 bg-amber-500/15 hover:bg-amber-500/25' : 'text-amber-500/30 hover:text-amber-400 hover:bg-amber-500/10'}`}
+                  >
+                    {isCustom ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                  </button>
+                  {/* Colour swatches */}
+                  <div className={`flex items-center gap-1.5 transition-opacity ${isCustom ? '' : 'opacity-30'}`}>
                     <div className="w-5 h-5 rounded-md border border-white/10 shadow-sm" style={{ backgroundColor: bg }} title="Background" />
                     <div className="w-5 h-5 rounded-md border border-white/10 shadow-sm" style={{ backgroundColor: accent }} title="Accent" />
                   </div>
-                  <ChevronDown className={`w-4 h-4 text-amber-500/40 transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
-                </button>
-                {isExpanded && (
+                  {isCustom && (
+                    <button
+                      type="button"
+                      onClick={() => setExpandedSection(isExpanded ? null : key)}
+                      className="ml-1"
+                    >
+                      <ChevronDown className={`w-4 h-4 text-amber-500/40 transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
+                    </button>
+                  )}
+                </div>
+                {isCustom && isExpanded && (
                   <div className="px-4 pb-4 pt-3 space-y-3 border-t border-amber-500/10">
                     <div className="flex flex-col gap-1.5">
                       <label className="text-xs font-medium text-amber-500/60 uppercase tracking-wider">Background</label>
                       <ColorInput
-                        value={bg}
+                        value={sectionColors[key].bg}
                         onChange={v => setSectionColors(p => ({ ...p, [key]: { ...p[key], bg: v } }))}
                       />
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <label className="text-xs font-medium text-amber-500/60 uppercase tracking-wider">Accent / UI Colour</label>
                       <ColorInput
-                        value={accent}
+                        value={sectionColors[key].accent}
                         onChange={v => setSectionColors(p => ({ ...p, [key]: { ...p[key], accent: v } }))}
                       />
                     </div>

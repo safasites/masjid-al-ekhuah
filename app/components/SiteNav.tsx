@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence, LayoutGroup, useAnimationControls } from 'motion/react';
 import {
   MapPin, Globe, Home, BookOpen, BookMarked, Calendar, LayoutGrid,
-  Info, Menu, Settings, ArrowRight, ExternalLink,
+  Info, Menu, Settings, ArrowRight,
 } from 'lucide-react';
 import { useAnimationConfig } from '@/app/animation-provider';
 import { AnimatedText } from './AnimatedText';
@@ -97,30 +97,15 @@ export function SiteNav({
           <LayoutGroup>
           <nav className="hidden lg:flex items-center gap-8">
             {Object.entries(t.nav).filter(([key]) => {
+              // Page-link items (courses, quran) are rendered on the right side with action buttons
+              if (key === 'quran' || key === 'courses') return false;
               if (key === 'dhikr')   return showDhikr && hasDhikrCached;
               if (key === 'events')  return showEvents;
-              if (key === 'courses') return showCourses;
               if (key === 'donate')  return showDonate;
               return true;
             }).map(([key, item], i) => {
-              // Page-link items open a separate route and can never be highlighted
-              // by the home-page intersection observer — render them as pill buttons.
-              const isPageLink = key === 'quran' || key === 'courses';
-              const isActive = !isPageLink && activeSection === key;
-              const href = key === 'courses' ? '/courses' : key === 'quran' ? '/quran' : key === 'events' ? '#events' : `#${key}`;
-              if (isPageLink) {
-                return (
-                  <motion.a key={key} href={href} layout
-                    initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.1 * i }}
-                    className={`flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 backdrop-blur-sm transition-all duration-300 hover:shadow-theme-soft ${
-                      secLM ? 'text-amber-700' : 'text-amber-300'
-                    }`}>
-                    <AnimatedText>{item}</AnimatedText>
-                    <ExternalLink className="w-3 h-3 opacity-50" />
-                  </motion.a>
-                );
-              }
+              const isActive = activeSection === key;
+              const href = key === 'events' ? '#events' : `#${key}`;
               return (
                 <motion.a key={key} href={href} layout
                   initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
@@ -147,7 +132,18 @@ export function SiteNav({
 
           <motion.div initial={{ opacity: 0, x: isRTL ? -20 : 20 }} animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
-            className="flex items-center gap-2 md:gap-4">
+            className="flex items-center gap-2 md:gap-3">
+            {/* Page-link pills — Courses and Quran, grouped with action buttons on the right */}
+            {showCourses && (
+              <a href="/courses"
+                className={`hidden lg:flex items-center text-sm font-medium px-3 py-2 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 backdrop-blur-sm transition-all duration-300 hover:shadow-theme-soft ${secLM ? 'text-amber-700' : 'text-amber-300'}`}>
+                <AnimatedText>{t.nav.courses}</AnimatedText>
+              </a>
+            )}
+            <a href="/quran"
+              className={`hidden lg:flex items-center text-sm font-medium px-3 py-2 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 backdrop-blur-sm transition-all duration-300 hover:shadow-theme-soft ${secLM ? 'text-amber-700' : 'text-amber-300'}`}>
+              <AnimatedText>{t.nav.quran}</AnimatedText>
+            </a>
             <button onClick={() => onLangChange(nextLang[lang])}
               className={`flex items-center justify-center px-3 md:px-4 py-2 md:py-2.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-sm font-medium backdrop-blur-sm transition-all duration-300 hover:shadow-theme-soft gap-2 group ${secLM ? 'text-amber-700' : 'text-amber-300'}`}>
               <Globe className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />

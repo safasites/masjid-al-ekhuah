@@ -4,6 +4,8 @@ import { Suspense, lazy, useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowUp } from 'lucide-react';
 import { useAnimationConfig } from './animation-provider';
+import { useTheme } from './theme-provider';
+import { THEME_COLORS } from '@/lib/theme-colors';
 
 // Always-loaded above-fold components
 import { SiteNav } from './components/SiteNav';
@@ -35,6 +37,7 @@ function SectionSkeleton({ height = '60vh' }: { height?: string }) {
 
 export default function MosqueHero() {
   const anim = useAnimationConfig();
+  const { theme } = useTheme();
 
   // ── Shared UI state ────────────────────────────────────────────
   const [lang, setLang] = useState<Lang>('en');
@@ -81,12 +84,23 @@ export default function MosqueHero() {
   const showDhikr   = content.feature_dhikr   !== 'false';
 
   // ── Per-section colour helpers ─────────────────────────────────
-  const secBg     = useCallback((key: string) =>
-    (isCustomizing ? customizeColors[key]?.bg : null) ?? content[`section_${key}_bg`] ?? '#0a0804',
-    [isCustomizing, customizeColors, content]);
-  const secAccent = useCallback((key: string) =>
-    (isCustomizing ? customizeColors[key]?.accent : null) ?? content[`section_${key}_accent`] ?? '#d97706',
-    [isCustomizing, customizeColors, content]);
+  // Derive default bg/accent from the active theme (SSR-correct via useTheme).
+  // Sections follow the global theme unless section_{key}_custom === 'true'.
+  const secBg = useCallback((key: string) => {
+    const effectiveTheme = (content.global_theme ?? theme) as string;
+    const themeBg = THEME_COLORS[effectiveTheme]?.bg ?? '#0a0804';
+    if (isCustomizing) return customizeColors[key]?.bg ?? themeBg;
+    if (content[`section_${key}_custom`] === 'true') return content[`section_${key}_bg`] ?? themeBg;
+    return themeBg;
+  }, [isCustomizing, customizeColors, content, theme]);
+
+  const secAccent = useCallback((key: string) => {
+    const effectiveTheme = (content.global_theme ?? theme) as string;
+    const themeAccent = THEME_COLORS[effectiveTheme]?.accent ?? '#d97706';
+    if (isCustomizing) return customizeColors[key]?.accent ?? themeAccent;
+    if (content[`section_${key}_custom`] === 'true') return content[`section_${key}_accent`] ?? themeAccent;
+    return themeAccent;
+  }, [isCustomizing, customizeColors, content, theme]);
   const secLM     = useCallback((key: string) => !isDarkBg(secBg(key)), [secBg]);
   const secStyle  = useCallback((key: string): React.CSSProperties => ({
     '--section-accent': secAccent(key),

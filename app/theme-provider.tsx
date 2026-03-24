@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 export type Theme =
   // ── Dark themes ─────────────────────────────────────────────────────────────
@@ -29,13 +29,22 @@ const ThemeContext = createContext<{ theme: Theme; setTheme: (t: Theme) => void 
   setTheme: () => {},
 });
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
+export function ThemeProvider({
+  children,
+  initialTheme = 'aurum',
+}: {
+  children: React.ReactNode;
+  initialTheme?: Theme;
+}) {
+  const [theme, setThemeState] = useState<Theme>(initialTheme);
+
   useEffect(() => {
     // Fetch global_theme from DB — applies to admin, quran, and all sub-pages
     fetch('/api/admin/content')
       .then(r => r.json())
       .then((c: Record<string, string>) => {
         const t = normalizeTheme(c.global_theme) ?? 'aurum';
+        setThemeState(t);
         document.documentElement.setAttribute('data-theme', t);
         if (isLightTheme(t)) {
           document.documentElement.setAttribute('data-light', '');
@@ -62,13 +71,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .catch(() => {
-        document.documentElement.setAttribute('data-theme', 'aurum');
-        document.documentElement.removeAttribute('data-light');
+        // Keep initialTheme on error — don't reset to aurum if SSR gave us the right one
+        document.documentElement.setAttribute('data-theme', theme);
+        if (isLightTheme(theme)) {
+          document.documentElement.setAttribute('data-light', '');
+        } else {
+          document.documentElement.removeAttribute('data-light');
+        }
       });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <ThemeContext.Provider value={{ theme: 'aurum', setTheme: () => {} }}>
+    <ThemeContext.Provider value={{ theme, setTheme: setThemeState }}>
       {children}
     </ThemeContext.Provider>
   );

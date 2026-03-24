@@ -67,7 +67,7 @@ export default async function RootLayout({children}: {children: React.ReactNode}
         <script dangerouslySetInnerHTML={{ __html:
           `(function(){localStorage.setItem('mosque-theme','${initialTheme}');})();`
         }} />
-        <ThemeProvider>
+        <ThemeProvider initialTheme={initialTheme as import('./theme-provider').Theme}>
           <AnimationProvider>
             {children}
           </AnimationProvider>
