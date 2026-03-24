@@ -44,6 +44,13 @@
   --glass-blur:   16px;
 }
 
+/* Light-theme glass overrides — white cards with a subtle dark border instead of near-invisible white */
+[data-light] {
+  --glass-bg:     rgba(255, 255, 255, 0.55);
+  --glass-bg-md:  rgba(255, 255, 255, 0.70);
+  --glass-border: rgba(0, 0, 0, 0.07);
+}
+
 @keyframes breathe {
   0%, 100% { transform: scale(1); opacity: 0.9; }
   50% { transform: scale(1.015); opacity: 1; }

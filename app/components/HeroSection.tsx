@@ -46,14 +46,14 @@ export function HeroSection({ lang, isRTL, secLM, secStyle, content, prayers, pr
       </div>
 
       <motion.div style={{ opacity: heroOpacity, y: heroY, willChange: anim.useParallax ? 'transform, opacity' : 'auto' }}
-        className="relative z-10 flex flex-col items-center justify-center px-6 w-full max-w-7xl mx-auto text-center">
+        className="relative z-10 flex flex-col items-center justify-center px-6 w-full max-w-7xl mx-auto text-center pt-24 pb-24 md:pt-0 md:pb-0">
         <motion.h1
           initial={{ opacity: 0, y: anim.isSimplified ? 0 : 30, filter: anim.blur(10) }}
           animate={{ opacity: 1, y: 0, filter: anim.blur(0) }}
           transition={{ duration: anim.isSimplified ? 0.2 : 1, delay: anim.isSimplified ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="font-display text-6xl sm:text-7xl md:text-[7rem] lg:text-[9rem] xl:text-[10rem] text-white w-full leading-[1.0] tracking-tight mb-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+          className={`font-display text-6xl sm:text-7xl md:text-[7rem] lg:text-[9rem] xl:text-[10rem] w-full leading-[1.0] tracking-tight mb-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 ${secLM ? 'text-amber-900' : 'text-white'}`}>
           <AnimatedText>{heroLine1}</AnimatedText>
-          <AnimatedText className="text-transparent bg-clip-text bg-gradient-to-r from-amber-100 via-amber-400 to-yellow-200 animate-gradient-xy drop-shadow-sm">
+          <AnimatedText className={`text-transparent bg-clip-text bg-gradient-to-r drop-shadow-sm ${secLM ? 'from-amber-700 via-amber-900 to-amber-800 animate-gradient-xy' : 'from-amber-100 via-amber-400 to-yellow-200 animate-gradient-xy'}`}>
             {heroLine2}
           </AnimatedText>
         </motion.h1>
@@ -79,16 +79,18 @@ export function HeroSection({ lang, isRTL, secLM, secStyle, content, prayers, pr
           </button>
         </motion.div>
 
-        {/* Prayer Countdown Ring — isolated in its own component with React.memo */}
-        {!prayerLoading && (
-          <PrayerCountdownRing
-            prayers={prayers}
-            lang={lang}
-            secLM={secLM}
-            isFriday={isFriday}
-            fridayHighlightEnabled={content.friday_highlight_enabled !== 'false'}
-          />
-        )}
+        {/* Prayer Countdown Ring — space always reserved to prevent layout shift */}
+        <div className="mt-10 flex items-center justify-center" style={{ minHeight: 288 }}>
+          {!prayerLoading && (
+            <PrayerCountdownRing
+              prayers={prayers}
+              lang={lang}
+              secLM={secLM}
+              isFriday={isFriday}
+              fridayHighlightEnabled={content.friday_highlight_enabled !== 'false'}
+            />
+          )}
+        </div>
       </motion.div>
     </div>
   );

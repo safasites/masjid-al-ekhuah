@@ -61,7 +61,7 @@ export function EventsSection({ events, lang, isRTL, secStyle, secLM }: EventsSe
           ) : events.map(event => (
             <motion.div key={event.id} {...anim.cardHover}
               onClick={() => router.push('/events')}
-              className={`glass rounded-3xl overflow-hidden transition-all duration-300 group cursor-pointer hover:shadow-elevation-2 hover:shadow-theme-soft ${secLM ? 'bg-amber-50/60 border-amber-300/30' : ''}`}>
+              className={`glass rounded-3xl overflow-hidden transition-all duration-300 group cursor-pointer hover:shadow-elevation-2 hover:shadow-theme-soft ${secLM ? 'bg-white/60 border-amber-700/15 shadow-sm' : ''}`}>
               {event.image_url ? (
                 <div className="aspect-video w-full overflow-hidden relative">
                   <Image src={event.image_url} alt={getEventTitle(event)} fill

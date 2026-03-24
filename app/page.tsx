@@ -122,7 +122,7 @@ export default function MosqueHero() {
     const onScroll = () => {
       setScrolled(window.scrollY > 50);
       setShowBackToTop(window.scrollY > 300);
-      if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 80) {
+      if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 200) {
         setActiveSection('about');
       } else if (window.scrollY < 100) {
         setActiveSection('');
@@ -151,7 +151,7 @@ export default function MosqueHero() {
           if (entry.isIntersecting) setActiveSection(entry.target.id);
         });
       },
-      { rootMargin: '-40% 0px -50% 0px', threshold: 0 }
+      { rootMargin: '-20% 0px -60% 0px', threshold: 0 }
     );
 
     const observed = new Set<string>();
@@ -260,6 +260,7 @@ export default function MosqueHero() {
 
   function dismissAnnouncement() {
     setAnnouncementDismissed(true);
+    setBannerHeight(0);
     localStorage.setItem('mosque-announcement-dismissed-text', content.announcement_text ?? '');
   }
 
@@ -336,7 +337,7 @@ export default function MosqueHero() {
         isFriday={isFriday}
       />
 
-      <div className="h-[100vh]" />
+      <div className="h-[100svh]" />
 
       {/* ── Scrollable content sections ─────────────────────── */}
       <div className="relative z-20 rounded-t-[3rem] md:rounded-t-[5rem] shadow-theme-top overflow-hidden pb-32 md:pb-0">
@@ -469,7 +470,7 @@ export default function MosqueHero() {
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.2 }}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="fixed z-40 bottom-[5.5rem] md:bottom-8 right-4 md:right-6 w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center hover:bg-amber-500/30 transition-all duration-300 backdrop-blur-md shadow-theme-soft hover:shadow-theme-glow hover:-translate-y-1"
+            className="fixed z-40 bottom-28 md:bottom-8 right-4 md:right-6 w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center hover:bg-amber-500/30 transition-all duration-300 backdrop-blur-md shadow-theme-soft hover:shadow-theme-glow hover:-translate-y-1"
             aria-label="Back to top"
           >
             <ArrowUp className="w-5 h-5" />

@@ -137,7 +137,7 @@ export function PrayerTimesSection({
                     isActive
                       ? 'glass-md border border-amber-400/60 shadow-theme-glow bg-gradient-to-r from-amber-500/20 to-transparent'
                       : secLM
-                        ? 'bg-amber-50/70 border border-amber-300/40 hover:border-amber-400/60 hover:bg-amber-100/60'
+                        ? 'bg-white/60 border border-amber-600/20 hover:border-amber-600/35 hover:bg-white/75'
                         : 'glass border border-amber-500/10 hover:border-amber-500/30 hover:shadow-theme-soft'
                   }`}
                 >

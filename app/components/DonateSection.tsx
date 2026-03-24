@@ -25,10 +25,10 @@ export function DonateSection({ lang, secStyle, secLM }: DonateSectionProps) {
       <motion.div {...anim.sectionEntry}
         className={`max-w-4xl w-full mx-auto text-center relative z-10 glass-md rounded-[3rem] p-8 md:p-12 lg:p-20 shadow-elevation-3 ${secLM ? 'bg-amber-100/70 border-amber-300/40' : ''}`}>
         <div className="w-24 h-24 mx-auto bg-gradient-to-br from-amber-500/30 to-amber-700/20 rounded-full flex items-center justify-center mb-8 border-2 border-amber-400/40 shadow-theme-glow">
-          <Heart className="w-12 h-12 text-amber-300" />
+          <Heart className={`w-12 h-12 ${secLM ? 'text-amber-600' : 'text-amber-300'}`} />
         </div>
-        <h2 className={`font-display text-5xl md:text-7xl mb-6 break-words tracking-tight ${secLM ? 'text-amber-900' : 'text-gradient-theme'}`}>
-          <AnimatedText>{t.donateTitle}</AnimatedText>
+        <h2 className={`font-display text-3xl sm:text-5xl md:text-7xl mb-6 break-words tracking-tight ${secLM ? 'text-amber-900' : 'text-gradient-theme'}`}>
+          <AnimatedText nowrap={false}>{t.donateTitle}</AnimatedText>
         </h2>
         <p className={`text-base md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed ${secLM ? 'text-amber-800/70' : 'text-amber-100/65'}`}>
           <AnimatedText nowrap={false}>{t.donateDesc}</AnimatedText>

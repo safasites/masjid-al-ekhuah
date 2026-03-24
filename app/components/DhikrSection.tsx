@@ -206,7 +206,9 @@ export function DhikrSection({ lang, isRTL, secStyle, secLM, content, onLoad }: 
               <div className={`absolute inset-3 rounded-full transition-all duration-500 ${
                 isCompleted
                   ? 'bg-amber-500/20 shadow-theme-dhikr'
-                  : 'bg-amber-950/60 hover:bg-amber-900/60 shadow-[inset_0_2px_8px_rgba(0,0,0,0.4)]'
+                  : secLM
+                    ? 'bg-amber-600/10 hover:bg-amber-600/15 shadow-[inset_0_2px_4px_rgba(0,0,0,0.08)]'
+                    : 'bg-amber-950/60 hover:bg-amber-900/60 shadow-[inset_0_2px_8px_rgba(0,0,0,0.4)]'
               }`} />
               <div className="relative z-10 flex flex-col items-center justify-center">
                 <AnimatePresence mode="wait">
@@ -216,19 +218,19 @@ export function DhikrSection({ lang, isRTL, secStyle, secLM, content, onLoad }: 
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: anim.isSimplified ? 1 : 0.7, opacity: 0 }}
                     transition={anim.counterTransition}
-                    className={`font-display leading-none font-bold tabular-nums ${
+                    className={`font-display leading-none font-bold tabular-nums text-5xl md:text-6xl ${
                       count === 0
-                        ? 'text-5xl md:text-6xl text-amber-500/40'
+                        ? (secLM ? 'text-amber-600/40' : 'text-amber-500/40')
                         : isCompleted
-                          ? 'text-5xl md:text-6xl text-amber-300'
-                          : 'text-5xl md:text-6xl text-amber-100'
+                          ? (secLM ? 'text-amber-700' : 'text-amber-300')
+                          : (secLM ? 'text-amber-900' : 'text-amber-100')
                     }`}
                   >
                     {count}
                   </motion.span>
                 </AnimatePresence>
                 {count === 0 && !isCompleted && (
-                  <span className="text-xs text-amber-500/40 mt-1 tracking-widest uppercase">{t.dhikrTap}</span>
+                  <span className={`text-xs mt-1 tracking-widest uppercase ${secLM ? 'text-amber-600/50' : 'text-amber-500/40'}`}>{t.dhikrTap}</span>
                 )}
                 {isCompleted && (
                   <motion.span
@@ -245,10 +247,10 @@ export function DhikrSection({ lang, isRTL, secStyle, secLM, content, onLoad }: 
 
           {/* Progress text + reset */}
           <div className="flex flex-col items-center gap-3">
-            <p className="text-amber-500/60 text-sm tabular-nums">
-              <span className="text-amber-300 font-medium">{count}</span>
+            <p className={`text-sm tabular-nums ${secLM ? 'text-amber-600/60' : 'text-amber-500/60'}`}>
+              <span className={`font-medium ${secLM ? 'text-amber-700' : 'text-amber-300'}`}>{count}</span>
               {' '}{t.dhikrOf}{' '}
-              <span className="text-amber-100/60">{target}</span>
+              <span className={secLM ? 'text-amber-700/60' : 'text-amber-100/60'}>{target}</span>
             </p>
             {count > 0 && (
               <motion.button
