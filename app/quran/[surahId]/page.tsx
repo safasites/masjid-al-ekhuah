@@ -5,7 +5,7 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Play, Pause,
-  ChevronDown, Volume2, BookOpen, ArrowUp, Loader2, Home,
+  ChevronDown, Volume2, BookOpen, ArrowUp, Loader2, Home, BrainCircuit,
 } from 'lucide-react';
 import DOMPurify from 'isomorphic-dompurify';
 import Link from 'next/link';
@@ -698,6 +698,10 @@ export default function SurahReaderPage() {
           <Link href="/quran" className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-full text-amber-400 transition-colors">
             <BookOpen className="w-5 h-5" />
             <span className="text-[10px] font-medium">Surahs</span>
+          </Link>
+          <Link href={`/quran/memorize?surah=${surahId}`} className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-full text-amber-100/50 hover:text-amber-300 transition-colors">
+            <BrainCircuit className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Memorize</span>
           </Link>
         </div>
       </div>

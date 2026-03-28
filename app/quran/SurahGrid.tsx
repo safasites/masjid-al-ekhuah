@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Search, ChevronDown, BookOpen, ArrowUp, Home } from 'lucide-react';
+import { ArrowLeft, Search, ChevronDown, BookOpen, ArrowUp, Home, BrainCircuit } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAnimationConfig } from '../animation-provider';
@@ -232,6 +232,10 @@ export default function SurahGrid({ chapters }: { chapters: Chapter[] }) {
             <BookOpen className="w-5 h-5" />
             <span className="text-[10px] font-medium">Surahs</span>
           </button>
+          <Link href="/quran/memorize" className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-full text-amber-100/50 hover:text-amber-300 transition-colors">
+            <BrainCircuit className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Memorize</span>
+          </Link>
         </div>
       </div>
     </main>
