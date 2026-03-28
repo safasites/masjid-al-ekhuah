@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, BookOpen, Home, ArrowUp, BrainCircuit } from 'lucide-react';
@@ -55,7 +55,7 @@ interface EngineSignal {
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function HifzPage() {
+function HifzPage() {
   const searchParams = useSearchParams();
   const anim = useAnimationConfig();
   const { theme } = useTheme();
@@ -605,5 +605,13 @@ export default function HifzPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function HifzPageWrapper() {
+  return (
+    <Suspense>
+      <HifzPage />
+    </Suspense>
   );
 }
