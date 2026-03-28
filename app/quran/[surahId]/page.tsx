@@ -428,6 +428,15 @@ export default function SurahReaderPage() {
           >
             Tajweed
           </button>
+
+          {/* Memorize this surah */}
+          <Link
+            href={`/quran/memorize?surah=${surahId}`}
+            className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs border border-amber-500/15 text-amber-500/40 hover:border-amber-500/30 hover:text-amber-400 transition-colors shrink-0"
+          >
+            <BrainCircuit className="w-3.5 h-3.5" />
+            Memorize
+          </Link>
         </div>
       </div>
 

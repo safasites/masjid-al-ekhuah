@@ -122,6 +122,7 @@ function HifzPage() {
 
   // ─── UI state ──────────────────────────────────────────────────────────
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [showSettings, setShowSettings] = useState(true);
 
   // ─── Refs ──────────────────────────────────────────────────────────────
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -277,20 +278,44 @@ function HifzPage() {
 
         audio.playbackRate = cfg.playbackSpeed;
         audio.src = url;
-        audio.load();
 
-        // Wait for ended or error
+        // canplay-then-play: wait for browser to buffer before calling play(),
+        // preventing the AbortError that fires when load() + play() are called
+        // back-to-back (which caused the engine to race through all verses instantly).
         const el = audio;
         await new Promise<void>(resolve => {
-          const onEnded = () => { cleanup(); resolve(); };
-          const onError = () => { cleanup(); resolve(); };
-          function cleanup() {
-            el.removeEventListener('ended', onEnded);
-            el.removeEventListener('error', onError);
+          if (signal.cancelled) { resolve(); return; }
+
+          let settled = false;
+          const finish = () => {
+            if (!settled) {
+              settled = true;
+              el.removeEventListener('canplay', onCanPlay);
+              el.removeEventListener('error', onLoadError);
+              el.removeEventListener('ended', onEnded);
+              resolve();
+            }
+          };
+
+          // Safety timeout — never hang longer than 12s per verse
+          const safetyTimer = setTimeout(finish, 12000);
+          const finishAndClear = () => { clearTimeout(safetyTimer); finish(); };
+
+          function onCanPlay() {
+            el.removeEventListener('canplay', onCanPlay);
+            el.removeEventListener('error', onLoadError);
+            if (signal.cancelled) { finishAndClear(); return; }
+            el.addEventListener('ended', onEnded, { once: true });
+            // play() rejection after canplay is rare but handled
+            el.play().catch(finishAndClear);
           }
-          el.addEventListener('ended', onEnded, { once: true });
-          el.addEventListener('error', onError, { once: true });
-          el.play().catch(() => resolve());
+
+          const onLoadError = finishAndClear;
+          const onEnded = finishAndClear;
+
+          el.addEventListener('canplay', onCanPlay, { once: true });
+          el.addEventListener('error', onLoadError, { once: true });
+          el.load(); // explicitly trigger load (preload='none')
         });
 
         if (signal.cancelled) return;
@@ -474,11 +499,54 @@ function HifzPage() {
           </p>
         </motion.div>
 
-        {/* ── Two-column on desktop ──────────────────────────────────── */}
-        <div className="md:grid md:grid-cols-[1fr_340px] md:gap-6 md:items-start">
+        {/* ── Two-column layout: flex-col on mobile, grid on desktop ── */}
+        {/* Controls come first in DOM so they appear at TOP on mobile   */}
+        <div className="flex flex-col md:grid md:grid-cols-[1fr_340px] md:gap-6 md:items-start">
 
-          {/* ── Left: verse list ──────────────────────────────────────── */}
-          <div className="order-2 md:order-1">
+          {/* ── Controls (top on mobile, right sticky column on desktop) */}
+          <div className="mb-6 md:mb-0 md:col-start-2 md:row-start-1 md:sticky md:top-20 md:self-start">
+            <HifzControls
+              chapters={allChapters}
+              surahId={surahId}
+              chapter={chapter}
+              startVerse={startVerse}
+              endVerse={endVerse}
+              onSurahChange={handleSurahChange}
+              onStartVerseChange={handleStartVerseChange}
+              onEndVerseChange={handleEndVerseChange}
+              reciters={reciters}
+              reciterId={reciterId}
+              onReciterChange={handleReciterChange}
+              isPlaying={isPlaying}
+              isLoading={audioLoading}
+              audioCurrentTime={audioCurrentTime}
+              audioDuration={audioDuration}
+              onPlayPause={handlePlayPause}
+              onSeekBack={handleSeekBack}
+              onSeekForward={handleSeekForward}
+              onSeek={handleSeek}
+              onReset={handleReset}
+              playbackSpeed={playbackSpeed}
+              onSpeedChange={setPlaybackSpeed}
+              repeatCount={repeatCount}
+              onRepeatChange={setRepeatCount}
+              verseDelay={verseDelay}
+              onDelayChange={setVerseDelay}
+              loopLesson={loopLesson}
+              onLoopChange={setLoopLesson}
+              showTranslation={showTranslation}
+              onTranslationChange={setShowTranslation}
+              showSettings={showSettings}
+              onToggleSettings={() => setShowSettings(v => !v)}
+              currentVerseIndex={currentVerseIndex}
+              totalVerses={lessonVerses.length}
+              lightMode={lightMode}
+              dataLoading={dataLoading}
+            />
+          </div>
+
+          {/* ── Verse list (below controls on mobile, left column on desktop) */}
+          <div className="md:col-start-1 md:row-start-1">
             {dataLoading ? (
               <div className="space-y-4">
                 {[...Array(5)].map((_, i) => (
@@ -513,7 +581,7 @@ function HifzPage() {
                     >
                       <HifzVerseCard
                         verse={verse}
-                        isActive={isPlaying && i === currentVerseIndex}
+                        isActive={i === currentVerseIndex && isPlaying}
                         showTranslation={showTranslation}
                         repeatsDone={repeatsDone}
                         totalRepeats={repeatCount}
@@ -526,46 +594,6 @@ function HifzPage() {
                 ))}
               </div>
             )}
-          </div>
-
-          {/* ── Right: controls (sticky on desktop, top on mobile) ────── */}
-          <div className="order-1 md:order-2 mb-6 md:mb-0 md:sticky md:top-20 md:self-start">
-            <HifzControls
-              chapters={allChapters}
-              surahId={surahId}
-              chapter={chapter}
-              startVerse={startVerse}
-              endVerse={endVerse}
-              onSurahChange={handleSurahChange}
-              onStartVerseChange={handleStartVerseChange}
-              onEndVerseChange={handleEndVerseChange}
-              reciters={reciters}
-              reciterId={reciterId}
-              onReciterChange={handleReciterChange}
-              isPlaying={isPlaying}
-              isLoading={audioLoading}
-              audioCurrentTime={audioCurrentTime}
-              audioDuration={audioDuration}
-              onPlayPause={handlePlayPause}
-              onSeekBack={handleSeekBack}
-              onSeekForward={handleSeekForward}
-              onSeek={handleSeek}
-              onReset={handleReset}
-              playbackSpeed={playbackSpeed}
-              onSpeedChange={setPlaybackSpeed}
-              repeatCount={repeatCount}
-              onRepeatChange={setRepeatCount}
-              verseDelay={verseDelay}
-              onDelayChange={setVerseDelay}
-              loopLesson={loopLesson}
-              onLoopChange={setLoopLesson}
-              showTranslation={showTranslation}
-              onTranslationChange={setShowTranslation}
-              currentVerseIndex={currentVerseIndex}
-              totalVerses={lessonVerses.length}
-              lightMode={lightMode}
-              dataLoading={dataLoading}
-            />
           </div>
         </div>
       </div>

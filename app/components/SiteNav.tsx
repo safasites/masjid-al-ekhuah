@@ -5,7 +5,7 @@ import { motion, AnimatePresence, LayoutGroup, useAnimationControls } from 'moti
 import Image from 'next/image';
 import {
   MapPin, Globe, Home, BookOpen, BookMarked, Calendar, LayoutGrid,
-  Info, Menu, Settings, ArrowRight,
+  Info, Menu, Settings, ArrowRight, BrainCircuit,
 } from 'lucide-react';
 import { useAnimationConfig } from '@/app/animation-provider';
 import { AnimatedText } from './AnimatedText';
@@ -163,6 +163,11 @@ export function SiteNav({
             <a href="/quran"
               className={`hidden lg:flex items-center text-sm font-medium px-3 py-2 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 backdrop-blur-sm transition-all duration-300 hover:shadow-theme-soft ${secLM ? 'text-amber-700' : 'text-amber-300'}`}>
               <AnimatedText>{t.nav.quran}</AnimatedText>
+            </a>
+            <a href="/quran/memorize"
+              className={`hidden lg:flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 backdrop-blur-sm transition-all duration-300 hover:shadow-theme-soft ${secLM ? 'text-amber-700' : 'text-amber-300'}`}>
+              <BrainCircuit className="w-4 h-4" />
+              <AnimatedText>Memorize</AnimatedText>
             </a>
             <button onClick={() => onLangChange(nextLang[lang])}
               className={`flex items-center justify-center px-3 md:px-4 py-2 md:py-2.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-sm font-medium backdrop-blur-sm transition-all duration-300 hover:shadow-theme-soft gap-2 group ${secLM ? 'text-amber-700' : 'text-amber-300'}`}>

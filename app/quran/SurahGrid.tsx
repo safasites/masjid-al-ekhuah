@@ -68,17 +68,26 @@ export default function SurahGrid({ chapters }: { chapters: Chapter[] }) {
       <div className="hidden md:block fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-yellow-500/10 blur-[150px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto relative z-10">
-        {/* Back button */}
-        <motion.button
-          initial={{ opacity: 0, x: isRTL ? 20 : -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4 }}
-          onClick={() => router.push('/')}
-          className="flex items-center gap-2 text-amber-400/70 hover:text-amber-300 transition-colors mb-12 group"
-        >
-          <ArrowLeft className={`w-4 h-4 transition-transform ${isRTL ? 'rotate-180 group-hover:translate-x-1' : 'group-hover:-translate-x-1'}`} />
-          <span className="text-sm font-medium">Back to Home</span>
-        </motion.button>
+        {/* Back button + desktop Memorize link */}
+        <div className="flex items-center justify-between mb-12">
+          <motion.button
+            initial={{ opacity: 0, x: isRTL ? 20 : -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4 }}
+            onClick={() => router.push('/')}
+            className="flex items-center gap-2 text-amber-400/70 hover:text-amber-300 transition-colors group"
+          >
+            <ArrowLeft className={`w-4 h-4 transition-transform ${isRTL ? 'rotate-180 group-hover:translate-x-1' : 'group-hover:-translate-x-1'}`} />
+            <span className="text-sm font-medium">Back to Home</span>
+          </motion.button>
+          <Link
+            href="/quran/memorize"
+            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/8 text-amber-400/70 hover:text-amber-300 hover:bg-amber-500/15 transition-all text-sm font-medium"
+          >
+            <BrainCircuit className="w-4 h-4" />
+            Memorize
+          </Link>
+        </div>
 
         {/* Header */}
         <motion.div
