@@ -111,8 +111,11 @@ export default function SurahReaderPage() {
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   const [audioLoading, setAudioLoading] = useState(false);
 
-  // Audio (word)
+  // Audio (word / verse)
   const wordAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Verse-level audio URLs fetched from API (keyed by verse_key)
+  const [verseAudioUrls, setVerseAudioUrls] = useState<Record<string, string>>({});
 
   // UI
   const [showTajweed, setShowTajweed] = useState(true);
@@ -191,6 +194,22 @@ export default function SurahReaderPage() {
       .catch(() => setSurahAudioUrl(null));
   }, [surahId, reciterId, isValidSurah]);
 
+  // ─── Fetch per-verse audio URLs from API ─────────────────────────────────
+  useEffect(() => {
+    if (!isValidSurah) return;
+    setVerseAudioUrls({});
+    fetch(`${BASE}/recitations/${reciterId}/by_chapter/${surahId}?per_page=286&page=1`)
+      .then(r => r.json())
+      .then(d => {
+        const urls: Record<string, string> = {};
+        (d.audio_files ?? []).forEach((f: { verse_key: string; url: string }) => {
+          urls[f.verse_key] = f.url;
+        });
+        setVerseAudioUrls(urls);
+      })
+      .catch(() => {});
+  }, [surahId, reciterId, isValidSurah]);
+
   // ─── Update audio element src when URL changes ────────────────────────────
   useEffect(() => {
     const audio = audioRef.current;
@@ -254,7 +273,7 @@ export default function SurahReaderPage() {
 
   function playVerseAudio(verseKey: string, verseNum: number) {
     if (audioRef.current) { audioRef.current.pause(); setAudioPlaying(false); }
-    const url = verseAudioUrl(reciterId, surahId, verseNum);
+    const url = verseAudioUrls[verseKey] ?? verseAudioUrl(reciterId, surahId, verseNum);
     const wAudio = wordAudioRef.current;
     if (!wAudio) return;
     if (verseAudioKey === verseKey) {

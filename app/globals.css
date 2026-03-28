@@ -485,6 +485,12 @@ html {
 [data-theme="violet-light"]   { --page-bg: #f5f3ff; }
 [data-theme="lime-light"]     { --page-bg: #f7fee7; }
 
+/* Apply theme background synchronously on first paint — prevents FOUC.
+   [data-light] body { background-color: ... !important; } (above) overrides for light themes. */
+body {
+  background-color: var(--page-bg);
+}
+
 /* ── Light: aurum-light ───────────────────────────────────────────────────── */
 [data-theme="aurum-light"] {
   --theme-glow:      rgba(120, 80, 10, 0.25);

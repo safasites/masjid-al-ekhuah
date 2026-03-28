@@ -60,8 +60,10 @@ export function useAnimationConfig() {
   const { mode, setMode } = useContext(AnimationContext);
   const s = mode === 'simplified';
 
-  // isMobile is read from the provider; default false (SSR-safe — no hydration mismatch)
-  const [isMobile, setIsMobile] = useState(false);
+  // Read window.innerWidth synchronously on first client render so useParallax is correct
+  // before paint, avoiding a heroY MotionValue → plain-string jump on mobile.
+  // SSR fallback is false (no window) — no hydration mismatch.
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
   useEffect(() => { setIsMobile(window.innerWidth < 768); }, []);
 
   return {

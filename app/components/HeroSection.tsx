@@ -46,12 +46,12 @@ export function HeroSection({ lang, isRTL, secLM, secStyle, content, prayers, pr
       </div>
 
       <motion.div style={{ opacity: heroOpacity, y: heroY, willChange: anim.useParallax ? 'transform, opacity' : 'auto' }}
-        className="relative z-10 flex flex-col items-center justify-center px-6 w-full max-w-7xl mx-auto text-center pt-24 pb-24 md:pt-0 md:pb-0">
+        className="relative z-10 flex flex-col items-center justify-center px-6 w-full max-w-7xl mx-auto text-center pt-32 pb-16 md:pt-0 md:pb-0">
         <motion.h1
           initial={{ opacity: 0, y: anim.isSimplified ? 0 : 30, filter: anim.blur(10) }}
           animate={{ opacity: 1, y: 0, filter: anim.blur(0) }}
           transition={{ duration: anim.isSimplified ? 0.2 : 1, delay: anim.isSimplified ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className={`font-display text-6xl sm:text-7xl md:text-[7rem] lg:text-[9rem] xl:text-[10rem] w-full leading-[1.0] tracking-tight mb-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 ${secLM ? 'text-stone-800' : 'text-white'}`}>
+          className={`font-display text-5xl sm:text-7xl md:text-[7rem] lg:text-[9rem] xl:text-[10rem] w-full leading-[1.0] tracking-tight mb-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 ${secLM ? 'text-stone-800' : 'text-white'}`}>
           <span className="inline-block whitespace-nowrap">{heroLine1}</span>
           <span className={`inline-block whitespace-nowrap text-transparent bg-clip-text bg-gradient-to-r drop-shadow-sm ${secLM ? 'from-[#b45309] via-[#78350f] to-[#92400e] animate-gradient-xy' : 'from-amber-100 via-amber-400 to-yellow-200 animate-gradient-xy'}`}>
             {heroLine2}
@@ -80,7 +80,7 @@ export function HeroSection({ lang, isRTL, secLM, secStyle, content, prayers, pr
         </motion.div>
 
         {/* Prayer Countdown Ring — space always reserved to prevent layout shift */}
-        <div className="mt-10 flex items-center justify-center" style={{ minHeight: 288 }}>
+        <div className="mt-10 flex items-center justify-center min-h-[200px] sm:min-h-[288px]">
           {!prayerLoading && (
             <PrayerCountdownRing
               prayers={prayers}

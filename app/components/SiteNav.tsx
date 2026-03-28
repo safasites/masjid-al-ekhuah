@@ -78,7 +78,7 @@ export function SiteNav({
           ...(scrolled ? {} : { backgroundColor: 'transparent', backdropFilter: 'none', WebkitBackdropFilter: 'none' }),
           top: bannerVisible ? bannerHeight : 0,
         }}
-        className={`section-themed fixed left-0 right-0 z-50 transition-[background-color,backdrop-filter,padding,border-color,opacity] duration-500 ${
+        className={`section-themed fixed left-0 right-0 z-50 transition-[background-color,padding,border-color,box-shadow] duration-500 ${
           scrolled ? 'glass border-b border-amber-500/15 py-4' : 'py-6'
         }`}>
         <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between">
@@ -203,7 +203,7 @@ export function SiteNav({
           )}
         </AnimatePresence>
 
-        <div className="bg-[#111310]/95 backdrop-blur-xl border border-amber-500/15 rounded-[1.75rem] px-1 py-1 flex items-stretch shadow-elevation-3">
+        <div className="bg-[#111310]/95 backdrop-blur-xl border border-amber-500/15 rounded-[1.75rem] px-1 py-1 flex items-stretch shadow-theme-nav">
           {([
             { id: 'home',    icon: Home,        label: t.mobileNav.home,      scrollId: null as string | null,    href: null as string | null },
             { id: 'times',   icon: LayoutGrid,  label: t.mobileNav.timetable, scrollId: 'times',                 href: null },

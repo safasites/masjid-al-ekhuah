@@ -59,7 +59,7 @@ export default async function RootLayout({children}: {children: React.ReactNode}
   return (
     <html lang="en" data-theme={initialTheme} {...(isLight ? { 'data-light': '' } : {})}
       className={`${inter.variable} ${outfit.variable} ${amiri.variable}`}>
-      <body className="font-sans antialiased bg-black text-white" suppressHydrationWarning>
+      <body className="font-sans antialiased text-white" suppressHydrationWarning>
         {customAccent && (
           <style id="custom-theme-override">{`[data-theme]{--color-amber-500:${customAccent};}`}</style>
         )}

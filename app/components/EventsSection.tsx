@@ -27,7 +27,7 @@ export function EventsSection({ events, lang, isRTL, secStyle, secLM }: EventsSe
     lang === 'ar' ? (e.description_ar || e.description) : lang === 'ku' ? (e.description_ku || e.description) : e.description;
 
   return (
-    <section id="events" style={secStyle} className="section-themed px-6 py-8 md:py-24 overflow-hidden">
+    <section id="events" style={secStyle} className="section-themed px-6 pt-8 pb-14 md:pt-24 md:pb-24 overflow-x-hidden">
       <motion.div {...anim.sectionEntry} className="max-w-6xl w-full mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-5 md:mb-12 gap-3 md:gap-6">
           <div>

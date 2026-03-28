@@ -178,7 +178,7 @@ export default function MosqueHero() {
       } else {
         setPrayerLoading(false);
       }
-      if (Array.isArray(eventsRes)) setEvents(eventsRes.slice(0, 3));
+      if (Array.isArray(eventsRes)) setEvents(eventsRes.slice(0, 6));
       if (Array.isArray(coursesRes)) setCourses(coursesRes);
       if (Array.isArray(booksRes))
         setBooks(booksRes.filter((b: Book & { is_active?: boolean }) => b.is_active !== false).slice(0, 6));
